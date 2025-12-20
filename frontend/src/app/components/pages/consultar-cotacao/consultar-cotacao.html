@@ -1,0 +1,51 @@
+<app-navbar/>
+
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Minhas Solicitações</h2>
+    <button class="btn btn-primary">
+      <i class="bi bi-plus-circle"></i> Nova Solicitação
+    </button>
+  </div>
+
+  <div class="row">
+    <div class="col-12 mb-3" *ngFor="let item of solicitacoes">
+      
+      <div class="card shadow-sm border-start-primary hover-effect">
+        <div class="card-body">
+          <div class="row align-items-center">
+            
+            <div class="col-md-8">
+              <div class="d-flex align-items-center mb-2">
+                <h5 class="card-title mb-0 me-3">{{ item.titulo }}</h5>
+                <span class="badge rounded-pill" [ngClass]="getStatusClass(item.status)">
+                  {{ item.status }}
+                </span>
+              </div>
+              <p class="card-text text-muted mb-1">{{ item.descricao }}</p>
+              <small class="text-muted">
+                <i class="bi bi-calendar"></i> Criado em: {{ item.dataCriacao | date:'dd/MM/yyyy' }}
+              </small>
+            </div>
+
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+              <div class="mb-2">
+                <span class="h4 fw-bold text-primary">{{ item.qtdPropostas }}</span>
+                <span class="small text-muted d-block">Propostas Recebidas</span>
+              </div>
+              <button class="btn btn-outline-primary btn-sm">
+                Ver Detalhes
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div *ngIf="solicitacoes.length === 0" class="alert alert-info text-center">
+    Nenhuma solicitação encontrada. Crie sua primeira solicitação de compra!
+  </div>
+</div>

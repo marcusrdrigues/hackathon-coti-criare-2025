@@ -1,0 +1,108 @@
+<nav class="navbar navbar-expand-lg bg-white shadow-sm sticky-top">
+  <div class="container-fluid px-4">
+      
+      <a class="navbar-brand fw-bold text-primary" routerLink="/pages/dashboard">
+        <i class="bi bi-buildings-fill me-2"></i>Portal B2B
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" 
+              data-bs-target="#contentNavbar" aria-controls="contentNavbar" 
+              aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="contentNavbar">
+          
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              
+              <li class="nav-item">
+                  <a class="nav-link fw-semibold" routerLink="/pages/dashboard">Dashboard</a>
+              </li>
+
+              <ng-container *ngIf="usuario.tipo === 'EMPRESA'">
+                
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle fw-semibold" href="#" role="button" data-bs-toggle="dropdown">
+                       Gerenciar Cotações
+                    </a>
+                    <ul class="dropdown-menu border-0 shadow-sm">
+                        <li>
+                            <a class="dropdown-item" routerLink="/pages/cadastro-cotacao">
+                                <i class="bi bi-plus-circle me-2 text-primary"></i>Nova Cotação
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" routerLink="/pages/consultar-cotacao">
+                                <i class="bi bi-list-ul me-2"></i>Minhas Solicitações
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+              </ng-container>
+
+
+              <ng-container *ngIf="usuario.tipo === 'FORNECEDOR'">
+                
+                <li class="nav-item">
+                    <a class="nav-link fw-semibold text-success" routerLink="/pages/mural-oportunidades">
+                        <i class="bi bi-shop me-1"></i> Mural de Cotações
+                    </a>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle fw-semibold" href="#" role="button" data-bs-toggle="dropdown">
+                       Minhas Propostas
+                    </a>
+                    <ul class="dropdown-menu border-0 shadow-sm">
+                        <li>
+                            <a class="dropdown-item" routerLink="/pages/propostas-enviadas">
+                                <i class="bi bi-send me-2"></i>Enviadas / Em Aberto
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" routerLink="/pages/historico-propostas">
+                                <i class="bi bi-archive me-2"></i>Histórico
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+              </ng-container>
+
+          </ul>
+
+          <div class="d-flex align-items-center ms-auto">
+              
+              <div class="d-none d-lg-block text-end me-3 line-height-sm">
+                  <div class="fw-bold text-dark small mb-0">{{ usuario.nome }}</div>
+                  <small class="text-muted" style="font-size: 0.75rem;">
+                      {{ tipoPerfilTexto }}
+                  </small>
+              </div>
+
+              <div class="dropdown">
+                  <a href="#" class="d-flex align-items-center text-decoration-none" 
+                     data-bs-toggle="dropdown">
+                      <div class="avatar-container bg-light text-primary rounded-circle d-flex justify-content-center align-items-center border">
+                        <i class="bi bi-person-fill fs-5"></i>
+                      </div>
+                  </a>
+                  
+                  <ul class="dropdown-menu dropdown-menu-end border-0 shadow">
+                      <li>
+                          <button (click)="alternarPerfil()" class="dropdown-item text-info">
+                              <i class="bi bi-arrow-repeat me-2"></i>Trocar Perfil (Dev)
+                          </button>
+                      </li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li><a class="dropdown-item text-danger" href="#">Sair</a></li>
+                  </ul>
+              </div>
+
+          </div>
+
+      </div>
+  </div>
+</nav>
