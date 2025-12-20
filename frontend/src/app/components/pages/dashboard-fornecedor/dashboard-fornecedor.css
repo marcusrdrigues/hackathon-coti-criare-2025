@@ -1,0 +1,37 @@
+/* Cards e suas bordas laterais */
+.card {
+    border: none;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.border-start-primary { border-left: 4px solid #0d6efd !important; }
+.border-start-warning { border-left: 4px solid #ffc107 !important; }
+.border-start-success { border-left: 4px solid #198754 !important; }
+
+/* Ícones redondos com fundo suave */
+.icon-box {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* As cores bg-*-subtle são nativas do Bootstrap 5.3+ */
+    /* Caso esteja usando Bootstrap 5.0, substitua por cores manuais se não aparecer */
+}
+
+/* Tabela */
+.table th {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    color: #6c757d;
+}
+
+.table td {
+    font-size: 0.95rem;
+}

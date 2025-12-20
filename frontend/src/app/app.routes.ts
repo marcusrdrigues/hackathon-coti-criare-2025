@@ -10,8 +10,8 @@ export const routes: Routes = [
     { path: '', pathMatch: 'full', redirectTo: '/pages/dashboard' },
 
     { path: 'pages/dashboard', component: DashboardComponent },
+    { path: 'pages/dashboard-fornecedor', component: DashboardFornecedor },
     { path: 'pages/cadastro-cotacao', component: CadastroCotacao },
     { path: 'pages/consultar-cotacao', component: ConsultarCotacao },
-    { path: 'pages/dashboard-fornecedor', component: DashboardFornecedor },
     { path: '**', component: NotFound }
 ];
