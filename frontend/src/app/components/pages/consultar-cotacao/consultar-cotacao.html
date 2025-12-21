@@ -2,9 +2,10 @@
 
 <div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Minhas Solicitações</h2>
-    <button class="btn btn-primary">
-      <i class="bi bi-plus-circle"></i> Nova Solicitação
+    <h2 class="fw-bold text-dark">Minhas Solicitações</h2>
+    
+    <button class="btn btn-primary" routerLink="/pages/cadastro-cotacao">
+      <i class="bi bi-plus-circle me-2"></i>Nova Solicitação
     </button>
   </div>
 
@@ -17,7 +18,7 @@
             
             <div class="col-md-8">
               <div class="d-flex align-items-center mb-2">
-                <h5 class="card-title mb-0 me-3">{{ item.titulo }}</h5>
+                <h5 class="card-title mb-0 me-3 fw-bold">{{ item.titulo }}</h5>
                 <span class="badge rounded-pill" [ngClass]="getStatusClass(item.status)">
                   {{ item.status }}
                 </span>
@@ -33,9 +34,9 @@
                 <span class="h4 fw-bold text-primary">{{ item.qtdPropostas }}</span>
                 <span class="small text-muted d-block">Propostas Recebidas</span>
               </div>
-              <button class="btn btn-outline-primary btn-sm">
-                Ver Detalhes
-              </button>
+                <button class="btn btn-outline-primary btn-sm" [routerLink]="['/pages/detalhe-cotacao', item.id]">
+                  Ver Detalhes
+                </button>
             </div>
 
           </div>
@@ -45,7 +46,7 @@
     </div>
   </div>
 
-  <div *ngIf="solicitacoes.length === 0" class="alert alert-info text-center">
+  <div *ngIf="solicitacoes.length === 0" class="alert alert-info text-center border-0 shadow-sm">
     Nenhuma solicitação encontrada. Crie sua primeira solicitação de compra!
   </div>
 </div>

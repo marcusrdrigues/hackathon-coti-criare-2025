@@ -1,16 +1,50 @@
-/* Mantendo a identidade visual da tela anterior */
-.border-start-primary {
-  border-left: 5px solid #0d6efd !important; 
+/* --- DEFINIÇÃO DE CORES CRIARE --- */
+:host {
+  --criare-red: #B2002D;
+  --criare-dark: #800020;
+  --criare-focus: rgba(178, 0, 45, 0.25); /* Brilho vermelho do input */
 }
 
-/* Ajuste fino para os labels */
+/* 1. Borda lateral do Card (Antes azul, agora Vermelha) */
+.border-start-primary {
+  border-left: 5px solid var(--criare-red) !important; 
+}
+
+/* 2. Badge/Etiqueta (Antes azul, agora Vermelha) */
+.badge.bg-primary {
+  background-color: var(--criare-red) !important;
+}
+
+/* 3. Inputs e Textareas (Foco Vermelho) */
+.form-control:focus {
+  border-color: var(--criare-red);
+  box-shadow: 0 0 0 0.25rem var(--criare-focus);
+}
+
 .form-label {
   color: #495057;
   font-size: 0.95rem;
 }
 
-/* Opcional: Efeito de foco suave nos inputs */
-.form-control:focus {
-  border-color: #86b7fe;
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+/* 4. Botão Principal (Publicar) - Transforma o Azul em Vermelho */
+.btn-primary {
+  background-color: var(--criare-red) !important;
+  border-color: var(--criare-red) !important;
+}
+
+.btn-primary:hover, .btn-primary:active {
+  background-color: var(--criare-dark) !important;
+  border-color: var(--criare-dark) !important;
+}
+
+/* 5. Botão Secundário (Cancelar) - Hover Vermelho */
+.btn-outline-secondary:hover {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: white;
+}
+
+/* 6. Link de Voltar */
+a.text-muted:hover {
+  color: var(--criare-red) !important; /* Fica vermelho ao passar o mouse */
 }

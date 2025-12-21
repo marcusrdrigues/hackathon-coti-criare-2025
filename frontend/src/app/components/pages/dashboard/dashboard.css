@@ -1,31 +1,38 @@
+/* --- CORES DA MARCA --- */
+:host {
+  --criare-red: #B2002D;
+  --criare-dark: #800020;
+}
+
 /* =========================================
    1. ESTILO GERAL DOS CARDS
    ========================================= */
 .card {
-  border: none; /* Remove borda cinza padrão */
+  border: none;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Efeito ao passar o mouse: levanta levemente */
 .card:hover {
   transform: translateY(-3px);
   box-shadow: 0 .5rem 1rem rgba(0,0,0,.10)!important;
 }
 
 /* =========================================
-   2. BORDAS LATERAIS COLORIDAS (KPIs)
+   2. BORDAS LATERAIS (KPIs)
    ========================================= */
-/* Azul (Abertas) */
-.border-start-primary { border-left: 5px solid #0d6efd !important; }
 
-/* Ciano (Propostas - Informativo) */
-.border-start-info { border-left: 5px solid #f0bf0d !important; }
+/* AQUI ESTÁ A MUDANÇA: Primary agora é Vermelho Criare */
+.border-start-primary { 
+  border-left: 5px solid var(--criare-red) !important; 
+}
 
-/* Verde (Economia - Sucesso) */
-.border-start-success { border-left: 5px solid #198754 !important; }
+/* Mantendo o Amarelo/Dourado que você gostou para Propostas */
+.border-start-warning { 
+  border-left: 5px solid #f0bf0d !important; 
+}
 
 /* =========================================
-   3. ÍCONES REDONDOS
+   3. ÍCONES E CORES DE FUNDO
    ========================================= */
 .icon-shape {
   width: 3.5rem;
@@ -35,6 +42,11 @@
   justify-content: center;
   border-radius: 50% !important;
   opacity: 0.9;
+}
+
+/* Sobrescrevendo o fundo azul padrão pelo Vermelho Criare */
+.bg-primary {
+  background-color: var(--criare-red) !important;
 }
 
 /* =========================================
@@ -52,17 +64,29 @@
   background-color: #f8f9fa;
 }
 
-/* Avatar circular com a inicial */
+/* Avatar: Letra Vermelha Criare */
 .avatar-circle {
   width: 40px; 
   height: 40px;
-  background-color: #e9ecef;
+  background-color: #fceceb; /* Um rosa bem clarinho pra combinar */
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0d6efd;
+  color: var(--criare-red); /* Letra vermelha */
   font-weight: bold;
+}
+
+/* Botão "Ver todos" (Outline) em Vermelho */
+.btn-outline-primary {
+  color: var(--criare-red);
+  border-color: var(--criare-red);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--criare-red);
+  color: white;
+  border-color: var(--criare-red);
 }
 
 /* =========================================

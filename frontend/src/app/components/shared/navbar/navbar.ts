@@ -1,6 +1,8 @@
-import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common'; // Essencial para o *ngIf
+import { Component, OnInit } from '@angular/core';
+import { RouterLink, Router } from '@angular/router'; // Adicionei Router aqui
+import { CommonModule } from '@angular/common';
+import { AuthService } from '../../../services/auth.service';
+
 
 @Component({
   selector: 'app-navbar',
@@ -9,30 +11,74 @@ import { CommonModule } from '@angular/common'; // Essencial para o *ngIf
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
 })
-export class Navbar {
+export class Navbar implements OnInit {
   
-  // Defina o tipo aqui. No futuro, isso virá do seu LoginService ou LocalStorage
-  // Opções: 'EMPRESA' | 'FORNECEDOR'
-  usuario = {
-    nome: 'Tech Inovações',
-    tipo: 'EMPRESA', 
-    foto: null
+  // Mocks
+  perfilEmpresa = {
+    nome: 'Criare Consulting (Dev)',
+    tipo: 'EMPRESA',
+    cnpj: '12.345.678/0001-99'
   };
 
-  // Helper para o texto do perfil
-  get tipoPerfilTexto(): string {
-    return this.usuario.tipo === 'EMPRESA' ? 'Perfil Corporativo' : 'Portal do Fornecedor';
+  perfilFornecedor = {
+    nome: 'Tech Soluções (Fornecedor)',
+    tipo: 'FORNECEDOR',
+    cnpj: '98.765.432/0001-00'
+  };
+
+  // Começa nulo, vamos decidir no ngOnInit
+  usuario: any = null; 
+
+  constructor(private authService: AuthService, private router: Router) {}
+
+  ngOnInit() {
+    // 1. Verifica se já temos uma "escolha forçada" salva no navegador
+    const modoSalvo = localStorage.getItem('modo_demo');
+
+    if (modoSalvo === 'EMPRESA') {
+      this.usuario = this.perfilEmpresa;
+    } else if (modoSalvo === 'FORNECEDOR') {
+      this.usuario = this.perfilFornecedor;
+    } else {
+      // Se não tiver nada salvo, assume Fornecedor por padrão
+      this.usuario = this.perfilFornecedor;
+    }
+    
+    // (Opcional) Se tiver login real, sobrescreve o mock
+    this.authService.usuario$.subscribe(dados => {
+      if (dados) this.usuario = dados;
+    });
   }
 
-  // MÉTODO PARA DEMONSTRAÇÃO NO HACKATHON
-  // (Você pode ligar isso num botão escondido ou no console para mostrar aos juízes)
   alternarPerfil() {
     if (this.usuario.tipo === 'EMPRESA') {
-      this.usuario.tipo = 'FORNECEDOR';
-      this.usuario.nome = 'Fornecedor João';
+      // Muda para Fornecedor
+      this.usuario = this.perfilFornecedor;
+      localStorage.setItem('modo_demo', 'FORNECEDOR'); // <--- SALVA NA MEMÓRIA
+      alert('Alternado para FORNECEDOR');
+      this.router.navigate(['/pages/dashboard-fornecedor']); // Já manda pra tela certa
     } else {
-      this.usuario.tipo = 'EMPRESA';
-      this.usuario.nome = 'Tech Inovações';
+      // Muda para Empresa
+      this.usuario = this.perfilEmpresa;
+      localStorage.setItem('modo_demo', 'EMPRESA'); // <--- SALVA NA MEMÓRIA
+      alert('Alternado para EMPRESA');
+      this.router.navigate(['/pages/dashboard']); // Já manda pra tela certa
     }
+  }
+
+  get tipoPerfilTexto(): string {
+    return this.usuario?.tipo === 'EMPRESA' ? 'Perfil Corporativo' : 'Portal do Fornecedor';
+  }
+
+  get rotaDashboard(): string {
+    if (this.usuario && this.usuario.tipo === 'FORNECEDOR') {
+      return '/pages/dashboard-fornecedor'; // Se não tiver essa rota, use /pages/mural-oportunidades
+    }
+    return '/pages/dashboard';
+  }
+
+  sair() {
+    this.authService.logout();
+    localStorage.removeItem('modo_demo'); // Limpa a memória ao sair
   }
 }

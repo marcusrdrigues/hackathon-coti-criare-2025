@@ -4,11 +4,25 @@ import { DashboardFornecedor } from './components/pages/dashboard-fornecedor/das
 import { CadastroCotacao } from './components/pages/cadastro-cotacao/cadastro-cotacao';
 import { NotFound } from './components/pages/not-found/not-found';
 import { ConsultarCotacao } from './components/pages/consultar-cotacao/consultar-cotacao';
+import { CadastroComponent } from './components/pages/cadastro/cadastro';
+import { Login } from './components/pages/login/login';
+import { DetalheCotacao } from './components/pages/detalhe-cotacao/detalhe-cotacao';
+import { Negociacao } from './components/pages/negociacao/negociacao';
+import { MuralOportunidades } from './components/pages/mural-oportunidades/mural-oportunidades';
+import { PropostasEnviadas } from './components/pages/propostas-enviadas/propostas-enviadas';
+import { historicoPropostas } from './components/pages/historico-propostas/historico-propostas';
 
 
 export const routes: Routes = [
     { path: '', pathMatch: 'full', redirectTo: '/pages/dashboard' },
 
+    { path: 'pages/historico-propostas', component: historicoPropostas },
+    {path: 'pages/propostas-enviadas', component: PropostasEnviadas },
+    { path: 'pages/mural-oportunidades', component: MuralOportunidades },
+    { path: 'pages/detalhe-cotacao/:id', component: DetalheCotacao },
+    { path: 'pages/negociacao/:id', component: Negociacao },
+    { path: 'pages/login', component: Login },
+    { path: 'pages/cadastro', component: CadastroComponent },
     { path: 'pages/dashboard', component: DashboardComponent },
     { path: 'pages/dashboard-fornecedor', component: DashboardFornecedor },
     { path: 'pages/cadastro-cotacao', component: CadastroCotacao },

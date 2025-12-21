@@ -1,14 +1,14 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
+import { RouterLink } from '@angular/router'; // Adicionei para o botão funcionar
 import { Navbar } from '../../shared/navbar/navbar';
 
-// Interface ajustada para a realidade do Back-end
-interface cotacao {
+interface Cotacao {
   id: number;
   titulo: string;
   descricao: string;
   dataCriacao: Date;
-  status: 'ABERTO' | 'ENCERRADO'; // Apenas os status reais
+  status: 'ABERTO' | 'ENCERRADO';
   qtdPropostas: number;
 }
 
@@ -17,15 +17,15 @@ interface cotacao {
   standalone: true,
   imports: [
     Navbar,
-    CommonModule
+    CommonModule,
+    RouterLink // Necessário para o botão "Nova Solicitação"
   ],
   templateUrl: './consultar-cotacao.html',
   styleUrl: './consultar-cotacao.css',
 })
 export class ConsultarCotacao {
 
-  // Dados atualizados
-  solicitacoes: cotacao[] = [
+  solicitacoes: Cotacao[] = [
     {
       id: 1,
       titulo: 'Aquisição de Notebooks',
@@ -39,7 +39,7 @@ export class ConsultarCotacao {
       titulo: 'Serviço de Limpeza Pós-Obra',
       descricao: 'Limpeza completa do galpão B após reforma estrutural.',
       dataCriacao: new Date('2025-11-15'),
-      status: 'ABERTO', // Mudado de EM_ANALISE para ABERTO
+      status: 'ABERTO',
       qtdPropostas: 5
     },
     {
@@ -52,15 +52,14 @@ export class ConsultarCotacao {
     }
   ];
 
-  // Função simplificada
   getStatusClass(status: string): string {
     switch (status) {
       case 'ABERTO': 
-        return 'bg-success'; // Verde para chamar atenção
-      case 'FECHADO': 
-        return 'bg-secondary'; // Cinza para indicar inativo
+        return 'bg-success'; // Verde (Mantive verde pois "Aberto" é sinal positivo)
+      case 'ENCERRADO': 
+        return 'bg-secondary'; // Cinza
       default: 
-        return 'bg-primary';
+        return 'bg-light text-dark';
     }
   }
 }

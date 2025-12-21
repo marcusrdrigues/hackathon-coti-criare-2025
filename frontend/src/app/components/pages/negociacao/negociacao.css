@@ -1,0 +1,25 @@
+/* Cores Criare */
+:host { --criare-red: #B2002D; --criare-light: #fff0f3; }
+
+.timeline-card {
+  border-left: 2px solid #e9ecef;
+  margin-left: 20px;
+  padding-left: 20px;
+  padding-bottom: 30px;
+  position: relative;
+}
+
+/* Bolinha da timeline */
+.timeline-dot {
+  width: 12px; height: 12px;
+  background: var(--criare-red);
+  border-radius: 50%;
+  position: absolute;
+  left: -7px; top: 5px;
+}
+
+.bg-proposta { background-color: #f8f9fa; border: 1px solid #dee2e6; }
+.bg-contra { background-color: var(--criare-light); border: 1px solid #f8d7da; }
+
+.btn-primary { background-color: var(--criare-red) !important; border-color: var(--criare-red) !important; }
+.text-primary { color: var(--criare-red) !important; }

@@ -1,34 +1,64 @@
-/* Ajuste para o texto ficar bem juntinho (Nome em cima, cargo em baixo) */
+/* --- CORES DA MARCA (CRIARE) --- */
+:host {
+    --criare-red: #B2002D;
+    --criare-hover: #900024;
+    --criare-light: #fff0f3; /* Fundo rosinha claro */
+}
+
+/* 1. Sobrescreve o Azul Padrão do Bootstrap neste componente */
+.text-primary {
+    color: var(--criare-red) !important;
+}
+
+/* 2. Link do Menu: Cinza por padrão, Vermelho no Hover/Ativo */
+.nav-link {
+    color: #555;
+    font-size: 0.95rem;
+    transition: color 0.2s;
+    font-weight: 500;
+}
+
+.nav-link:hover, .nav-link.active {
+    color: var(--criare-red) !important;
+}
+
+/* 3. Ajuste para o texto do perfil (Nome/Cargo) */
 .line-height-sm {
     line-height: 1.2;
 }
 
-/* Container do Avatar */
+/* 4. Container do Avatar */
 .avatar-container {
     width: 40px;
     height: 40px;
     transition: all 0.2s ease;
     cursor: pointer;
+    
+    /* Cores da Criare no Avatar */
+    background-color: var(--criare-light) !important; /* Fundo rosinha */
+    color: var(--criare-red) !important; /* Ícone vermelho */
+    border: 1px solid #dee2e6;
 }
 
 /* Efeito ao passar o mouse no avatar */
 .avatar-container:hover {
-    background-color: #e9ecef !important; /* Cinza um pouco mais escuro */
-    border-color: #dee2e6 !important;
+    background-color: var(--criare-red) !important; /* Fica vermelho sólido */
+    color: white !important; /* Ícone vira branco */
+    border-color: var(--criare-red) !important;
 }
 
-/* Ajuste fino na Navbar para dar ar de 'Dashboard' */
+/* 5. Ajuste fino na Navbar (Borda inferior) */
 .navbar {
     border-bottom: 1px solid #eef2f6;
     padding-top: 0.75rem;
     padding-bottom: 0.75rem;
 }
 
-.nav-link {
-    color: #555;
-    font-size: 0.95rem;
+/* 6. Ícones dentro dos Dropdowns */
+.dropdown-item i {
+    color: var(--criare-red);
 }
 
-.nav-link.active {
-    color: #0d6efd !important; /* Azul Bootstrap */
+.dropdown-item:active {
+    background-color: var(--criare-red);
 }
