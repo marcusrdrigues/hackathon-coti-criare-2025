@@ -18,7 +18,7 @@ export class DashboardComponent {
   kpis = {
     cotacoesAbertas: 2,      // Status: ABERTO
     propostasRecebidas: 20,  // Volume total
-    economiaGerada: 1000.00 // Resultado das cotacoes FECHADAS
+    cotacoesNegociacao: 5 // Resultado das cotacoes FECHADAS
   };
 
   // LISTA DE FORNECEDORES

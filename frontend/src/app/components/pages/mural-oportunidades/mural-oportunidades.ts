@@ -25,7 +25,8 @@ export class MuralOportunidades {
       
       // NOVOS CAMPOS DE CONTROLE (MOCK)
       expandido: false,
-      valorProposta: '' 
+      valorProposta: '',
+      descricaoPropostaTexto: ''
     },
     {
       id: 2,
@@ -37,7 +38,8 @@ export class MuralOportunidades {
       orcamentoEstimado: 'Sob Consulta',
       
       expandido: false,
-      valorProposta: ''
+      valorProposta: '',
+      descricaoPropostaTexto: ''
     },
     {
       id: 3,
@@ -49,7 +51,8 @@ export class MuralOportunidades {
       orcamentoEstimado: 'R$ 2.000,00',
       
       expandido: false,
-      valorProposta: ''
+      valorProposta: '',
+      descricaoPropostaTexto: ''
     }
   ];
 
@@ -70,19 +73,31 @@ export class MuralOportunidades {
   }
 
   // 2. Função que ENVIA de verdade
-  confirmarEnvio(item: any) {
-    if (!item.valorProposta) {
-      alert('Por favor, digite um valor para a proposta.');
-      return;
-    }
-
-    alert(`Sucesso! Proposta de R$ ${item.valorProposta} enviada para ${item.empresa}!`);
-    
-    // Reseta o card
-    item.expandido = false;
-    item.valorProposta = '';
-    
-    // Redireciona
-    this.router.navigate(['/pages/propostas-enviadas']);
+ confirmarEnvio(item: any) {
+  // 1. Validação básica
+  if (!item.valorProposta) {
+    alert('Digite o valor!');
+    return;
   }
+
+  // 2. Pega o ID do Fornecedor Logado (do localStorage/AuthService)
+  // Supondo que você tem o objeto usuario salvo
+  const usuarioLogado = JSON.parse(localStorage.getItem('sessao_usuario') || '{}');
+
+  // 3. MONTA O JSON EXATO QUE O JAVA ESPERA
+  const propostaDTO = {
+    descricao: item.descricaoPropostaTexto || 'Sem descrição adicional', // Campo novo
+    valor: item.valorProposta,
+    fornecedor: { id: usuarioLogado.id }, // O Java espera um objeto ou ID
+    cotacao: { id: item.id }              // ID da cotação que você clicou
+  };
+
+  console.log('Enviando pro Java:', propostaDTO);
+
+  // 4. AQUI ENTRA A CHAMADA PRO SERVICE (Quando tiver a API)
+  // this.propostaService.criar(propostaDTO).subscribe(...)
+
+  alert('Proposta enviada com sucesso!');
+  item.expandido = false;
+}
 }
