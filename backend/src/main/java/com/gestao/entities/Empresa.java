@@ -1,0 +1,33 @@
+package com.gestao.entities;
+
+import jakarta.persistence.*;
+import lombok.Data;
+
+import java.util.UUID;
+
+@Data
+@Entity
+@Table(name = "tb_empresa")
+public class Empresa {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id")
+    private UUID id;
+
+    @Column(name = "nome", length = 200, nullable = false)
+    private String razaoSocial;
+
+    @Column(name = "cnpj", length = 18, nullable = false, unique = true)
+    private String cnpj;
+
+    @Column(name = "email", length = 100, nullable = false, unique = true)
+    private String email;
+
+    @Column(name = "senha", length = 100, nullable = false)
+    private String senha;
+
+    @ManyToOne
+    @JoinColumn(name = "perfil_id", nullable = false)
+    private Perfil perfil; // Sempre será "EMPRESA"
+}

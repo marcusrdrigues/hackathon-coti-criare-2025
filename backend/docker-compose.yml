@@ -1,0 +1,33 @@
+services:
+
+  gestaohackaton:
+    container_name: spring_gestao_hackaton
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8085:8085"
+    networks:
+      - gestaohackaton_network
+    depends_on:
+      - postgres
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bdgestao
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: coti
+
+  postgres:
+    image: postgres:16
+    container_name: postgres_gestaohackaton
+    environment:
+      POSTGRES_DB: bdgestao
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: coti
+    ports:
+      - "5435:5432"
+    networks:
+      - gestaohackaton_network
+
+networks:
+  gestaohackaton_network:
+    driver: bridge
