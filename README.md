@@ -21,6 +21,8 @@
 <p align="center">
   <a href="https://github.com/marcusrdrigues/hackathon-coti-criare-2025/actions/workflows/ci.yml"><img src="https://github.com/marcusrdrigues/hackathon-coti-criare-2025/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://github.com/marcusrdrigues/hackathon-coti-criare-2025/actions/workflows/codeql.yml"><img src="https://github.com/marcusrdrigues/hackathon-coti-criare-2025/actions/workflows/codeql.yml/badge.svg" alt="CodeQL" /></a>
+  <a href="https://sonarcloud.io/summary/new_code?id=marcusrdrigues_hackathon-coti-criare-2025"><img src="https://sonarcloud.io/api/project_badges/measure?project=marcusrdrigues_hackathon-coti-criare-2025&metric=alert_status" alt="Quality Gate" /></a>
+  <a href="https://sonarcloud.io/summary/new_code?id=marcusrdrigues_hackathon-coti-criare-2025"><img src="https://sonarcloud.io/api/project_badges/measure?project=marcusrdrigues_hackathon-coti-criare-2025&metric=coverage" alt="Cobertura" /></a>
 </p>
 
 ---
