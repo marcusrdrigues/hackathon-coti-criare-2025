@@ -3,7 +3,6 @@
   texto="Empresas publicam o que precisam comprar. Fornecedores encontram oportunidades e enviam propostas. O cadastro é gratuito e usa o CNPJ da sua empresa.">
 
   <h1 class="titulo">Criar conta</h1>
-  <p class="subtitulo">Leva menos de um minuto. Depois você entra direto no portal.</p>
 
   @if (erroGeral(); as mensagem) {
     <p class="aviso aviso-erro" role="alert">{{ mensagem }}</p>
@@ -12,7 +11,8 @@
   <form (ngSubmit)="cadastrar()" novalidate>
 
     <fieldset class="campo">
-      <legend class="rotulo">Tipo de conta</legend>
+      <!-- O controle segmentado com texto dispensa título visível (HIG); o leitor de tela ainda o lê -->
+      <legend class="visually-hidden">Tipo de conta</legend>
       <div class="segmentado">
         <input type="radio" class="segmento-entrada" id="tipo-empresa" name="tipo" value="EMPRESA"
                [checked]="tipo() === 'EMPRESA'" (change)="tipo.set('EMPRESA')">

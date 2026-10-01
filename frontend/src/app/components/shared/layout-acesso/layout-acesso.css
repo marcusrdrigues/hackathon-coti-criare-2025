@@ -1,11 +1,11 @@
 /*
  * Moldura das telas de acesso.
- *   --vinho  #7a0020  fundo do painel da marca; branco nele 11,4:1
- *   #f3c9d3           texto secundário no painel; 7,6:1 sobre o vinho
+ *   --vinho  #5e070c  fundo do painel da marca; branco nele 13,9:1
+ *   #f2c8c8           texto secundário no painel; 9,2:1 sobre o vinho
  */
 :host {
-  --vinho: #7a0020;
-  --vinho-texto-2: #f3c9d3;
+  --vinho: #5e070c;
+  --vinho-texto-2: #f2c8c8;
   display: block;
 }
 
@@ -24,15 +24,21 @@
   gap: 2rem;
   padding: clamp(2rem, 5vh, 3.5rem) clamp(2rem, 5vw, 4.5rem);
   background:
-    radial-gradient(120% 80% at 0% 0%, rgba(178, 0, 45, 0.55) 0%, transparent 60%),
+    radial-gradient(120% 80% at 0% 0%, rgba(143, 11, 17, 0.7) 0%, transparent 60%),
     var(--vinho);
   color: #fff;
 }
 
 .marca {
   display: flex;
-  align-items: baseline;
-  gap: 0.75rem;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.marca-logo {
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
 }
 
 .marca-nome {
@@ -152,7 +158,7 @@
 }
 
 .marca-compacta .marca-nome {
-  color: var(--criare-red);
+  color: var(--tx, #1d1d1f);
 }
 
 .marca-compacta .marca-produto {
@@ -173,7 +179,7 @@
   }
 }
 
-@media (max-height: 720px) {
+@media (max-height: 760px) {
   .painel-marca {
     padding-top: 1.75rem;
     padding-bottom: 1.75rem;
@@ -188,8 +194,13 @@
     padding-bottom: 0.4rem;
   }
 
+  .painel-acesso {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
   .marca-compacta {
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
   }
 }
 

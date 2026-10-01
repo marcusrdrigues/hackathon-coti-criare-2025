@@ -28,7 +28,7 @@
 }
 
 .botao-demo:active:not(:disabled) {
-  background: #fbdde4;
+  background: #f6d9d8;
 }
 
 .botao-demo:disabled {

@@ -47,3 +47,15 @@
   background-color: var(--criare-red);
   color: #fff;
 }
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: #1d1d1f;
+}
+
+.marca:hover {
+  color: #1d1d1f;
+}
