@@ -133,12 +133,16 @@ jobs:
         run: |
           # Lista as issues como anotações no GitHub, com arquivo e linha, para corrigir sem sair do PR
           # O projeto é público: a consulta não precisa de token
+          # A busca de issues do SonarCloud é indexada alguns segundos depois do fim da análise
+          sleep 45
           url="https://sonarcloud.io/api/issues/search?componentKeys=marcusrdrigues_hackathon-coti-criare-2025&resolved=false&ps=100"
           status=$(curl -s -o issues.json -w "%{http_code}" "$url")
           if [ "$status" != "200" ]; then
             echo "::warning title=SonarCloud::Não consegui listar as issues (HTTP $status): $(head -c 300 issues.json)"
             exit 0
           fi
+          # Linhas de código por linguagem, para conferir que back-end e front-end entraram na análise
+          curl -s -o linguagens.json "https://sonarcloud.io/api/measures/component?component=marcusrdrigues_hackathon-coti-criare-2025&metricKeys=ncloc_language_distribution" || true
           python3 - <<'PY'
           import json
           dados = json.load(open('issues.json'))
@@ -148,6 +152,11 @@ jobs:
               linha = i.get('line', 1)
               texto = f"{i['message']} ({i['rule']}, {i.get('severity', '')})".replace('%', '%25')
               print(f"::warning file={caminho},line={linha},title=SonarCloud::{texto}")
+          try:
+              medidas = json.load(open('linguagens.json'))['component']['measures']
+              print(f"::notice title=SonarCloud (linhas por linguagem)::{medidas[0]['value']}")
+          except Exception:
+              pass
           PY
 
       - name: Motivo da falha no SonarCloud
