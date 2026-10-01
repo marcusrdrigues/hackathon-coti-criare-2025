@@ -38,6 +38,20 @@ jobs:
           set -o pipefail
           ./mvnw -B -ntp verify 2>&1 | tee build.log
 
+      - name: Conferir os testes no PostgreSQL (Testcontainers)
+        run: |
+          # Sem Docker as suítes *Postgres* são puladas em silêncio; no CI isso seria um falso verde
+          python3 - <<'PY'
+          import glob, sys, xml.etree.ElementTree as ET
+          total = puladas = 0
+          for arquivo in glob.glob('target/surefire-reports/TEST-*Postgres*.xml'):
+              suite = ET.parse(arquivo).getroot()
+              total += int(suite.get('tests')); puladas += int(suite.get('skipped'))
+          rodaram = total - puladas
+          print(f'::notice title=PostgreSQL real::{rodaram} de {total} testes rodaram no PostgreSQL (Testcontainers)')
+          sys.exit(0 if total and not puladas else 1)
+          PY
+
       - name: Resumo dos erros de build/teste
         if: failure()
         run: |
