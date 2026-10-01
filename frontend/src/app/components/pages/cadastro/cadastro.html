@@ -54,7 +54,7 @@
       <div class="text-start mb-4">
         <label for="senha" class="form-label small fw-bold text-secondary ps-1">Crie uma senha</label>
         <input id="senha" type="password" class="form-control" [(ngModel)]="registro.senha" name="senha"
-               placeholder="Mínimo de 6 caracteres" autocomplete="new-password" minlength="6" maxlength="72" required>
+               placeholder="8+ caracteres, letras e números" autocomplete="new-password" minlength="8" maxlength="72" required>
       </div>
 
       <button type="submit" class="btn btn-criare shadow-sm mb-3" [disabled]="carregando()">

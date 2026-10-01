@@ -30,7 +30,7 @@ export class DashboardComponent implements OnInit {
 
   carregar(): void {
     this.erro.set(null);
-    this.dashboardService.empresa(this.auth.usuarioLogado.id).subscribe({
+    this.dashboardService.empresa().subscribe({
       next: (dados) => {
         this.dados.set(dados);
         this.atualizadoEm.set(new Date());

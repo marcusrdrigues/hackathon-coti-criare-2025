@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { CategoriaCotacao, Cotacao, Proposta } from '../../../core/models';
-import { AuthService } from '../../../core/services/auth.service';
 import { CotacaoService } from '../../../core/services/cotacao.service';
 import { NotificacaoService } from '../../../core/services/notificacao.service';
 import { PropostaService } from '../../../core/services/proposta.service';
@@ -27,7 +26,6 @@ export class MuralOportunidades implements OnInit {
   private readonly cotacaoService = inject(CotacaoService);
   private readonly propostaService = inject(PropostaService);
   private readonly notificacao = inject(NotificacaoService);
-  private readonly auth = inject(AuthService);
 
   protected readonly categorias$ = this.cotacaoService.categorias();
   protected readonly diasRestantes = diasRestantes;
@@ -63,7 +61,7 @@ export class MuralOportunidades implements OnInit {
   carregar(): void {
     forkJoin({
       abertas: this.cotacaoService.listarAbertas(),
-      minhas: this.propostaService.listarPorFornecedor(this.auth.usuarioLogado.id),
+      minhas: this.propostaService.listarMinhas(),
     }).subscribe({
       next: ({ abertas, minhas }) => {
         this.oportunidades.set(abertas);
@@ -98,7 +96,6 @@ export class MuralOportunidades implements OnInit {
       .enviar({
         valor: this.rascunho.valor,
         descricao: this.rascunho.descricao.trim() || 'Sem condições adicionais.',
-        fornecedorId: this.auth.usuarioLogado.id,
         cotacaoId: c.id,
       })
       .subscribe({

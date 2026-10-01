@@ -51,8 +51,8 @@ export class CadastroComponent {
       this.erro.set('O CNPJ precisa ter 14 dígitos.');
       return;
     }
-    if (senha.length < 6) {
-      this.erro.set('A senha precisa ter pelo menos 6 caracteres.');
+    if (senha.length < 8 || !/[A-Za-z]/.test(senha) || !/\d/.test(senha)) {
+      this.erro.set('A senha precisa ter pelo menos 8 caracteres, com letras e números.');
       return;
     }
 

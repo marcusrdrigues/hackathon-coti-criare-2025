@@ -22,8 +22,9 @@ export class CotacaoService {
     return this.http.get<Cotacao>(`${this.url}/${id}`);
   }
 
-  listarPorEmpresa(empresaId: string): Observable<Cotacao[]> {
-    return this.http.get<Cotacao[]>(`${this.url}/empresa/${empresaId}`);
+  /** Cotações da empresa logada. */
+  listarMinhas(): Observable<Cotacao[]> {
+    return this.http.get<Cotacao[]>(`${this.url}/minhas`);
   }
 
   listarAbertas(): Observable<Cotacao[]> {

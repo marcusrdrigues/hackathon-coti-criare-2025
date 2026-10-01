@@ -2,7 +2,6 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Proposta } from '../../../core/models';
-import { AuthService } from '../../../core/services/auth.service';
 import { PropostaService } from '../../../core/services/proposta.service';
 import { mensagemDeErro } from '../../../core/utils/erros';
 import { Navbar } from '../../shared/navbar/navbar';
@@ -16,7 +15,6 @@ import { Navbar } from '../../shared/navbar/navbar';
 })
 export class HistoricoPropostas implements OnInit {
   private readonly propostaService = inject(PropostaService);
-  private readonly auth = inject(AuthService);
 
   protected readonly propostas = signal<Proposta[] | null>(null);
   protected readonly erro = signal<string | null>(null);
@@ -34,7 +32,7 @@ export class HistoricoPropostas implements OnInit {
   );
 
   ngOnInit(): void {
-    this.propostaService.listarPorFornecedor(this.auth.usuarioLogado.id).subscribe({
+    this.propostaService.listarMinhas().subscribe({
       next: (lista) => this.propostas.set(lista),
       error: (e) => this.erro.set(mensagemDeErro(e)),
     });

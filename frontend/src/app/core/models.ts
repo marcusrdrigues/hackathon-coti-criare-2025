@@ -1,4 +1,5 @@
 // Tipos espelhando os DTOs da API (pacote com.gestao.dtos).
+// Quem é o usuário (empresa, fornecedor, remetente) a API descobre pelo token.
 
 export type TipoUsuario = 'EMPRESA' | 'FORNECEDOR';
 export type StatusCotacao = 'ABERTA' | 'EM_NEGOCIACAO' | 'FECHADA' | 'CANCELADA';
@@ -19,6 +20,14 @@ export interface Usuario {
   email: string;
   cnpj: string;
   tipo: TipoUsuario;
+}
+
+/** Resposta de login e de renovação. O refresh token vai num cookie HttpOnly, não aqui. */
+export interface TokenResponse {
+  accessToken: string;
+  tokenType: 'Bearer';
+  expiresIn: number;
+  usuario: Usuario;
 }
 
 export interface LoginRequest {
@@ -67,7 +76,6 @@ export interface CotacaoRequest {
   categoria: CategoriaCotacao | null;
   orcamentoEstimado: number | null;
   dataLimite: string | null;
-  empresaId: string;
 }
 
 export interface Proposta {
@@ -92,7 +100,6 @@ export interface Proposta {
 export interface PropostaRequest {
   valor: number;
   descricao: string;
-  fornecedorId: string;
   cotacaoId: string;
 }
 
@@ -130,8 +137,6 @@ export interface MensagemRequest {
   negociacaoId: string;
   mensagem: string | null;
   valorOfertado: number | null;
-  tipoRemetente: TipoUsuario;
-  remetenteId: string;
 }
 
 export interface CategoriaResumo {

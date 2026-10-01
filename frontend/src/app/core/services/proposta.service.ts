@@ -17,8 +17,9 @@ export class PropostaService {
     return this.http.get<Proposta[]>(`${this.url}/cotacao/${cotacaoId}`);
   }
 
-  listarPorFornecedor(fornecedorId: string): Observable<Proposta[]> {
-    return this.http.get<Proposta[]>(`${this.url}/fornecedor/${fornecedorId}`);
+  /** Propostas do fornecedor logado. */
+  listarMinhas(): Observable<Proposta[]> {
+    return this.http.get<Proposta[]>(`${this.url}/minhas`);
   }
 
   recusar(id: string): Observable<Proposta> {

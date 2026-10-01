@@ -3,7 +3,6 @@ import { Component, OnInit, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CategoriaCotacao, CotacaoRequest } from '../../../core/models';
-import { AuthService } from '../../../core/services/auth.service';
 import { CotacaoService } from '../../../core/services/cotacao.service';
 import { NotificacaoService } from '../../../core/services/notificacao.service';
 import { mensagemDeErro } from '../../../core/utils/erros';
@@ -18,7 +17,6 @@ import { Navbar } from '../../shared/navbar/navbar';
 })
 export class CadastroCotacao implements OnInit {
   private readonly cotacaoService = inject(CotacaoService);
-  private readonly auth = inject(AuthService);
   private readonly notificacao = inject(NotificacaoService);
   private readonly router = inject(Router);
 
@@ -76,7 +74,6 @@ export class CadastroCotacao implements OnInit {
       orcamentoEstimado: this.form.orcamentoEstimado || null,
       // A cotação fica aberta até o fim do dia escolhido
       dataLimite: this.form.dataLimite ? `${this.form.dataLimite}T23:59:59` : null,
-      empresaId: this.auth.usuarioLogado.id,
     };
 
     const id = this.id();

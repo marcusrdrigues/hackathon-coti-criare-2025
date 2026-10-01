@@ -28,7 +28,7 @@ export class DashboardFornecedor implements OnInit {
 
   ngOnInit(): void {
     forkJoin({
-      kpis: this.dashboardService.fornecedor(this.auth.usuarioLogado.id),
+      kpis: this.dashboardService.fornecedor(),
       abertas: this.cotacaoService.listarAbertas(),
     }).subscribe({
       next: ({ kpis, abertas }) => {

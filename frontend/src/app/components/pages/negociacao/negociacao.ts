@@ -143,17 +143,11 @@ export class Negociacao implements OnInit {
   }
 
   private enviarMensagem(mensagem: string | null, valorOfertado: number | null): void {
-    const usuario = this.auth.usuarioLogado;
     this.enviando.set(true);
 
+    // Quem envia a API descobre pelo token
     this.negociacaoService
-      .enviarMensagem({
-        negociacaoId: this.id(),
-        mensagem,
-        valorOfertado,
-        tipoRemetente: usuario.tipo,
-        remetenteId: usuario.id,
-      })
+      .enviarMensagem({ negociacaoId: this.id(), mensagem, valorOfertado })
       .subscribe({
         next: () => {
           this.textoMensagem = '';

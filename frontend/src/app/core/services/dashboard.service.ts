@@ -9,11 +9,13 @@ export class DashboardService {
   private readonly http = inject(HttpClient);
   private readonly url = `${API_URL}/dashboard`;
 
-  empresa(empresaId: string): Observable<DashboardEmpresa> {
-    return this.http.get<DashboardEmpresa>(`${this.url}/empresa/${empresaId}`);
+  /** Painel da empresa logada. */
+  empresa(): Observable<DashboardEmpresa> {
+    return this.http.get<DashboardEmpresa>(`${this.url}/empresa`);
   }
 
-  fornecedor(fornecedorId: string): Observable<DashboardFornecedor> {
-    return this.http.get<DashboardFornecedor>(`${this.url}/fornecedor/${fornecedorId}`);
+  /** Painel do fornecedor logado. */
+  fornecedor(): Observable<DashboardFornecedor> {
+    return this.http.get<DashboardFornecedor>(`${this.url}/fornecedor`);
   }
 }

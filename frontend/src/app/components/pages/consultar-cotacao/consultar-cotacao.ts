@@ -2,7 +2,6 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Cotacao, StatusCotacao } from '../../../core/models';
-import { AuthService } from '../../../core/services/auth.service';
 import { CotacaoService } from '../../../core/services/cotacao.service';
 import { mensagemDeErro } from '../../../core/utils/erros';
 import { STATUS_COTACAO } from '../../../core/utils/formatos';
@@ -18,7 +17,6 @@ type Filtro = 'TODAS' | StatusCotacao;
 })
 export class ConsultarCotacao implements OnInit {
   private readonly cotacaoService = inject(CotacaoService);
-  private readonly auth = inject(AuthService);
 
   protected readonly status = STATUS_COTACAO;
   protected readonly filtros: { valor: Filtro; texto: string }[] = [
@@ -40,7 +38,7 @@ export class ConsultarCotacao implements OnInit {
   });
 
   ngOnInit(): void {
-    this.cotacaoService.listarPorEmpresa(this.auth.usuarioLogado.id).subscribe({
+    this.cotacaoService.listarMinhas().subscribe({
       next: (lista) => this.solicitacoes.set(lista),
       error: (e) => this.erro.set(mensagemDeErro(e)),
     });
