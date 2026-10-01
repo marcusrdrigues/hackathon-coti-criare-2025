@@ -20,6 +20,7 @@
 
 <p align="center">
   <a href="https://github.com/marcusrdrigues/hackathon-coti-criare-2025/actions/workflows/ci.yml"><img src="https://github.com/marcusrdrigues/hackathon-coti-criare-2025/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/marcusrdrigues/hackathon-coti-criare-2025/actions/workflows/codeql.yml"><img src="https://github.com/marcusrdrigues/hackathon-coti-criare-2025/actions/workflows/codeql.yml/badge.svg" alt="CodeQL" /></a>
 </p>
 
 ---
@@ -203,9 +204,13 @@ O Swagger já vem com o botão **Authorize**: faça o login em `/api/v1/auth/log
 
 ```text
 hackathon-coti-criare-2025/
-├── .github/workflows/ci.yml     Build, testes e teste de fumaça a cada push
+├── .github/
+│   ├── workflows/ci.yml         Build, testes e teste de fumaça a cada push
+│   ├── workflows/codeql.yml     Análise de segurança do código (CodeQL)
+│   └── dependabot.yml           Atualização semanal de dependências
 ├── render.yaml                  Deploy da API no Render (Blueprint)
 ├── docs/                        Deploy, gravação da demo e design system
+│   └── adr/                     Registros das decisões de arquitetura
 │
 ├── backend/                     API REST · Spring Boot 4 · Java 21
 │   ├── docker-compose.yml       PostgreSQL 16 + API
@@ -550,11 +555,13 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | `smoke-test-api.sh` | Contra a API real com PostgreSQL: login, proteção das rotas, CORS, validações, regras de perfil e de posse, cotação → proposta → negociação → mensagens → fechamento, dashboards, refresh com rotação e reuso, logout e força bruta |
 | Front-end | Interceptor (token, renovação automática e expiração), guards por perfil, tema claro/escuro, máscara de CNPJ e componente raiz |
 
-O **GitHub Actions** (`.github/workflows/ci.yml`) roda a cada push: compila e testa o back-end (inclusive contra PostgreSQL com Testcontainers), sobe a API com PostgreSQL e executa o teste de fumaça, e faz o build de produção e os testes do front-end.
+O **GitHub Actions** (`.github/workflows/ci.yml`) roda a cada push: compila e testa o back-end (inclusive contra PostgreSQL com Testcontainers), sobe a API com PostgreSQL e executa o teste de fumaça, e faz o build de produção e os testes do front-end. O **CodeQL** procura vulnerabilidades no código Java e TypeScript, e o **Dependabot** abre PRs semanais com as atualizações de dependências.
 
 ---
 
 ## 💡 Decisões técnicas
+
+As decisões maiores têm um registro próprio, com contexto, alternativas e consequências, em [docs/adr](docs/adr/README.md).
 
 - **Monorepo** com back-end e front-end, unificado a partir dos repositórios originais com o histórico preservado.
 - **Camadas bem separadas no back-end** (controller → service → repository) com **DTOs em `record`**: a API nunca expõe entidades JPA nem a senha.
@@ -594,8 +601,8 @@ Deixar o projeto mais fácil de manter e com qualidade medida.
 - [x] **Flyway** no lugar do `ddl-auto`, com o esquema versionado em migrações
 - [x] **Testcontainers**: testes de integração contra um PostgreSQL real, e não só H2
 - [ ] **Cobertura com JaCoCo** e análise no **SonarCloud**, com badges no README
-- [ ] **Dependabot** e **CodeQL** para dependências e vulnerabilidades
-- [ ] **ADRs** em `docs/adr/`: registros curtos das decisões de arquitetura (ex.: por que o refresh token é opaco)
+- [x] **Dependabot** e **CodeQL** para dependências e vulnerabilidades
+- [x] **ADRs** em [`docs/adr/`](docs/adr/README.md): registros curtos das decisões de arquitetura (ex.: por que o refresh token é opaco)
 - [ ] **Testes ponta a ponta com Playwright** no CI, simulando empresa e fornecedor no navegador
 
 ### Fase 3 · Produto
