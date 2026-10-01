@@ -1,86 +1,68 @@
-<app-navbar />
-
-<div class="container mt-4 mb-5">
-  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-    <h2 class="fw-bold text-body-emphasis mb-0">Minhas Cotações</h2>
-    <a class="btn btn-primary" routerLink="/pages/cadastro-cotacao">
-      <i class="bi bi-plus-circle me-2"></i>Nova Cotação
-    </a>
-  </div>
+<div class="pagina">
+  <header class="cabecalho">
+    <div class="cabecalho-texto">
+      <h1 class="titulo-pagina">Cotações</h1>
+      <p class="subtitulo-pagina">O que a sua empresa está comprando</p>
+    </div>
+    <div class="cabecalho-acoes">
+      <a class="botao botao-primario" routerLink="/pages/cadastro-cotacao">
+        <ui-icone nome="mais" [tamanho]="18" />
+        Nova cotação
+      </a>
+    </div>
+  </header>
 
   @if (erro(); as mensagem) {
-    <div class="alert alert-danger">{{ mensagem }}</div>
-  }
-
-  <ul class="nav nav-pills mb-4 gap-1">
-    @for (f of filtros; track f.valor) {
-      <li class="nav-item">
-        <button type="button" class="nav-link" [class.active]="filtro() === f.valor" (click)="filtro.set(f.valor)">
-          {{ f.texto }} <span class="badge rounded-pill bg-body-tertiary text-body ms-1">{{ contar(f.valor) }}</span>
-        </button>
-      </li>
-    }
-  </ul>
-
-  @if (solicitacoes() === null && !erro()) {
-    <div class="text-center py-5">
-      <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div>
+    <p class="nota nota-erro" role="alert"><ui-icone nome="alerta" [tamanho]="18" />{{ mensagem }}</p>
+  } @else if (cotacoes(); as lista) {
+    <div class="filtros">
+      <ui-segmentado rotulo="Situação" [opcoes]="filtros()" [(valor)]="filtro" />
+      <div class="busca">
+        <ui-icone nome="buscar" [tamanho]="17" />
+        <input class="entrada" type="search" placeholder="Buscar" aria-label="Buscar cotações"
+               [value]="busca()" (input)="busca.set($any($event.target).value)" />
+      </div>
     </div>
-  }
 
-  <div class="row">
-    @for (item of filtradas(); track item.id) {
-      <div class="col-12 mb-3">
-        <div class="card shadow-sm border-start-primary card-hover">
-          <div class="card-body">
-            <div class="row align-items-center">
-
-              <div class="col-md-8">
-                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                  <h5 class="card-title mb-0 fw-bold">{{ item.nomeServico }}</h5>
-                  <span class="badge rounded-pill" [class]="status[item.status].classe">{{ status[item.status].texto }}</span>
-                  @if (item.categoriaDescricao) {
-                    <span class="badge rounded-pill bg-body-tertiary text-body border">{{ item.categoriaDescricao }}</span>
+    @if (filtradas().length > 0) {
+      <ul class="lista" role="list">
+        @for (c of filtradas(); track c.id) {
+          <li>
+            <a class="linha" [routerLink]="['/pages/detalhe-cotacao', c.id]">
+              <span class="linha-principal">
+                <span class="linha-titulo">{{ c.nomeServico }}</span>
+                <span class="linha-detalhe">
+                  {{ c.categoriaDescricao ?? 'Sem categoria' }} · criada em {{ c.dataCriacao | date: 'dd/MM/yyyy' }}
+                  @if (c.dataLimite) {
+                    · prazo {{ c.dataLimite | date: 'dd/MM' }}
                   }
-                </div>
-                <p class="card-text text-muted mb-2 requisitos">{{ item.requisitos }}</p>
-                <small class="text-muted d-flex flex-wrap gap-3">
-                  <span><i class="bi bi-calendar me-1"></i>Criada em {{ item.dataCriacao | date: 'dd/MM/yyyy' }}</span>
-                  @if (item.dataLimite) {
-                    <span><i class="bi bi-clock me-1"></i>Prazo: {{ item.dataLimite | date: 'dd/MM/yyyy' }}</span>
-                  }
-                  @if (item.melhorOferta !== null) {
-                    <span><i class="bi bi-tag me-1"></i>Melhor oferta: {{ item.melhorOferta | currency }}</span>
-                  }
-                </small>
-              </div>
-
-              <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                <div class="mb-2">
-                  <span class="h4 fw-bold text-primary">{{ item.quantidadePropostas }}</span>
-                  <span class="small text-muted d-block">
-                    {{ item.quantidadePropostas === 1 ? 'Proposta recebida' : 'Propostas recebidas' }}
-                  </span>
-                </div>
-                <a class="btn btn-outline-primary btn-sm" [routerLink]="['/pages/detalhe-cotacao', item.id]">
-                  Ver detalhes
-                </a>
-              </div>
-
-            </div>
-          </div>
+                </span>
+                <ui-status class="status-celular" [tom]="status[c.status].tom">{{ status[c.status].texto }}</ui-status>
+              </span>
+              <span class="linha-lateral coluna-propostas">
+                <span class="numeros">{{ c.quantidadePropostas === 1 ? '1 proposta' : c.quantidadePropostas + ' propostas' }}</span>
+                @if (c.melhorOferta !== null) {
+                  <span class="ajuda numeros">menor {{ c.melhorOferta | currency: 'BRL' : 'symbol' : '1.0-0' }}</span>
+                }
+              </span>
+              <ui-status class="coluna-status" [tom]="status[c.status].tom">{{ status[c.status].texto }}</ui-status>
+              <ui-icone class="linha-seta" nome="avancar" [tamanho]="18" />
+            </a>
+          </li>
+        }
+      </ul>
+    } @else if (lista.length === 0) {
+      <div class="lista">
+        <div class="vazio">
+          <p class="vazio-titulo">Nenhuma cotação ainda</p>
+          <p>Publique o que você precisa comprar e receba propostas dos fornecedores.</p>
+          <a class="botao botao-primario" routerLink="/pages/cadastro-cotacao">Nova cotação</a>
         </div>
       </div>
+    } @else {
+      <div class="lista"><p class="vazio">Nenhuma cotação com esses filtros.</p></div>
     }
-  </div>
-
-  @if (solicitacoes() !== null && filtradas().length === 0) {
-    <div class="alert alert-light text-center border-0 shadow-sm py-4">
-      @if (filtro() === 'TODAS') {
-        Nenhuma cotação ainda. <a routerLink="/pages/cadastro-cotacao">Crie sua primeira solicitação de compra!</a>
-      } @else {
-        Nenhuma cotação com este status.
-      }
-    </div>
+  } @else {
+    <div class="carregando-pagina" role="status"><span class="girando"></span><span class="visually-hidden">Carregando</span></div>
   }
 </div>

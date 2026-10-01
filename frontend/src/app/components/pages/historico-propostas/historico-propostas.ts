@@ -1,15 +1,18 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { CurrencyPipe, DatePipe, NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Proposta } from '../../../core/models';
 import { PropostaService } from '../../../core/services/proposta.service';
 import { mensagemDeErro } from '../../../core/utils/erros';
-import { Navbar } from '../../shared/navbar/navbar';
+import { Icone } from '../../../ui/icone';
+import { Status } from '../../../ui/status';
+import { AbasPropostas } from '../../shared/abas-propostas';
 
 /** Propostas que já tiveram desfecho: vencidas ou perdidas. */
 @Component({
   selector: 'app-historico-propostas',
-  imports: [Navbar, RouterLink, CurrencyPipe, DatePipe],
+  imports: [RouterLink, CurrencyPipe, DatePipe, NgTemplateOutlet, Icone, Status, AbasPropostas],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './historico-propostas.html',
   styleUrl: './historico-propostas.css',
 })

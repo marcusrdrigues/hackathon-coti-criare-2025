@@ -1,3 +1,66 @@
-.toast-container {
-  z-index: 1100;
+.avisos {
+  position: fixed;
+  z-index: 90;
+  left: 50%;
+  bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: grid;
+  gap: 0.5rem;
+  width: min(26rem, calc(100% - 2rem));
+  pointer-events: none;
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.75rem 0.5rem 0.75rem 0.875rem;
+  border-radius: var(--raio-grande);
+  background: var(--cor-flutuante);
+  box-shadow: var(--sombra-flutuante);
+  font-size: var(--texto-corpo);
+  line-height: 1.4;
+  pointer-events: auto;
+  animation: surgir var(--duracao) var(--curva);
+}
+
+.aviso-icone {
+  margin-top: 0.0625rem;
+  color: var(--cor-texto-2);
+}
+
+.aviso[data-tipo='sucesso'] .aviso-icone {
+  color: var(--cor-sucesso);
+}
+
+.aviso[data-tipo='erro'] .aviso-icone {
+  color: var(--cor-erro-texto);
+}
+
+.aviso-texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.aviso-fechar {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin: -0.25rem 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--cor-texto-2);
+}
+
+.aviso-fechar:hover {
+  background: var(--cor-hover);
+}
+
+/* Acima da barra de abas no celular */
+@media (max-width: 1023.98px) {
+  .avisos {
+    bottom: calc(var(--altura-abas) + 1rem + env(safe-area-inset-bottom));
+  }
 }

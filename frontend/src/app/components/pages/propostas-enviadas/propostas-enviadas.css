@@ -1,0 +1,12 @@
+.proposta {
+  align-items: flex-start;
+  padding-block: var(--esp-4);
+}
+
+.status-proposta {
+  margin-top: var(--esp-2);
+}
+
+.linha-acoes {
+  margin-top: var(--esp-2);
+}

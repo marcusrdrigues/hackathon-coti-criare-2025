@@ -1,4 +1,5 @@
 import { StatusCotacao, StatusNegociacao, StatusProposta } from '../models';
+import { TomStatus } from '../../ui/status';
 
 /** Aplica a máscara 00.000.000/0000-00 enquanto o usuário digita. */
 export function mascararCnpj(valor: string): string {
@@ -37,25 +38,31 @@ export function diasRestantes(data: string | null): number | null {
 
 export interface InfoStatus {
   texto: string;
-  classe: string;
+  tom: TomStatus;
 }
 
 export const STATUS_COTACAO: Record<StatusCotacao, InfoStatus> = {
-  ABERTA: { texto: 'Aberta', classe: 'text-bg-success' },
-  EM_NEGOCIACAO: { texto: 'Em negociação', classe: 'text-bg-warning' },
-  FECHADA: { texto: 'Fechada', classe: 'text-bg-primary' },
-  CANCELADA: { texto: 'Cancelada', classe: 'text-bg-secondary' },
+  ABERTA: { texto: 'Aberta', tom: 'sucesso' },
+  EM_NEGOCIACAO: { texto: 'Em negociação', tom: 'atencao' },
+  FECHADA: { texto: 'Fechada', tom: 'marca' },
+  CANCELADA: { texto: 'Cancelada', tom: 'neutro' },
 };
 
 export const STATUS_PROPOSTA: Record<StatusProposta, InfoStatus> = {
-  ENVIADA: { texto: 'Nova proposta', classe: 'text-bg-info' },
-  EM_ANALISE: { texto: 'Em análise', classe: 'text-bg-info' },
-  ACEITA: { texto: 'Em negociação', classe: 'text-bg-warning' },
-  RECUSADA: { texto: 'Recusada', classe: 'text-bg-secondary' },
+  ENVIADA: { texto: 'Nova', tom: 'marca' },
+  EM_ANALISE: { texto: 'Em análise', tom: 'neutro' },
+  ACEITA: { texto: 'Em negociação', tom: 'atencao' },
+  RECUSADA: { texto: 'Recusada', tom: 'neutro' },
 };
 
 export const STATUS_NEGOCIACAO: Record<StatusNegociacao, InfoStatus> = {
-  EM_ANDAMENTO: { texto: 'Em andamento', classe: 'text-bg-warning' },
-  FINALIZADA: { texto: 'Negócio fechado', classe: 'text-bg-success' },
-  CANCELADA: { texto: 'Encerrada sem acordo', classe: 'text-bg-secondary' },
+  EM_ANDAMENTO: { texto: 'Em andamento', tom: 'atencao' },
+  FINALIZADA: { texto: 'Negócio fechado', tom: 'sucesso' },
+  CANCELADA: { texto: 'Encerrada sem acordo', tom: 'neutro' },
 };
+
+/** Iniciais para o círculo de identificação (ex.: "Tech Soluções" → "TS"). */
+export function iniciais(nome: string): string {
+  const partes = (nome ?? '').trim().split(/\s+/).filter((p) => p.length > 2 || /^[A-ZÀ-Ú]/.test(p));
+  return ((partes[0]?.[0] ?? '') + (partes[1]?.[0] ?? '')).toUpperCase() || '?';
+}

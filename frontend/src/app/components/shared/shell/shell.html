@@ -1,0 +1,85 @@
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
+
+<ng-template #conta>
+  @if (usuario(); as u) {
+    <div class="menu-cabecalho">
+      <strong>{{ u.nome }}</strong>
+      <span>{{ u.email }}</span>
+      <span>{{ perfil() }} · CNPJ {{ u.cnpj | cnpj }}</span>
+    </div>
+    <hr class="menu-separador" />
+    <div class="menu-linha">
+      <span>Aparência</span>
+      <app-seletor-tema />
+    </div>
+    <hr class="menu-separador" />
+    <button type="button" class="menu-item menu-item-destrutivo" data-fechar (click)="sair()">
+      <ui-icone nome="sair" [tamanho]="18" />
+      Sair
+    </button>
+  }
+</ng-template>
+
+<div class="app" [class.com-lateral]="comLateral()">
+  @if (comLateral()) {
+    <aside class="lateral">
+      <a class="marca" [routerLink]="auth.rotaInicial()">
+        <img src="logo-criare.svg" alt="" width="28" height="28" />
+        <span>Portal Criare</span>
+      </a>
+
+      <nav aria-label="Navegação principal">
+        <ul role="list" class="navegacao">
+          @for (d of destinos(); track d.rota) {
+            <li>
+              <a class="nav-item" [routerLink]="d.rota" [class.ativo]="ativo(d)" [attr.aria-current]="ativo(d) ? 'page' : null">
+                <ui-icone [nome]="d.icone" />
+                <span>{{ d.rotulo }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      </nav>
+
+      <div class="lateral-rodape">
+        <ui-menu rotulo="Menu do usuário" tipo="painel" direcao="acima" alinhar="inicio" classeGatilho="conta">
+          <span gatilho class="conta-conteudo">
+            <span class="inicial" aria-hidden="true">{{ iniciais() }}</span>
+            <span class="conta-texto">
+              <strong>{{ usuario()?.nome }}</strong>
+              <span>{{ perfil() }}</span>
+            </span>
+            <ui-icone nome="acima-abaixo" [tamanho]="16" />
+          </span>
+          <ng-container [ngTemplateOutlet]="conta" />
+        </ui-menu>
+      </div>
+    </aside>
+  } @else {
+    <header class="topo">
+      <a class="marca" [routerLink]="auth.rotaInicial()">
+        <img src="logo-criare.svg" alt="" width="26" height="26" />
+        <span>Portal Criare</span>
+      </a>
+      <ui-menu rotulo="Menu do usuário" tipo="painel" classeGatilho="conta-redonda">
+        <span gatilho class="inicial">{{ iniciais() }}</span>
+        <ng-container [ngTemplateOutlet]="conta" />
+      </ui-menu>
+    </header>
+  }
+
+  <main class="conteudo" id="conteudo" tabindex="-1">
+    <router-outlet />
+  </main>
+
+  @if (!comLateral()) {
+    <nav class="abas" aria-label="Navegação principal" [style.--colunas]="destinos().length">
+      @for (d of destinos(); track d.rota) {
+        <a class="aba" [routerLink]="d.rota" [class.ativo]="ativo(d)" [attr.aria-current]="ativo(d) ? 'page' : null">
+          <ui-icone [nome]="d.icone" [tamanho]="24" />
+          <span>{{ d.rotulo }}</span>
+        </a>
+      }
+    </nav>
+  }
+</div>

@@ -1,138 +1,125 @@
-<app-navbar />
-
-<div class="container mt-4 mb-5">
-
-  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-    <div>
-      <h2 class="fw-bold text-body-emphasis mb-0">Mural de Oportunidades</h2>
-      <p class="text-muted small mb-0">Encontre novos clientes e envie suas propostas.</p>
+<div class="pagina">
+  <header class="cabecalho">
+    <div class="cabecalho-texto">
+      <h1 class="titulo-pagina">Mural</h1>
+      <p class="subtitulo-pagina">Cotações abertas esperando proposta</p>
     </div>
-    <div class="d-flex flex-wrap gap-2 filtros">
-      <select class="form-select" aria-label="Filtrar por categoria" [ngModel]="categoria()"
-              (ngModelChange)="categoria.set($event)">
-        <option value="">Todas as categorias</option>
-        @for (cat of categorias$ | async; track cat.codigo) {
-          <option [value]="cat.codigo">{{ cat.descricao }}</option>
-        }
-      </select>
-      <div class="input-group">
-        <span class="input-group-text bg-body"><i class="bi bi-search"></i></span>
-        <input type="search" class="form-control" placeholder="Buscar serviços..." aria-label="Buscar"
-               [ngModel]="busca()" (ngModelChange)="busca.set($event)">
-      </div>
-    </div>
-  </div>
+  </header>
 
   @if (erro(); as mensagem) {
-    <div class="alert alert-danger">{{ mensagem }}</div>
-  }
-
-  @if (oportunidades() === null && !erro()) {
-    <div class="text-center py-5">
-      <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div>
+    <p class="nota nota-erro" role="alert"><ui-icone nome="alerta" [tamanho]="18" />{{ mensagem }}</p>
+  } @else if (oportunidades(); as lista) {
+    <div class="filtros">
+      <div class="busca">
+        <ui-icone nome="buscar" [tamanho]="17" />
+        <input class="entrada" type="search" placeholder="Buscar por serviço ou empresa" aria-label="Buscar"
+               [value]="busca()" (input)="busca.set($any($event.target).value)" />
+      </div>
+      <ui-seletor class="filtro-categoria" rotulo="Categoria" [opcoes]="categorias()" [(valor)]="categoria" />
     </div>
-  }
 
-  <div class="row">
-    @for (item of filtradas(); track item.id) {
-      @let minha = minhasPropostas().get(item.id);
-      @let dias = diasRestantes(item.dataLimite);
-      <div class="col-12 mb-3">
-        <div class="card shadow-sm border-start-primary h-100">
-          <div class="card-body">
-            <div class="row align-items-center">
-
-              <div class="col-md-8">
-                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                  @if (ehNova(item)) {
-                    <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">NOVO</span>
-                  }
-                  <h5 class="card-title mb-0 fw-bold">{{ item.nomeServico }}</h5>
-                  @if (item.categoriaDescricao) {
-                    <span class="badge rounded-pill bg-body-tertiary text-body border">{{ item.categoriaDescricao }}</span>
-                  }
-                </div>
-                <p class="mb-1 text-muted"><i class="bi bi-building me-1"></i>{{ item.empresaNome }}</p>
-                <p class="card-text small text-secondary mb-2 texto-quebrado">{{ item.requisitos }}</p>
-
-                <div class="d-flex flex-wrap gap-3 text-muted small mt-3">
-                  <span><i class="bi bi-calendar me-1"></i>Publicada em {{ item.dataCriacao | date: 'dd/MM/yyyy' }}</span>
-                  @if (item.dataLimite && dias !== null) {
-                    <span [class.text-danger]="dias <= 3" [class.fw-bold]="dias <= 3">
-                      <i class="bi bi-clock me-1"></i>Encerra em {{ item.dataLimite | date: 'dd/MM/yyyy' }}
-                      ({{ dias === 1 ? '1 dia' : dias + ' dias' }})
-                    </span>
-                  }
-                  <span><i class="bi bi-people me-1"></i>{{ item.quantidadePropostas }} proposta(s)</span>
-                </div>
-              </div>
-
-              <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                <div class="mb-3">
-                  <small class="text-muted d-block">Orçamento estimado</small>
-                  <span class="h4 fw-bold text-success">
-                    {{ item.orcamentoEstimado !== null ? (item.orcamentoEstimado | currency) : 'Sob consulta' }}
-                  </span>
-                </div>
-
+    @if (filtradas().length > 0) {
+      <ul class="lista" role="list">
+        @for (item of filtradas(); track item.id) {
+          @let minha = minhasPropostas().get(item.id);
+          @let dias = diasRestantes(item.dataLimite);
+          <li class="linha oportunidade">
+            <div class="linha-principal">
+              <p class="titulo-linha">
+                <span class="linha-titulo">{{ item.nomeServico }}</span>
+                @if (ehNova(item)) {
+                  <span class="etiqueta">Novo</span>
+                }
+              </p>
+              <p class="linha-detalhe">
+                {{ item.empresaNome }} · {{ item.categoriaDescricao ?? 'Sem categoria' }}
+                @if (dias !== null) {
+                  · <span [class.urgente]="dias <= 3">{{ dias <= 0 ? 'encerra hoje' : dias === 1 ? 'encerra amanhã' : 'encerra em ' + dias + ' dias' }}</span>
+                }
+                · {{ item.quantidadePropostas === 1 ? '1 proposta' : item.quantidadePropostas + ' propostas' }}
+              </p>
+              <p class="linha-texto">{{ item.requisitos }}</p>
+            </div>
+            <div class="linha-lateral">
+              @if (item.orcamentoEstimado !== null) {
+                <span class="linha-valor">{{ item.orcamentoEstimado | currency: 'BRL' : 'symbol' : '1.0-0' }}</span>
+                <span class="ajuda">orçamento</span>
+              } @else {
+                <span class="ajuda">Orçamento sob consulta</span>
+              }
+              <div class="linha-acoes">
                 @if (minha) {
-                  <div class="alert alert-success py-2 mb-0 small text-start">
-                    <i class="bi bi-check-circle-fill me-1"></i>
-                    Você ofertou <strong>{{ minha.valor | currency }}</strong>.
-                    <a routerLink="/pages/propostas-enviadas" class="alert-link">Acompanhar</a>
-                  </div>
+                  <a class="minha-oferta" routerLink="/pages/propostas-enviadas">
+                    Você ofertou {{ minha.valor | currency: 'BRL' : 'symbol' : '1.0-0' }}
+                  </a>
                 } @else {
-                  <button type="button" class="btn w-100"
-                          [class]="expandida() === item.id ? 'btn-outline-secondary' : 'btn-primary'"
-                          (click)="toggleProposta(item)">
-                    <i class="bi" [class.bi-x-lg]="expandida() === item.id" [class.bi-send-fill]="expandida() !== item.id"></i>
-                    {{ expandida() === item.id ? 'Cancelar' : 'Enviar Proposta' }}
+                  <button type="button" class="botao botao-secundario botao-pequeno" (click)="abrirProposta(item)"
+                          [attr.aria-label]="'Enviar proposta para ' + item.nomeServico">
+                    Enviar proposta
                   </button>
                 }
               </div>
             </div>
-
-            @if (expandida() === item.id) {
-              <form class="mt-4 pt-3 border-top bg-body-tertiary rounded p-3 fade-in" (ngSubmit)="confirmarEnvio(item)">
-                <div class="row align-items-end">
-                  <div class="col-12 mb-3">
-                    <label [for]="'descricao-' + item.id" class="form-label fw-bold text-body-emphasis small">CONDIÇÕES DA PROPOSTA</label>
-                    <textarea [id]="'descricao-' + item.id" class="form-control" rows="2" maxlength="1000" name="descricao"
-                              placeholder="Ex: Incluso frete, garantia de 1 ano, pagamento em 30 dias..."
-                              [(ngModel)]="rascunho.descricao"></textarea>
-                  </div>
-
-                  <div class="col-md-8">
-                    <label [for]="'valor-' + item.id" class="form-label fw-bold text-body-emphasis small">VALOR TOTAL (R$)</label>
-                    <div class="input-group">
-                      <span class="input-group-text bg-body text-muted">R$</span>
-                      <input [id]="'valor-' + item.id" type="number" min="0" step="0.01" name="valor"
-                             class="form-control form-control-lg fw-bold" placeholder="0,00" [(ngModel)]="rascunho.valor">
-                    </div>
-                    <div class="form-text">Inclua todas as taxas no valor final.</div>
-                  </div>
-
-                  <div class="col-md-4 mt-3 mt-md-0">
-                    <button type="submit" class="btn btn-success w-100 btn-lg" [disabled]="enviando()">
-                      <i class="bi bi-check-circle-fill me-2"></i>Confirmar
-                    </button>
-                  </div>
-                </div>
-              </form>
-            }
-          </div>
+          </li>
+        }
+      </ul>
+    } @else if (lista.length === 0) {
+      <div class="lista">
+        <div class="vazio">
+          <p class="vazio-titulo">Nenhuma cotação aberta agora</p>
+          <p>Quando uma empresa publicar, ela aparece aqui.</p>
         </div>
       </div>
+    } @else {
+      <div class="lista"><p class="vazio">Nenhuma cotação com esses filtros.</p></div>
     }
-  </div>
-
-  @if (oportunidades() !== null && filtradas().length === 0) {
-    <div class="alert alert-light text-center border-0 shadow-sm py-4">
-      @if (oportunidades()!.length === 0) {
-        Nenhuma cotação aberta no momento. Volte mais tarde!
-      } @else {
-        Nenhuma cotação encontrada com esses filtros.
-      }
-    </div>
+  } @else {
+    <div class="carregando-pagina" role="status"><span class="girando"></span><span class="visually-hidden">Carregando</span></div>
   }
 </div>
+
+<ui-painel titulo="Enviar proposta" [(aberto)]="painelAberto">
+  @if (selecionada(); as c) {
+    <form id="form-proposta" class="formulario" (ngSubmit)="confirmarEnvio()" novalidate>
+      <div class="resumo">
+        <p class="resumo-titulo">{{ c.nomeServico }}</p>
+        <p class="ajuda">{{ c.empresaNome }}
+          @if (c.orcamentoEstimado !== null) {
+            · orçamento {{ c.orcamentoEstimado | currency: 'BRL' : 'symbol' : '1.0-0' }}
+          }
+          @if (c.dataLimite) {
+            · até {{ c.dataLimite | date: 'dd/MM' }}
+          }
+        </p>
+        <p class="resumo-requisitos texto-quebrado">{{ c.requisitos }}</p>
+      </div>
+
+      <div class="campo">
+        <label class="rotulo" for="valor-proposta">Valor total</label>
+        <div class="grupo-entrada">
+          <span class="prefixo" aria-hidden="true">R$</span>
+          <input id="valor-proposta" class="entrada numeros" type="number" name="valor" min="0" step="0.01" inputmode="decimal"
+                 placeholder="0,00" aria-describedby="valor-ajuda" required
+                 [ngModel]="valor()" (ngModelChange)="valor.set($event)" />
+        </div>
+        <span class="ajuda" id="valor-ajuda">Com impostos, frete e taxas incluídos.</span>
+      </div>
+
+      <div class="campo">
+        <label class="rotulo" for="condicoes-proposta">Condições <span class="opcional">(opcional)</span></label>
+        <textarea id="condicoes-proposta" class="entrada" name="condicoes" rows="4" maxlength="1000"
+                  placeholder="Prazo de entrega, garantia, forma de pagamento…"
+                  [ngModel]="condicoes()" (ngModelChange)="condicoes.set($event)"></textarea>
+      </div>
+    </form>
+  }
+  <div rodape class="rodape-proposta">
+    <button type="button" class="botao botao-secundario" (click)="painelAberto.set(false)">Cancelar</button>
+    <button type="submit" form="form-proposta" class="botao botao-primario" [disabled]="enviando()">
+      @if (enviando()) {
+        <span class="girando" aria-hidden="true"></span>
+      }
+      Enviar proposta
+    </button>
+  </div>
+</ui-painel>

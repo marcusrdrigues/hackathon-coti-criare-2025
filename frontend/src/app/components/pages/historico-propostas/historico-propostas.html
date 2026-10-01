@@ -1,64 +1,64 @@
-<app-navbar />
+<div class="pagina">
+  <header class="cabecalho">
+    <div class="cabecalho-texto">
+      <h1 class="titulo-pagina">Propostas</h1>
+      <p class="subtitulo-pagina">Negócios fechados e propostas que não seguiram</p>
+    </div>
+  </header>
 
-<div class="container mt-4 mb-5">
-  <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4">
-    <h2 class="fw-bold text-body-emphasis mb-0">Histórico de Propostas</h2>
-    @if (historico().length > 0) {
-      <div class="text-end">
-        <small class="text-muted d-block">Total em negócios fechados</small>
-        <span class="h5 fw-bold text-success mb-0">{{ totalGanho() | currency }}</span>
-      </div>
-    }
-  </div>
+  <app-abas-propostas atual="historico" />
 
   @if (erro(); as mensagem) {
-    <div class="alert alert-danger">{{ mensagem }}</div>
-  }
+    <p class="nota nota-erro" role="alert"><ui-icone nome="alerta" [tamanho]="18" />{{ mensagem }}</p>
+  } @else if (propostas() !== null) {
+    @if (historico().length > 0) {
+      <dl class="metricas">
+        <div class="metrica">
+          <dt class="metrica-rotulo">Em negócios fechados</dt>
+          <dd class="metrica-valor">{{ totalGanho() | currency: 'BRL' : 'symbol' : '1.0-0' }}</dd>
+        </div>
+        <div class="metrica">
+          <dt class="metrica-rotulo">Propostas no histórico</dt>
+          <dd class="metrica-valor">{{ historico().length }}</dd>
+        </div>
+      </dl>
 
-  <div class="card shadow-sm">
-    <div class="table-responsive">
-      <table class="table table-criare align-middle mb-0">
-        <thead>
-          <tr>
-            <th class="ps-4">Data</th>
-            <th>Cotação</th>
-            <th>Empresa</th>
-            <th>Resultado</th>
-            <th class="text-end pe-4">Valor</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (item of historico(); track item.id) {
-            <tr>
-              <td class="ps-4 text-muted">{{ item.dataEnvio ? (item.dataEnvio | date: 'dd/MM/yyyy') : '—' }}</td>
-              <td class="fw-bold">
-                {{ item.cotacaoNome }}
-                @if (item.negociacaoId) {
-                  <a class="small fw-normal ms-1" [routerLink]="['/pages/negociacao', item.negociacaoId]">ver conversa</a>
-                }
-              </td>
-              <td>{{ item.empresaNome }}</td>
-              <td>
-                <span class="badge rounded-pill" [class]="ganhou(item) ? 'bg-success' : 'bg-secondary'">
-                  <i class="bi" [class.bi-trophy-fill]="ganhou(item)" [class.bi-x-circle-fill]="!ganhou(item)"></i>
-                  {{ ganhou(item) ? 'Vencida' : 'Perdida' }}
-                </span>
-                <small class="d-block text-muted mt-1">{{ motivo(item) }}</small>
-              </td>
-              <td class="text-end pe-4 fw-bold" [class.text-muted]="!ganhou(item)">
-                {{ (ganhou(item) ? item.valorFinal : item.valor) | currency }}
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-
-    @if (propostas() !== null && historico().length === 0) {
-      <div class="estado-vazio">
-        <i class="bi bi-archive"></i>
-        Nenhuma proposta finalizada ainda.
+      <ul class="lista" role="list">
+        @for (p of historico(); track p.id) {
+          <li>
+            @if (p.negociacaoId) {
+              <a class="linha" [routerLink]="['/pages/negociacao', p.negociacaoId]">
+                <ng-container [ngTemplateOutlet]="conteudo" [ngTemplateOutletContext]="{ $implicit: p }" />
+                <ui-icone class="linha-seta" nome="avancar" [tamanho]="18" />
+              </a>
+            } @else {
+              <div class="linha">
+                <ng-container [ngTemplateOutlet]="conteudo" [ngTemplateOutletContext]="{ $implicit: p }" />
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    } @else {
+      <div class="lista">
+        <div class="vazio">
+          <p class="vazio-titulo">Histórico vazio</p>
+          <p>Propostas que viraram negócio ou não seguiram aparecem aqui.</p>
+        </div>
       </div>
     }
-  </div>
+  } @else {
+    <div class="carregando-pagina" role="status"><span class="girando"></span><span class="visually-hidden">Carregando</span></div>
+  }
 </div>
+
+<ng-template #conteudo let-p>
+  <span class="linha-principal">
+    <span class="linha-titulo">{{ p.cotacaoNome }}</span>
+    <span class="linha-detalhe">{{ p.empresaNome }} · {{ p.dataEnvio | date: 'dd/MM/yyyy' }}</span>
+  </span>
+  <span class="linha-lateral">
+    <span class="linha-valor">{{ (ganhou(p) ? p.valorFinal : p.valor) | currency: 'BRL' }}</span>
+    <ui-status [tom]="ganhou(p) ? 'sucesso' : 'neutro'">{{ motivo(p) }}</ui-status>
+  </span>
+</ng-template>

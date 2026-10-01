@@ -1,73 +1,49 @@
-<app-navbar />
+<div class="pagina">
+  <header class="cabecalho">
+    <div class="cabecalho-texto">
+      <h1 class="titulo-pagina">Propostas</h1>
+      <p class="subtitulo-pagina">O que você enviou e ainda não teve desfecho</p>
+    </div>
+  </header>
 
-<div class="container mt-4 mb-5">
-  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-    <h2 class="fw-bold text-body-emphasis mb-0">Propostas em Andamento</h2>
-    <a routerLink="/pages/historico-propostas" class="link-voltar">
-      <i class="bi bi-archive me-1"></i>Ver histórico
-    </a>
-  </div>
+  <app-abas-propostas atual="andamento" />
 
   @if (erro(); as mensagem) {
-    <div class="alert alert-danger">{{ mensagem }}</div>
+    <p class="nota nota-erro" role="alert"><ui-icone nome="alerta" [tamanho]="18" />{{ mensagem }}</p>
+  } @else if (propostas() !== null) {
+    @if (enviadas().length > 0) {
+      <ul class="lista" role="list">
+        @for (p of enviadas(); track p.id) {
+          <li class="linha proposta">
+            <span class="inicial" aria-hidden="true">{{ iniciais(p.empresaNome) }}</span>
+            <div class="linha-principal">
+              <p class="linha-titulo">{{ p.cotacaoNome }}</p>
+              <p class="linha-detalhe">{{ p.empresaNome }} · enviada em {{ p.dataEnvio | date: 'dd/MM/yyyy' }}</p>
+              <ui-status class="status-proposta" [tom]="situacao(p).tom">{{ situacao(p).texto }}</ui-status>
+            </div>
+            <div class="linha-lateral">
+              <span class="linha-valor">{{ p.valor | currency: 'BRL' }}</span>
+              <div class="linha-acoes">
+                @if (p.negociacaoStatus === 'EM_ANDAMENTO') {
+                  <a class="botao botao-primario botao-pequeno" [routerLink]="['/pages/negociacao', p.negociacaoId]">Abrir negociação</a>
+                } @else if (p.status === 'ENVIADA') {
+                  <button type="button" class="botao botao-destrutivo botao-pequeno" (click)="retirar(p)">Retirar</button>
+                }
+              </div>
+            </div>
+          </li>
+        }
+      </ul>
+    } @else {
+      <div class="lista">
+        <div class="vazio">
+          <p class="vazio-titulo">Nenhuma proposta em andamento</p>
+          <p>Encontre cotações abertas no mural e envie a sua.</p>
+          <a class="botao botao-primario" routerLink="/pages/mural-oportunidades">Ver o mural</a>
+        </div>
+      </div>
+    }
+  } @else {
+    <div class="carregando-pagina" role="status"><span class="girando"></span><span class="visually-hidden">Carregando</span></div>
   }
-
-  <div class="card shadow-sm">
-    <div class="table-responsive">
-      <table class="table table-hover table-criare align-middle mb-0">
-        <thead>
-          <tr>
-            <th class="ps-4">Cotação</th>
-            <th>Empresa</th>
-            <th>Meu lance</th>
-            <th>Status atual</th>
-            <th class="text-end pe-4">Ação</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (item of enviadas(); track item.id) {
-            <tr>
-              <td class="ps-4">
-                <div class="fw-bold">{{ item.cotacaoNome }}</div>
-                @if (item.dataEnvio) {
-                  <small class="text-muted">Enviada em {{ item.dataEnvio | date: 'dd/MM/yyyy' }}</small>
-                }
-              </td>
-              <td>{{ item.empresaNome }}</td>
-              <td class="fw-bold text-secondary">{{ item.valor | currency }}</td>
-              <td>
-                <span class="badge rounded-pill" [class]="situacao(item).classe">{{ situacao(item).texto }}</span>
-              </td>
-              <td class="text-end pe-4 text-nowrap">
-                @if (item.negociacaoId) {
-                  <a class="btn btn-sm btn-primary" [routerLink]="['/pages/negociacao', item.negociacaoId]">
-                    <i class="bi bi-chat-dots me-1"></i>Negociar
-                  </a>
-                } @else if (item.status === 'ENVIADA') {
-                  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="retirar(item)">
-                    <i class="bi bi-arrow-counterclockwise me-1"></i>Retirar
-                  </button>
-                } @else {
-                  <span class="text-muted small">Aguardando...</span>
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-
-    @if (propostas() !== null && enviadas().length === 0) {
-      <div class="estado-vazio">
-        <i class="bi bi-send"></i>
-        Nenhuma proposta em andamento.
-        <a routerLink="/pages/mural-oportunidades" class="d-block mt-2">Procurar cotações no mural</a>
-      </div>
-    }
-    @if (propostas() === null && !erro()) {
-      <div class="text-center py-5">
-        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div>
-      </div>
-    }
-  </div>
 </div>

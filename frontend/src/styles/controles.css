@@ -1,0 +1,725 @@
+/* =========================================================
+   Peças globais em CSS: botões, campos, página, seções,
+   listas, números de destaque, status, notas e estados.
+   As peças com comportamento (seletor, menu, segmentado,
+   painel, confirmação, avisos) são componentes em app/ui.
+   ========================================================= */
+
+/* ---------- Botões ----------
+   .botao + uma variante:
+   primario   ação principal da tela (uma por tela)
+   secundario ação comum, em cinza
+   simples    só texto, para ações leves
+   destrutivo só texto, para ações que desfazem algo        */
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  height: var(--altura-controle);
+  padding: 0 1rem;
+  border: 0;
+  border-radius: var(--raio);
+  background: transparent;
+  font-size: var(--texto-corpo);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background-color var(--duracao-rapida) var(--curva),
+    color var(--duracao-rapida) var(--curva),
+    opacity var(--duracao-rapida) var(--curva);
+}
+
+.botao:disabled {
+  opacity: 0.45;
+}
+
+.botao-primario {
+  background: var(--cor-marca);
+  color: var(--cor-sobre-marca);
+}
+
+.botao-primario:hover:not(:disabled) {
+  background: var(--cor-marca-hover);
+  color: var(--cor-sobre-marca);
+}
+
+.botao-primario:active:not(:disabled) {
+  background: var(--cor-marca-pressionada);
+}
+
+.botao-secundario {
+  background: var(--cor-preenchimento);
+  color: var(--cor-texto);
+}
+
+.botao-secundario:hover:not(:disabled) {
+  background: var(--cor-preenchimento-hover);
+  color: var(--cor-texto);
+}
+
+.botao-simples {
+  color: var(--cor-marca-texto);
+  padding: 0 0.625rem;
+}
+
+.botao-simples:hover:not(:disabled) {
+  background: var(--cor-hover);
+  color: var(--cor-marca-texto-hover);
+}
+
+.botao-destrutivo {
+  color: var(--cor-erro-texto);
+  padding: 0 0.625rem;
+}
+
+.botao-destrutivo:hover:not(:disabled) {
+  background: var(--cor-hover);
+  color: var(--cor-erro-texto);
+}
+
+.botao-pequeno {
+  height: var(--altura-controle-pequeno);
+  padding: 0 0.75rem;
+  font-size: var(--texto-pequeno);
+}
+
+.botao-icone {
+  width: var(--altura-controle);
+  padding: 0;
+}
+
+.botao-pequeno.botao-icone {
+  width: var(--altura-controle-pequeno);
+}
+
+.botao-largo {
+  width: 100%;
+}
+
+/* ---------- Campos ---------- */
+.campo {
+  display: grid;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.rotulo {
+  font-size: var(--texto-pequeno);
+  font-weight: 600;
+  color: var(--cor-texto);
+}
+
+.rotulo .opcional {
+  font-weight: 400;
+  color: var(--cor-texto-2);
+}
+
+.entrada {
+  display: block;
+  width: 100%;
+  height: var(--altura-controle);
+  padding: 0 0.75rem;
+  /* 16px evita o zoom automático do iPhone ao focar o campo */
+  font-size: 1rem;
+  color: var(--cor-texto);
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda-campo);
+  border-radius: var(--raio);
+  transition:
+    border-color var(--duracao-rapida) var(--curva),
+    box-shadow var(--duracao-rapida) var(--curva);
+}
+
+textarea.entrada {
+  height: auto;
+  min-height: 6.5rem;
+  padding: 0.625rem 0.75rem;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.entrada::placeholder {
+  color: var(--cor-texto-2);
+}
+
+.entrada:focus {
+  outline: none;
+  border-color: var(--cor-marca-texto);
+  box-shadow: 0 0 0 3px var(--cor-marca-foco);
+}
+
+.entrada[aria-invalid='true'] {
+  border-color: var(--cor-erro);
+}
+
+.entrada:read-only:not([type='date']) {
+  background: var(--cor-superficie-2);
+}
+
+/* Sem as setas de número: o valor é digitado, não incrementado */
+.entrada[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.entrada[type='number']::-webkit-outer-spin-button,
+.entrada[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Campo com prefixo (R$) */
+.grupo-entrada {
+  position: relative;
+}
+
+.grupo-entrada .prefixo {
+  position: absolute;
+  top: 50%;
+  left: 0.75rem;
+  transform: translateY(-50%);
+  color: var(--cor-texto-2);
+  pointer-events: none;
+}
+
+.grupo-entrada .entrada {
+  padding-left: 2.375rem;
+}
+
+/* Campo de busca: cinza preenchido, sem borda, com a lupa dentro */
+.busca {
+  position: relative;
+  min-width: 0;
+}
+
+.busca ui-icone {
+  position: absolute;
+  top: 50%;
+  left: 0.625rem;
+  transform: translateY(-50%);
+  color: var(--cor-texto-2);
+  pointer-events: none;
+}
+
+.busca .entrada {
+  padding-left: 2.125rem;
+  background: var(--cor-preenchimento);
+  border-color: transparent;
+}
+
+.busca .entrada:focus {
+  background: var(--cor-superficie);
+}
+
+.ajuda {
+  font-size: var(--texto-pequeno);
+  color: var(--cor-texto-2);
+}
+
+.erro-campo {
+  font-size: var(--texto-pequeno);
+  color: var(--cor-erro-texto);
+}
+
+/* Formulário em coluna, com campos lado a lado no computador */
+.formulario {
+  display: grid;
+  gap: var(--esp-5);
+}
+
+.formulario-linha {
+  display: grid;
+  gap: var(--esp-5);
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+}
+
+.formulario-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--esp-3);
+  padding-top: var(--esp-2);
+}
+
+/* ---------- Página ---------- */
+.pagina {
+  max-width: var(--largura-conteudo);
+  margin: 0 auto;
+  padding: var(--esp-7) var(--esp-7) var(--esp-8);
+  animation: surgir var(--duracao) var(--curva);
+}
+
+.pagina-estreita {
+  max-width: 44rem;
+}
+
+.cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--esp-4);
+  margin-bottom: var(--esp-6);
+}
+
+.cabecalho-texto {
+  min-width: 0;
+}
+
+.cabecalho-acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+}
+
+.titulo-pagina {
+  font-size: var(--texto-titulo-1);
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  line-height: 1.1;
+}
+
+.subtitulo-pagina {
+  margin-top: var(--esp-1);
+  color: var(--cor-texto-2);
+}
+
+.voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  margin: 0 0 var(--esp-2) -0.375rem;
+  padding: 0.25rem 0.375rem;
+  border-radius: var(--raio-pequeno);
+  color: var(--cor-marca-texto);
+}
+
+.voltar:hover {
+  background: var(--cor-hover);
+}
+
+/* ---------- Seções ---------- */
+.secao + .secao {
+  margin-top: var(--esp-7);
+}
+
+.secao-cabecalho {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--esp-3);
+  margin-bottom: var(--esp-3);
+}
+
+.secao-titulo {
+  font-size: var(--texto-destaque);
+  font-weight: 600;
+}
+
+.secao-acao {
+  font-size: var(--texto-pequeno);
+  font-weight: 500;
+}
+
+/* Duas colunas no computador, uma no celular */
+.colunas {
+  display: grid;
+  gap: var(--esp-7);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  align-items: start;
+}
+
+.colunas > .secao + .secao {
+  margin-top: 0;
+}
+
+/* ---------- Listas agrupadas ----------
+   Linhas numa superfície única, separadas por divisórias finas
+   recuadas, como nos Ajustes do iPhone. Sem card dentro de card. */
+.lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--cor-superficie);
+  border-radius: var(--raio-grande);
+  overflow: hidden;
+}
+
+.lista > * {
+  position: relative;
+}
+
+.lista > * + *::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: var(--esp-4);
+  right: 0;
+  border-top: 1px solid var(--cor-divisoria);
+  z-index: 1;
+}
+
+.linha {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  width: 100%;
+  min-height: 3.25rem;
+  padding: var(--esp-3) var(--esp-4);
+  color: var(--cor-texto);
+  text-align: left;
+  background: transparent;
+  border: 0;
+}
+
+a.linha,
+button.linha {
+  transition: background-color var(--duracao-rapida) var(--curva);
+}
+
+a.linha:hover,
+button.linha:hover {
+  background: var(--cor-hover);
+  color: var(--cor-texto);
+}
+
+a.linha:focus-visible,
+button.linha:focus-visible {
+  outline-offset: -2px;
+}
+
+.linha-principal {
+  flex: 1;
+  min-width: 0;
+}
+
+.linha-titulo,
+.linha-detalhe {
+  display: block;
+}
+
+.linha-titulo {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.linha-detalhe {
+  margin-top: 0.125rem;
+  font-size: var(--texto-pequeno);
+  color: var(--cor-texto-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.linha-texto {
+  margin-top: var(--esp-1);
+  font-size: var(--texto-pequeno);
+  color: var(--cor-texto-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.linha-lateral {
+  flex-shrink: 0;
+  display: grid;
+  justify-items: end;
+  gap: 0.125rem;
+  text-align: right;
+}
+
+.linha-valor {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.linha-seta {
+  flex-shrink: 0;
+  color: var(--cor-texto-3);
+}
+
+.linha-acoes {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--esp-2);
+}
+
+/* Inicial do nome num círculo neutro */
+.inicial {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: var(--cor-preenchimento);
+  color: var(--cor-texto-2);
+  font-size: var(--texto-pequeno);
+  font-weight: 600;
+}
+
+/* ---------- Números de destaque ---------- */
+.metricas {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0 0 var(--esp-7);
+  padding: 0;
+}
+
+/* <dl>: rótulo (dt) antes no HTML, número (dd) em cima na tela */
+.metrica {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  padding: 0 var(--esp-5);
+  border-left: 1px solid var(--cor-divisoria);
+}
+
+.metricas dt,
+.metricas dd {
+  margin: 0;
+}
+
+.metrica:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.metrica-valor {
+  display: block;
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-numero);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.metrica-rotulo {
+  display: block;
+  margin-top: var(--esp-1);
+  font-size: var(--texto-pequeno);
+  color: var(--cor-texto-2);
+}
+
+/* ---------- Status: ponto colorido + texto ---------- */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: var(--texto-pequeno);
+  color: var(--cor-texto);
+  white-space: nowrap;
+}
+
+.status::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--cor-texto-3);
+  flex-shrink: 0;
+}
+
+.status[data-tom='sucesso']::before {
+  background: var(--cor-sucesso);
+}
+
+.status[data-tom='atencao']::before {
+  background: var(--cor-atencao);
+}
+
+.status[data-tom='marca']::before {
+  background: var(--cor-marca-texto);
+}
+
+.status[data-tom='erro']::before {
+  background: var(--cor-erro);
+}
+
+/* Rótulo curto só em texto (ex.: "Novo", "Menor valor") */
+.etiqueta {
+  font-size: var(--texto-legenda);
+  font-weight: 600;
+  color: var(--cor-marca-texto);
+}
+
+.etiqueta-sucesso {
+  color: var(--cor-sucesso);
+}
+
+/* Prazo curto: texto, não só cor (o próprio texto diz "encerra amanhã") */
+.urgente {
+  color: var(--cor-erro-texto);
+}
+
+/* ---------- Notas dentro da página ---------- */
+.nota {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--esp-3);
+  padding: var(--esp-3) var(--esp-4);
+  border-radius: var(--raio);
+  background: var(--cor-info-fundo);
+  font-size: var(--texto-pequeno);
+  line-height: 1.45;
+}
+
+.nota-erro {
+  background: var(--cor-erro-fundo);
+  color: var(--cor-erro-fundo-texto);
+}
+
+.nota ui-icone {
+  margin-top: 0.0625rem;
+  flex-shrink: 0;
+}
+
+/* ---------- Estados: carregando e vazio ---------- */
+.carregando-pagina {
+  display: flex;
+  justify-content: center;
+  padding: var(--esp-8) var(--esp-4);
+  color: var(--cor-texto-2);
+  font-size: 1.25rem;
+}
+
+.vazio {
+  padding: var(--esp-7) var(--esp-4);
+  text-align: center;
+  color: var(--cor-texto-2);
+  font-size: var(--texto-pequeno);
+}
+
+.vazio-titulo {
+  margin-bottom: var(--esp-1);
+  font-size: var(--texto-corpo);
+  font-weight: 600;
+  color: var(--cor-texto);
+}
+
+.vazio .botao {
+  margin-top: var(--esp-4);
+}
+
+/* ---------- Celular e tablet ---------- */
+@media (max-width: 1023.98px) {
+  .pagina {
+    padding: var(--esp-5) var(--esp-4) calc(var(--altura-abas) + var(--esp-7) + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 767.98px) {
+  .titulo-pagina {
+    font-size: 1.75rem;
+  }
+
+  .metricas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: var(--esp-5);
+  }
+
+  .metrica:nth-child(odd) {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .cabecalho {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cabecalho-acoes {
+    width: 100%;
+  }
+
+  .formulario-acoes {
+    flex-direction: column-reverse;
+  }
+
+  .formulario-acoes .botao {
+    width: 100%;
+  }
+}
+
+/* ---------- Itens de menu (o conteúdo do <ui-menu> é projetado) ---------- */
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  min-height: 2.25rem;
+  padding: 0.375rem 0.625rem;
+  border: 0;
+  border-radius: var(--raio-pequeno);
+  background: transparent;
+  color: var(--cor-texto);
+  font-size: var(--texto-corpo);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.menu-item:hover,
+.menu-item:focus {
+  outline: none;
+  background: var(--cor-selecao);
+  color: var(--cor-texto);
+}
+
+.menu-item ui-icone {
+  color: var(--cor-texto-2);
+}
+
+.menu-item-destrutivo,
+.menu-item-destrutivo:hover,
+.menu-item-destrutivo:focus,
+.menu-item-destrutivo ui-icone {
+  color: var(--cor-erro-texto);
+}
+
+.menu-separador {
+  height: 1px;
+  margin: 0.25rem 0.625rem;
+  border: 0;
+  background: var(--cor-divisoria);
+}
+
+.menu-cabecalho {
+  padding: 0.5rem 0.625rem 0.375rem;
+  min-width: 0;
+}
+
+.menu-cabecalho strong {
+  display: block;
+  font-weight: 600;
+}
+
+.menu-cabecalho span {
+  display: block;
+  font-size: var(--texto-pequeno);
+  color: var(--cor-texto-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menu-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.375rem 0.625rem;
+  font-size: var(--texto-corpo);
+}
+
+/* Trava a rolagem da página enquanto um painel ou diálogo está aberto */
+html:has(dialog[open]) {
+  overflow: hidden;
+}

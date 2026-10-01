@@ -1,0 +1,19 @@
+.metricas {
+  grid-template-columns: repeat(2, minmax(0, max-content));
+  column-gap: var(--esp-6);
+}
+
+.metrica {
+  padding-right: var(--esp-6);
+}
+
+.linha-lateral .status {
+  font-size: var(--texto-legenda);
+}
+
+@media (max-width: 767.98px) {
+  .linha-lateral .status {
+    white-space: normal;
+    text-align: right;
+  }
+}

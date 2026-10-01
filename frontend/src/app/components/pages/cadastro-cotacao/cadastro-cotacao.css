@@ -1,4 +1,3 @@
-.form-label {
-  color: var(--cor-texto);
-  font-size: 0.95rem;
+.contador {
+  justify-self: end;
 }

@@ -1,19 +1,95 @@
 .filtros {
-  max-width: 560px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3);
+  margin-bottom: var(--esp-4);
 }
 
-.filtros .form-select {
-  width: auto;
-  min-width: 200px;
+.filtros .busca {
+  flex: 1 1 18rem;
+  max-width: 26rem;
 }
 
-.filtros .input-group {
-  width: 280px;
+.filtro-categoria {
+  flex: 0 1 15rem;
 }
 
-@media (max-width: 576px) {
-  .filtros .input-group,
-  .filtros .form-select {
-    width: 100%;
+.oportunidade {
+  align-items: flex-start;
+  padding-block: var(--esp-4);
+}
+
+.titulo-linha {
+  display: flex;
+  align-items: baseline;
+  gap: var(--esp-2);
+  min-width: 0;
+}
+
+.linha-texto {
+  max-width: 44rem;
+}
+
+.minha-oferta {
+  font-size: var(--texto-pequeno);
+  font-weight: 500;
+}
+
+.linha-acoes {
+  margin-top: var(--esp-2);
+}
+
+.resumo {
+  padding-bottom: var(--esp-4);
+  border-bottom: 1px solid var(--cor-divisoria);
+}
+
+.resumo-titulo {
+  font-weight: 600;
+}
+
+.resumo-requisitos {
+  margin-top: var(--esp-2);
+  font-size: var(--texto-pequeno);
+  color: var(--cor-texto-2);
+  max-height: 7.5rem;
+  overflow-y: auto;
+}
+
+.rodape-proposta {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--esp-2);
+}
+
+@media (max-width: 767.98px) {
+  .filtros .busca,
+  .filtro-categoria {
+    flex-basis: 100%;
+    max-width: none;
+  }
+
+  .oportunidade {
+    flex-wrap: wrap;
+  }
+
+  .oportunidade .linha-lateral {
+    flex-basis: 100%;
+    grid-auto-flow: column;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+  }
+
+  .oportunidade .linha-lateral .ajuda {
+    display: none;
+  }
+
+  .linha-acoes {
+    margin-top: 0;
+  }
+
+  .rodape-proposta .botao {
+    flex: 1;
   }
 }

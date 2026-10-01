@@ -14,6 +14,11 @@ export class NegociacaoService {
     return this.http.post<Negociacao>(this.url, { propostaId });
   }
 
+  /** Negociações em que o usuário logado é uma das partes (mais recentes primeiro). */
+  listarMinhas(): Observable<Negociacao[]> {
+    return this.http.get<Negociacao[]>(`${this.url}/minhas`);
+  }
+
   buscar(id: string): Observable<Negociacao> {
     return this.http.get<Negociacao>(`${this.url}/${id}`);
   }

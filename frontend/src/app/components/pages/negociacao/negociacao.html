@@ -1,161 +1,219 @@
-<app-navbar />
-
-<div class="container mt-4 mb-5">
-
-  <a [routerLink]="rotaVoltar()" class="link-voltar d-inline-block mb-3">
-    <i class="bi bi-arrow-left"></i> Voltar
-  </a>
-
-  @if (erro(); as mensagem) {
-    <div class="alert alert-danger">{{ mensagem }}</div>
-  }
-
+<ng-template #detalhes>
   @if (negociacao(); as n) {
-    <div class="row">
-
-      <!-- Resumo -->
-      <div class="col-lg-4 mb-3">
-        <div class="card shadow-sm resumo">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start">
-              <h5 class="fw-bold text-body-emphasis mb-0">Resumo da Negociação</h5>
-              <span class="badge" [class]="status[n.status].classe">{{ status[n.status].texto }}</span>
-            </div>
-            <hr>
-            <p class="mb-1"><small class="text-muted">Cotação</small></p>
-            <p class="fw-bold mb-2">{{ n.cotacaoNome }}</p>
-            <p class="small text-muted texto-quebrado requisitos">{{ n.cotacaoRequisitos }}</p>
-
-            <p class="mb-1"><small class="text-muted">{{ ehEmpresa() ? 'Fornecedor' : 'Empresa' }}</small></p>
-            <p class="fw-bold">{{ ehEmpresa() ? n.fornecedorNome : n.empresaNome }}</p>
-
-            <div class="d-flex justify-content-between border-top pt-3">
-              <div>
-                <small class="text-muted d-block">Proposta inicial</small>
-                <span class="fw-semibold">{{ n.valorProposta | currency }}</span>
-              </div>
-              <div class="text-end">
-                <small class="text-muted d-block">{{ n.status === 'FINALIZADA' ? 'Valor fechado' : 'Última oferta' }}</small>
-                <span class="fs-5 fw-bold text-success">{{ (n.valorFinal ?? n.ultimaOferta) | currency }}</span>
-              </div>
-            </div>
-
-            @if (emAndamento()) {
-              @if (aguardandoMinhaResposta()) {
-                <div class="alert alert-warning mb-0 mt-3 small">
-                  <i class="bi bi-exclamation-triangle me-1"></i> Aguardando a sua resposta
-                </div>
-              } @else {
-                <div class="alert alert-light border mb-0 mt-3 small">
-                  <i class="bi bi-hourglass-split me-1"></i>
-                  Aguardando resposta {{ ehEmpresa() ? 'do fornecedor' : 'da empresa' }}
-                </div>
-              }
-            } @else if (n.status === 'FINALIZADA') {
-              <div class="alert alert-success mb-0 mt-3 small">
-                <i class="bi bi-trophy-fill me-1"></i> Negócio fechado em {{ n.dataFinalizacao | date: 'dd/MM/yyyy' }}
-              </div>
-            } @else {
-              <div class="alert alert-secondary mb-0 mt-3 small">
-                <i class="bi bi-x-circle me-1"></i> Encerrada sem acordo em {{ n.dataFinalizacao | date: 'dd/MM/yyyy' }}
-              </div>
-            }
-          </div>
-        </div>
+    <dl class="ficha">
+      <div>
+        <dt>Cotação</dt>
+        <dd>
+          @if (ehEmpresa()) {
+            <a [routerLink]="['/pages/detalhe-cotacao', n.cotacaoId]">{{ n.cotacaoNome }}</a>
+          } @else {
+            {{ n.cotacaoNome }}
+          }
+        </dd>
       </div>
+      <div>
+        <dt>{{ ehEmpresa() ? 'Fornecedor' : 'Empresa' }}</dt>
+        <dd>{{ outraParte() }}</dd>
+      </div>
+      <div>
+        <dt>Situação</dt>
+        <dd><ui-status [tom]="status[n.status].tom">{{ status[n.status].texto }}</ui-status></dd>
+      </div>
+      <div>
+        <dt>Proposta inicial</dt>
+        <dd class="numeros">{{ n.valorProposta | currency: 'BRL' }}</dd>
+      </div>
+      <div>
+        <dt>{{ n.status === 'FINALIZADA' ? 'Valor fechado' : 'Última oferta' }}</dt>
+        <dd class="numeros forte">{{ (n.status === 'FINALIZADA' && n.valorFinal !== null ? n.valorFinal : n.ultimaOferta) | currency: 'BRL' }}</dd>
+      </div>
+      <div>
+        <dt>Início</dt>
+        <dd>{{ n.dataInicio | date: 'dd/MM/yyyy' }}</dd>
+      </div>
+      @if (n.dataFinalizacao) {
+        <div>
+          <dt>Encerramento</dt>
+          <dd>{{ n.dataFinalizacao | date: 'dd/MM/yyyy' }}</dd>
+        </div>
+      }
+    </dl>
 
-      <div class="col-lg-8">
+    <div class="requisitos">
+      <h3 class="ficha-titulo">Requisitos</h3>
+      <p class="texto-quebrado">{{ n.cotacaoRequisitos }}</p>
+    </div>
 
-        <!-- Histórico -->
-        <div class="card shadow-sm mb-4">
-          <div class="card-header bg-body py-3 d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-bold">Histórico da Negociação</h5>
-            @if (emAndamento()) {
-              <small class="text-muted"><i class="bi bi-arrow-repeat me-1"></i>Atualiza automaticamente</small>
-            }
+    @if (ehEmpresa() && emAndamento()) {
+      <button type="button" class="botao botao-destrutivo encerrar" (click)="encerrarSemAcordo()">Encerrar sem acordo</button>
+    }
+  }
+</ng-template>
+
+@if (erro(); as mensagem) {
+  <div class="pagina">
+    <a class="voltar" routerLink="/pages/negociacoes"><ui-icone nome="voltar" [tamanho]="18" />Negociações</a>
+    <p class="nota nota-erro" role="alert"><ui-icone nome="alerta" [tamanho]="18" />{{ mensagem }}</p>
+  </div>
+} @else {
+  <div class="sala">
+    <!-- Coluna 1: as outras negociações (só em telas bem largas) -->
+    <aside class="coluna-lista" aria-label="Negociações">
+      <h2 class="coluna-titulo">Negociações</h2>
+      <app-lista-negociacoes [negociacoes]="outras()" [selecionada]="id()" [compacta]="true" />
+    </aside>
+
+    <!-- Coluna 2: a conversa -->
+    <section class="conversa" [attr.aria-label]="'Conversa com ' + outraParte()">
+      <header class="conversa-topo">
+        <a class="botao botao-simples botao-icone voltar-lista" routerLink="/pages/negociacoes" aria-label="Voltar para as negociações">
+          <ui-icone nome="voltar" />
+        </a>
+        <div class="conversa-titulo">
+          <h1>{{ outraParte() || 'Negociação' }}</h1>
+          @if (negociacao(); as n) {
+            <p>{{ n.cotacaoNome }}</p>
+          }
+        </div>
+        @if (negociacao(); as n) {
+          <ui-status class="topo-status" [tom]="status[n.status].tom">{{ status[n.status].texto }}</ui-status>
+        }
+        <button type="button" class="botao botao-secundario botao-pequeno abrir-detalhes" (click)="detalhesAbertos.set(true)">
+          Detalhes
+        </button>
+      </header>
+
+      @if (negociacao(); as n) {
+        <!-- Assinatura: o valor convergindo ao longo da negociação -->
+        <div class="escada" aria-label="Evolução do valor">
+          <div class="degrau">
+            <span class="degrau-rotulo">Proposta inicial</span>
+            <span class="degrau-valor numeros">{{ n.valorProposta | currency: 'BRL' : 'symbol' : '1.0-0' }}</span>
           </div>
-          <div class="card-body">
-            @for (m of mensagens(); track m.id; let ultima = $last) {
-              <div class="timeline-card" [class.border-0]="ultima" [class.pb-0]="ultima">
-                <div class="timeline-dot" [class.bg-success]="!ehMinha(m)"></div>
-                <div class="p-3 rounded" [class.bg-minha]="ehMinha(m)" [class.bg-outra]="!ehMinha(m)">
-                  <div class="d-flex justify-content-between gap-2">
-                    <strong [class.text-primary]="ehMinha(m)">
-                      {{ ehMinha(m) ? 'Você' : m.remetenteNome }}
-                    </strong>
-                    <small class="text-muted text-nowrap">{{ m.dataEnvio | date: 'dd/MM \'às\' HH:mm' }}</small>
-                  </div>
+          <div class="trilha" aria-hidden="true"><span></span></div>
+          <div class="degrau degrau-atual">
+            <span class="degrau-rotulo">{{ n.status === 'FINALIZADA' ? 'Valor fechado' : 'Última oferta' }}</span>
+            <span class="degrau-valor numeros">
+              {{ (n.status === 'FINALIZADA' && n.valorFinal !== null ? n.valorFinal : n.ultimaOferta) | currency: 'BRL' : 'symbol' : '1.0-0' }}
+            </span>
+          </div>
+          @if (variacao(); as v) {
+            <span class="variacao numeros" [attr.title]="v.descricao">{{ v.texto }}<span class="visually-hidden"> {{ v.descricao }}</span></span>
+          }
+        </div>
+
+        <div class="mensagens" #rolagem tabindex="0" aria-label="Mensagens">
+          @for (g of grupos(); track g.dia) {
+            <p class="dia">{{ g.dia }}</p>
+            @for (m of g.mensagens; track m.id) {
+              <div class="mensagem" [class.minha]="ehMinha(m)">
+                <div class="balao" [class.oferta]="m.valorOfertado !== null">
                   @if (m.valorOfertado !== null) {
-                    <div class="mt-2">
-                      {{ $first ? 'Proposta inicial' : 'Nova oferta' }}:
-                      <span class="fs-5 fw-bold" [class.text-success]="!ehMinha(m)">{{ m.valorOfertado | currency }}</span>
-                    </div>
+                    <span class="oferta-rotulo">{{ ehPrimeira(m) ? 'Proposta inicial' : 'Oferta' }}</span>
+                    <span class="oferta-valor numeros">{{ m.valorOfertado | currency: 'BRL' }}</span>
                   }
                   @if (m.mensagem) {
-                    <p class="mb-0 mt-2 texto-quebrado">{{ m.mensagem }}</p>
+                    <p class="texto-quebrado">{{ m.mensagem }}</p>
                   }
                 </div>
+                <span class="hora">
+                  @if (!ehMinha(m)) {
+                    {{ m.remetenteNome }} ·
+                  }
+                  {{ m.dataEnvio | date: 'HH:mm' }}
+                </span>
               </div>
-            } @empty {
-              <div class="estado-vazio"><i class="bi bi-chat"></i>Nenhuma mensagem ainda.</div>
             }
-          </div>
+          } @empty {
+            <p class="dia">Nenhuma mensagem ainda.</p>
+          }
+
+          @if (n.status === 'FINALIZADA') {
+            <p class="desfecho"><ui-icone nome="sucesso" [tamanho]="18" />Negócio fechado em {{ n.dataFinalizacao | date: 'dd/MM/yyyy' }} por {{ n.valorFinal | currency: 'BRL' }}</p>
+          } @else if (n.status === 'CANCELADA') {
+            <p class="desfecho">Encerrada sem acordo em {{ n.dataFinalizacao | date: 'dd/MM/yyyy' }}</p>
+          }
         </div>
 
-        <!-- Resposta -->
         @if (emAndamento()) {
-          <div class="card shadow resposta">
-            <div class="card-body p-4">
-              <h5 class="fw-bold mb-3">Sua Resposta</h5>
-
-              <div class="mb-3">
-                <label for="mensagem" class="form-label text-muted small fw-bold">MENSAGEM</label>
-                <textarea id="mensagem" class="form-control" rows="2" maxlength="1000" [(ngModel)]="textoMensagem"
-                          placeholder="Ex: Conseguimos melhorar o prazo de entrega se fecharmos hoje."></textarea>
-              </div>
-
-              <div class="mb-4">
-                <label for="valor" class="form-label text-muted small fw-bold">VALOR DA CONTRAPROPOSTA (opcional)</label>
-                <div class="input-group">
-                  <span class="input-group-text">R$</span>
-                  <input id="valor" type="number" min="0" step="0.01" class="form-control form-control-lg fw-bold"
-                         placeholder="Digite seu valor..." [(ngModel)]="valorContraproposta">
-                </div>
-                <div class="form-text">A última oferta na mesa é de {{ n.ultimaOferta | currency }}.</div>
-              </div>
-
-              <div class="d-flex gap-2 flex-wrap">
-                <button type="button" class="btn btn-primary flex-grow-1 py-2" [disabled]="enviando()" (click)="enviar()">
-                  <i class="bi bi-send me-2"></i>Enviar
-                </button>
-
+          <!-- Decisão sobre a oferta na mesa -->
+          @if (ehEmpresa() || ofertaDaOutraParte()) {
+            <div class="decisao">
+              <span class="decisao-texto">
+                {{ ofertaDaOutraParte() ? outraParte() + ' ofereceu' : 'Sua última oferta' }}
+                <strong class="numeros">{{ n.ultimaOferta | currency: 'BRL' }}</strong>
+              </span>
+              <span class="decisao-acoes">
+                @if (ofertaDaOutraParte()) {
+                  <button type="button" class="botao botao-secundario botao-pequeno" (click)="contrapropor()">Contrapropor</button>
+                }
                 @if (ehEmpresa()) {
-                  <button type="button" class="btn btn-success flex-grow-1 py-2" [disabled]="enviando()" (click)="fecharNegocio()">
-                    <i class="bi bi-check-lg me-2"></i>Fechar por {{ n.ultimaOferta | currency }}
+                  <button type="button" class="botao botao-primario botao-pequeno" (click)="fecharNegocio()">
+                    Fechar por {{ n.ultimaOferta | currency: 'BRL' }}
                   </button>
-                  <button type="button" class="btn btn-outline-secondary" [disabled]="enviando()" (click)="encerrarSemAcordo()">
-                    Encerrar sem acordo
-                  </button>
-                } @else if (aguardandoMinhaResposta()) {
-                  <button type="button" class="btn btn-success flex-grow-1 py-2" [disabled]="enviando()" (click)="aceitarOferta()">
-                    <i class="bi bi-hand-thumbs-up me-2"></i>Aceitar {{ n.ultimaOferta | currency }}
+                } @else {
+                  <button type="button" class="botao botao-primario botao-pequeno" [disabled]="enviando()" (click)="aceitarOferta()">
+                    Aceitar {{ n.ultimaOferta | currency: 'BRL' }}
                   </button>
                 }
-              </div>
-
-              @if (!ehEmpresa()) {
-                <p class="form-text mb-0 mt-3">
-                  Quem fecha o negócio é a empresa. Ao aceitar, você avisa que concorda com o valor.
-                </p>
-              }
+              </span>
             </div>
-          </div>
+          }
+
+          <form class="compositor" (ngSubmit)="enviar()">
+            <label class="visually-hidden" for="mensagem">Mensagem</label>
+            <textarea
+              id="mensagem"
+              class="entrada campo-mensagem"
+              name="mensagem"
+              rows="1"
+              maxlength="1000"
+              placeholder="Mensagem"
+              [ngModel]="texto()"
+              (ngModelChange)="texto.set($event)"
+              (keydown)="teclaNaMensagem($event)"
+            ></textarea>
+            <div class="grupo-entrada campo-valor">
+              <span class="prefixo" aria-hidden="true">R$</span>
+              <input
+                #campoValor
+                id="valor"
+                class="entrada numeros"
+                type="number"
+                name="valor"
+                min="0"
+                step="0.01"
+                inputmode="decimal"
+                placeholder="Valor"
+                aria-label="Valor da contraproposta (opcional)"
+                [ngModel]="valor()"
+                (ngModelChange)="valor.set($event)"
+              />
+            </div>
+            <button type="submit" class="botao botao-primario botao-icone enviar" aria-label="Enviar" [disabled]="!podeEnviar()">
+              @if (enviando()) {
+                <span class="girando" aria-hidden="true"></span>
+              } @else {
+                <ui-icone nome="enviar" />
+              }
+            </button>
+          </form>
         }
-      </div>
-    </div>
-  } @else if (!erro()) {
-    <div class="text-center py-5">
-      <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div>
-    </div>
-  }
-</div>
+      } @else {
+        <div class="carregando-pagina" role="status"><span class="girando"></span><span class="visually-hidden">Carregando</span></div>
+      }
+    </section>
+
+    <!-- Coluna 3: detalhes (telas largas). Nas demais, abrem num painel -->
+    <aside class="coluna-detalhes" aria-label="Detalhes da negociação">
+      <h2 class="coluna-titulo">Detalhes</h2>
+      <ng-container [ngTemplateOutlet]="detalhes" />
+    </aside>
+  </div>
+
+  <ui-painel titulo="Detalhes" [(aberto)]="detalhesAbertos">
+    @if (detalhesAbertos()) {
+      <ng-container [ngTemplateOutlet]="detalhes" />
+    }
+  </ui-painel>
+}

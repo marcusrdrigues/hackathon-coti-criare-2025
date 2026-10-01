@@ -20,7 +20,7 @@
           <button type="button" class="botao-demo" [disabled]="carregando()" (click)="entrarDemo(conta.perfil)"
                   [attr.aria-label]="'Entrar como ' + rotuloPerfil(conta.perfil) + ': ' + conta.nome">
             @if (entrandoComo() === conta.perfil) {
-              <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+              <span class="girando" aria-hidden="true"></span>
             } @else {
               <span class="demo-perfil">Como {{ rotuloPerfil(conta.perfil) }}</span>
               <span class="demo-nome">{{ conta.nome }}</span>
@@ -49,7 +49,7 @@
 
     <button type="submit" class="botao-principal" [disabled]="carregando()">
       @if (carregando() && !entrandoComo()) {
-        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        <span class="girando" aria-hidden="true"></span>
         <span>Entrando…</span>
       } @else {
         Entrar

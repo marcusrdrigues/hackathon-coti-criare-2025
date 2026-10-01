@@ -1,143 +1,109 @@
-<app-navbar />
-
-<div class="container mt-4 mb-5">
-
-  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-    <div>
-      <h2 class="fw-bold text-body-emphasis mb-0">Painel do Fornecedor</h2>
-      <p class="text-muted small mb-0">Bem-vindo de volta, {{ auth.usuario()?.nome }}. Boas vendas!</p>
+<div class="pagina">
+  <header class="cabecalho">
+    <div class="cabecalho-texto">
+      <h1 class="titulo-pagina">Início</h1>
+      <p class="subtitulo-pagina">{{ auth.usuario()?.nome }}</p>
     </div>
-    <a class="btn btn-primary shadow-sm" routerLink="/pages/mural-oportunidades">
-      <i class="bi bi-search me-2"></i>Buscar Cotações
-    </a>
-  </div>
+    <div class="cabecalho-acoes">
+      <a class="botao botao-primario" routerLink="/pages/mural-oportunidades">Ver o mural</a>
+    </div>
+  </header>
 
   @if (erro(); as mensagem) {
-    <div class="alert alert-danger">{{ mensagem }}</div>
-  }
-
-  @if (kpis(); as k) {
-    <div class="row mb-4">
-      <div class="col-xl-3 col-md-6 mb-3">
-        <div class="card shadow-sm border-start-primary h-100 card-hover">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 class="text-uppercase text-muted mb-1 small">Oportunidades abertas</h6>
-                <h2 class="mb-0 fw-bold text-body-emphasis">{{ k.oportunidadesAbertas }}</h2>
-              </div>
-              <div class="icon-shape bg-primary-subtle text-primary"><i class="bi bi-shop-window fs-4"></i></div>
-            </div>
-            <small class="text-muted mt-2 d-block">Disponíveis para proposta agora</small>
-          </div>
-        </div>
+    <p class="nota nota-erro" role="alert"><ui-icone nome="alerta" [tamanho]="18" />{{ mensagem }}</p>
+  } @else if (numeros(); as k) {
+    <dl class="metricas">
+      <div class="metrica">
+        <dt class="metrica-rotulo">Cotações no mural</dt>
+        <dd class="metrica-valor">{{ k.oportunidadesAbertas }}</dd>
       </div>
-
-      <div class="col-xl-3 col-md-6 mb-3">
-        <div class="card shadow-sm border-start-warning h-100 card-hover">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 class="text-uppercase text-muted mb-1 small">Propostas enviadas</h6>
-                <h2 class="mb-0 fw-bold text-body-emphasis">{{ k.propostasPendentes }}</h2>
-              </div>
-              <div class="icon-shape bg-warning-subtle text-warning-emphasis"><i class="bi bi-send-fill fs-4"></i></div>
-            </div>
-            <small class="text-muted mt-2 d-block">Aguardando análise da empresa</small>
-          </div>
-        </div>
+      <div class="metrica">
+        <dt class="metrica-rotulo">Propostas aguardando</dt>
+        <dd class="metrica-valor">{{ k.propostasPendentes }}</dd>
       </div>
-
-      <div class="col-xl-3 col-md-6 mb-3">
-        <div class="card shadow-sm border-start-info h-100 card-hover">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 class="text-uppercase text-muted mb-1 small">Em negociação</h6>
-                <h2 class="mb-0 fw-bold text-body-emphasis">{{ k.negociacoesAtivas }}</h2>
-              </div>
-              <div class="icon-shape bg-info-subtle text-info-emphasis"><i class="bi bi-chat-dots-fill fs-4"></i></div>
-            </div>
-            @if (k.negociacoesAtivas > 0) {
-              <a class="small mt-2 d-block text-decoration-none" routerLink="/pages/propostas-enviadas">Responder agora →</a>
-            } @else {
-              <small class="text-muted mt-2 d-block">Nenhuma conversa ativa</small>
-            }
-          </div>
-        </div>
+      <div class="metrica">
+        <dt class="metrica-rotulo">Em negociação</dt>
+        <dd class="metrica-valor">{{ k.negociacoesAtivas }}</dd>
       </div>
-
-      <div class="col-xl-3 col-md-6 mb-3">
-        <div class="card shadow-sm border-start-success h-100 card-hover">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 class="text-uppercase text-muted mb-1 small">Cotações ganhas</h6>
-                <h2 class="mb-0 fw-bold text-success">{{ k.cotacoesGanhas }}</h2>
-              </div>
-              <div class="icon-shape bg-success-subtle text-success"><i class="bi bi-trophy-fill fs-4"></i></div>
-            </div>
-            <small class="text-muted mt-2 d-block">Total fechado: {{ k.valorTotalGanho | currency }}</small>
-          </div>
-        </div>
+      <div class="metrica">
+        <dt class="metrica-rotulo">
+          {{ k.cotacoesGanhas === 1 ? '1 negócio fechado' : k.cotacoesGanhas + ' negócios fechados' }}
+        </dt>
+        <dd class="metrica-valor">{{ k.valorTotalGanho | currency: 'BRL' : 'symbol' : '1.0-0' }}</dd>
       </div>
-    </div>
-  }
+    </dl>
 
-  <div class="card shadow-sm">
-    <div class="card-header bg-body py-3 border-bottom">
-      <h5 class="mb-0 fw-bold">Oportunidades Publicadas Recentemente</h5>
-    </div>
-    <div class="table-responsive">
-      <table class="table table-hover table-criare align-middle mb-0">
-        <thead>
-          <tr>
-            <th scope="col" class="ps-4">Título / Empresa</th>
-            <th scope="col">Encerra em</th>
-            <th scope="col">Orçamento</th>
-            <th scope="col" class="text-end pe-4">Ação</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (item of oportunidadesRecentes(); track item.id) {
-            <tr>
-              <td class="ps-4 py-3">
-                <div class="fw-bold text-body-emphasis">{{ item.nomeServico }}</div>
-                <small class="text-muted"><i class="bi bi-building me-1"></i>{{ item.empresaNome }}</small>
-              </td>
-              <td>
-                @if (item.dataLimite) {
-                  @let dias = diasRestantes(item.dataLimite) ?? 0;
-                  <div [class]="dias <= 3 ? 'text-danger fw-bold' : 'text-body-emphasis'">
-                    <i class="bi bi-clock me-1"></i>{{ item.dataLimite | date: 'dd/MM/yyyy' }}
-                  </div>
-                  <small class="text-muted">{{ dias === 1 ? '1 dia restante' : dias + ' dias restantes' }}</small>
-                } @else {
-                  <span class="text-muted">Sem prazo</span>
-                }
-              </td>
-              <td>{{ item.orcamentoEstimado !== null ? (item.orcamentoEstimado | currency) : 'Sob consulta' }}</td>
-              <td class="text-end pe-4">
-                <a class="btn btn-sm btn-outline-primary rounded-pill px-3" routerLink="/pages/mural-oportunidades">
-                  Ver no mural
-                </a>
-              </td>
-            </tr>
+    <section class="secao" aria-labelledby="titulo-pendencias">
+      <div class="secao-cabecalho">
+        <h2 class="secao-titulo" id="titulo-pendencias">Precisa da sua atenção</h2>
+        @if (k.propostasPendentes > 0) {
+          <a class="secao-acao" routerLink="/pages/propostas-enviadas">Ver propostas</a>
+        }
+      </div>
+      @if (negociacoesAtivas().length > 0) {
+        <ul class="lista" role="list">
+          @for (n of negociacoesAtivas(); track n.id) {
+            <li>
+              <a class="linha" [routerLink]="['/pages/negociacao', n.id]">
+                <span class="linha-principal">
+                  <span class="linha-titulo">Negociação com {{ n.empresaNome }}</span>
+                  <span class="linha-detalhe">
+                    {{ n.cotacaoNome }} · última oferta {{ n.ultimaOferta | currency: 'BRL' : 'symbol' : '1.0-0' }}
+                  </span>
+                </span>
+                <ui-icone class="linha-seta" nome="avancar" [tamanho]="18" />
+              </a>
+            </li>
           }
-        </tbody>
-      </table>
-    </div>
-    @if (oportunidadesRecentes().length === 0 && !erro()) {
-      <div class="estado-vazio">
-        <i class="bi bi-inbox"></i>
-        Nenhuma cotação aberta no momento. Volte mais tarde!
-      </div>
-    }
-    <div class="card-footer bg-body text-center py-3">
-      <a routerLink="/pages/mural-oportunidades" class="text-decoration-none fw-bold small">
-        Ver todas as oportunidades <i class="bi bi-arrow-right ms-1"></i>
-      </a>
-    </div>
-  </div>
+        </ul>
+      } @else {
+        <div class="lista">
+          <div class="vazio">
+            <p class="vazio-titulo">Nada pendente agora</p>
+            <p>Quando uma empresa abrir negociação com você, ela aparece aqui.</p>
+          </div>
+        </div>
+      }
+    </section>
 
+    <section class="secao" aria-labelledby="titulo-recentes">
+      <div class="secao-cabecalho">
+        <h2 class="secao-titulo" id="titulo-recentes">Cotações recentes</h2>
+        <a class="secao-acao" routerLink="/pages/mural-oportunidades">Ver todas</a>
+      </div>
+      @if (oportunidades().length > 0) {
+        <ul class="lista" role="list">
+          @for (c of oportunidades(); track c.id) {
+            @let dias = diasRestantes(c.dataLimite);
+            <li>
+              <a class="linha" routerLink="/pages/mural-oportunidades" [queryParams]="{ busca: c.nomeServico }">
+                <span class="linha-principal">
+                  <span class="linha-titulo">{{ c.nomeServico }}</span>
+                  <span class="linha-detalhe">
+                    {{ c.empresaNome }}
+                    @if (dias !== null) {
+                      · <span [class.urgente]="dias <= 3">{{ dias <= 0 ? 'encerra hoje' : dias === 1 ? 'encerra amanhã' : 'encerra em ' + dias + ' dias' }}</span>
+                    }
+                  </span>
+                </span>
+                <span class="linha-lateral">
+                  @if (c.orcamentoEstimado !== null) {
+                    <span class="linha-valor">{{ c.orcamentoEstimado | currency: 'BRL' : 'symbol' : '1.0-0' }}</span>
+                    <span class="ajuda">orçamento</span>
+                  } @else {
+                    <span class="ajuda">Sob consulta</span>
+                  }
+                </span>
+                <ui-icone class="linha-seta" nome="avancar" [tamanho]="18" />
+              </a>
+            </li>
+          }
+        </ul>
+      } @else {
+        <div class="lista"><p class="vazio">Nenhuma cotação aberta no momento.</p></div>
+      }
+    </section>
+  } @else {
+    <div class="carregando-pagina" role="status"><span class="girando"></span><span class="visually-hidden">Carregando</span></div>
+  }
 </div>

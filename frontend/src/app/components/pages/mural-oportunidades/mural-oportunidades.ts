@@ -1,24 +1,23 @@
-import { AsyncPipe, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { CurrencyPipe, DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { forkJoin, map } from 'rxjs';
 import { CategoriaCotacao, Cotacao, Proposta } from '../../../core/models';
 import { CotacaoService } from '../../../core/services/cotacao.service';
 import { NotificacaoService } from '../../../core/services/notificacao.service';
 import { PropostaService } from '../../../core/services/proposta.service';
 import { mensagemDeErro } from '../../../core/utils/erros';
 import { diasRestantes } from '../../../core/utils/formatos';
-import { Navbar } from '../../shared/navbar/navbar';
-
-interface RascunhoProposta {
-  valor: number | null;
-  descricao: string;
-}
+import { Icone } from '../../../ui/icone';
+import { Painel } from '../../../ui/painel';
+import { OpcaoSeletor, Seletor } from '../../../ui/seletor';
 
 @Component({
   selector: 'app-mural-oportunidades',
-  imports: [Navbar, FormsModule, RouterLink, AsyncPipe, CurrencyPipe, DatePipe],
+  imports: [FormsModule, RouterLink, CurrencyPipe, DatePipe, Icone, Painel, Seletor],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './mural-oportunidades.html',
   styleUrl: './mural-oportunidades.css',
 })
@@ -27,19 +26,31 @@ export class MuralOportunidades implements OnInit {
   private readonly propostaService = inject(PropostaService);
   private readonly notificacao = inject(NotificacaoService);
 
-  protected readonly categorias$ = this.cotacaoService.categorias();
+  protected readonly categorias = toSignal(
+    this.cotacaoService.categorias().pipe(
+      map((lista): OpcaoSeletor<CategoriaCotacao | ''>[] => [
+        { valor: '', rotulo: 'Todas as categorias' },
+        ...lista.map((c) => ({ valor: c.codigo, rotulo: c.descricao })),
+      ]),
+    ),
+    { initialValue: [{ valor: '', rotulo: 'Todas as categorias' }] as OpcaoSeletor<CategoriaCotacao | ''>[] },
+  );
   protected readonly diasRestantes = diasRestantes;
 
   protected readonly oportunidades = signal<Cotacao[] | null>(null);
   /** cotacaoId -> proposta que este fornecedor já enviou */
   protected readonly minhasPropostas = signal<Map<string, Proposta>>(new Map());
   protected readonly erro = signal<string | null>(null);
-  protected readonly busca = signal('');
+  // A busca pode vir pela URL (ex.: atalho do painel inicial)
+  protected readonly busca = signal(inject(ActivatedRoute).snapshot.queryParamMap.get('busca') ?? '');
   protected readonly categoria = signal<CategoriaCotacao | ''>('');
-  protected readonly expandida = signal<string | null>(null);
   protected readonly enviando = signal(false);
 
-  rascunho: RascunhoProposta = { valor: null, descricao: '' };
+  /** Cotação para a qual o painel de proposta está aberto */
+  protected readonly selecionada = signal<Cotacao | null>(null);
+  protected readonly painelAberto = signal(false);
+  protected readonly valor = signal<number | null>(null);
+  protected readonly condicoes = signal('');
 
   protected readonly filtradas = computed(() => {
     const termo = this.busca().trim().toLowerCase();
@@ -76,17 +87,20 @@ export class MuralOportunidades implements OnInit {
     return Date.now() - new Date(c.dataCriacao).getTime() < 48 * 60 * 60 * 1000;
   }
 
-  toggleProposta(c: Cotacao): void {
-    if (this.expandida() === c.id) {
-      this.expandida.set(null);
-      return;
-    }
-    this.rascunho = { valor: null, descricao: '' };
-    this.expandida.set(c.id);
+  abrirProposta(c: Cotacao): void {
+    this.selecionada.set(c);
+    this.valor.set(null);
+    this.condicoes.set('');
+    this.painelAberto.set(true);
   }
 
-  confirmarEnvio(c: Cotacao): void {
-    if (!this.rascunho.valor || this.rascunho.valor <= 0) {
+  confirmarEnvio(): void {
+    const c = this.selecionada();
+    const valor = this.valor();
+    if (!c) {
+      return;
+    }
+    if (!valor || valor <= 0) {
       this.notificacao.erro('Informe o valor da proposta.');
       return;
     }
@@ -94,15 +108,15 @@ export class MuralOportunidades implements OnInit {
     this.enviando.set(true);
     this.propostaService
       .enviar({
-        valor: this.rascunho.valor,
-        descricao: this.rascunho.descricao.trim() || 'Sem condições adicionais.',
+        valor,
+        descricao: this.condicoes().trim() || 'Sem condições adicionais.',
         cotacaoId: c.id,
       })
       .subscribe({
         next: (proposta) => {
-          this.notificacao.sucesso(`Proposta enviada para ${c.empresaNome}!`);
+          this.notificacao.sucesso(`Proposta enviada para ${c.empresaNome}.`);
           this.minhasPropostas.update((mapa) => new Map(mapa).set(c.id, proposta));
-          this.expandida.set(null);
+          this.painelAberto.set(false);
           this.enviando.set(false);
         },
         error: (e) => {

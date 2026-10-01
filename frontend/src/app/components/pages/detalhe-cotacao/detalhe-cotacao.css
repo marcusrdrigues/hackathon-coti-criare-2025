@@ -1,4 +1,95 @@
-.condicoes {
-  max-width: 320px;
+.titulo-pagina {
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1rem;
+  margin-top: var(--esp-2);
+  font-size: var(--texto-pequeno);
+  color: var(--cor-texto-2);
+}
+
+.metricas {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.requisitos {
+  max-width: 46rem;
+  line-height: 1.6;
+}
+
+.em-negociacao {
+  align-items: center;
+  margin-bottom: var(--esp-3);
+}
+
+.em-negociacao ui-icone {
+  color: var(--cor-atencao);
+}
+
+.nota-texto {
+  flex: 1;
+}
+
+.proposta {
+  align-items: flex-start;
+  padding-block: var(--esp-4);
+}
+
+.proposta .linha-titulo {
   white-space: normal;
+}
+
+.condicoes {
+  margin-top: var(--esp-2);
+  max-width: 34rem;
+  font-size: var(--texto-pequeno);
+}
+
+.valor {
+  font-size: var(--texto-destaque);
+}
+
+.linha-acoes {
+  margin-top: var(--esp-2);
+}
+
+@media (max-width: 767.98px) {
+  .metricas {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .metrica:nth-child(odd) {
+    padding-left: var(--esp-3);
+    border-left: 1px solid var(--cor-divisoria);
+  }
+
+  .metrica,
+  .metrica:nth-child(odd) {
+    padding: 0 var(--esp-3);
+  }
+
+  .metrica:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .metrica-valor {
+    font-size: 1.125rem;
+  }
+
+  /* No celular o valor e as ações descem para baixo do texto */
+  .proposta {
+    flex-wrap: wrap;
+  }
+
+  .proposta .linha-lateral {
+    flex-basis: 100%;
+    justify-items: start;
+    text-align: left;
+    padding-left: calc(2.25rem + var(--esp-3));
+  }
 }

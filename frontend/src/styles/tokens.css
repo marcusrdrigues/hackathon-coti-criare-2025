@@ -1,19 +1,17 @@
 /* =========================================================
    Design tokens do Portal Criare
    ---------------------------------------------------------
-   Fonte única das cores do sistema. Componentes e páginas
-   usam só estas variáveis (nunca um hexadecimal solto), e o
-   Bootstrap é ligado a elas no fim do arquivo, então classes
-   como .card, .bg-body, .text-body-secondary e .btn-primary
-   acompanham o tema sozinhas.
+   Fonte única de cores, tipografia, espaços, formas e
+   movimento. Componentes e páginas usam só estas variáveis,
+   nunca um valor solto.
 
-   Tema: o atributo data-bs-theme do <html> ("light" ou
-   "dark") é definido antes do Angular carregar (script no
-   index.html) e depois pelo TemaService. Padrão: segue o
-   sistema operacional; a pessoa pode fixar claro ou escuro.
+   Tema: o atributo data-theme do <html> ("light" ou "dark")
+   é definido antes do Angular carregar (script no index.html)
+   e depois pelo TemaService. Padrão: segue o sistema; a
+   pessoa pode fixar claro ou escuro.
 
-   Contrastes (WCAG 2.x) estão anotados em cada valor e
-   documentados em docs/design-system.md.
+   Contrastes (WCAG 2.x) estão anotados nos valores de texto
+   e documentados em docs/design-system.md.
    ========================================================= */
 
 /* ---------------------------------------------------------
@@ -27,42 +25,48 @@
   --cor-marca-rgb: 143, 11, 17;
   --cor-marca-hover: #7a090e;
   --cor-marca-pressionada: #5e070c;
-  --cor-sobre-marca: #ffffff;           /* texto e ícones sobre a marca */
-  --cor-marca-texto: #8f0b11;           /* marca como texto, link ou contorno; 9,4:1 na superfície */
-  --cor-marca-texto-rgb: 143, 11, 17;
+  --cor-sobre-marca: #ffffff;
+  --cor-marca-texto: #8f0b11;           /* marca como texto, link ou contorno; 9,4:1 · 8,7:1 no fundo */
   --cor-marca-texto-hover: #5e070c;
-  --cor-marca-texto-hover-rgb: 94, 7, 12;
-  --cor-marca-enfase: #5e070c;          /* texto forte sobre --cor-marca-suave */
+  --cor-marca-enfase: #5e070c;
   --cor-marca-suave: #fbeceb;           /* fundo de destaque leve; marca sobre ele 8,2:1 */
   --cor-marca-suave-ativa: #f6d9d8;
   --cor-marca-suave-borda: #f0cfcd;
   --cor-marca-foco: rgba(143, 11, 17, 0.25);
 
-  /* Superfícies (do fundo para a frente) */
-  --cor-fundo: #f5f5f7;                 /* fundo da página */
-  --cor-superficie: #ffffff;            /* cards, barra de navegação, campos */
-  --cor-superficie-rgb: 255, 255, 255;
-  --cor-superficie-2: #f2f2f7;          /* blocos dentro de um card, cabeçalho de tabela */
-  --cor-trilho: #ececf0;                /* trilho de controle segmentado, barras de progresso */
+  /* Superfícies, do fundo para a frente */
+  --cor-fundo: #f5f5f7;                 /* fundo da área de conteúdo */
+  --cor-superficie: #ffffff;            /* listas, barra lateral, campos, painéis */
+  --cor-superficie-2: #f2f2f7;          /* bloco dentro de uma superfície */
+  --cor-trilho: #e9e9ee;                /* trilho de segmentado e de barras */
   --cor-segmento-ativo: #ffffff;
+  --cor-preenchimento: rgba(118, 118, 128, 0.12);       /* botão secundário, busca */
+  --cor-preenchimento-hover: rgba(118, 118, 128, 0.2);
+  --cor-hover: rgba(0, 0, 0, 0.04);     /* linha sob o cursor */
+  --cor-selecao: rgba(0, 0, 0, 0.06);   /* item selecionado na navegação */
+  --cor-barra: rgba(255, 255, 255, 0.78); /* barras translúcidas (topo e abas) */
+  --cor-veu: rgba(0, 0, 0, 0.28);       /* fundo atrás de painéis e diálogos */
+  --cor-flutuante: #ffffff;             /* menus, listas de opção, painéis, avisos */
+  --cor-balao-outro: #e9e9eb;           /* mensagem da outra parte; texto 13,9:1 */
 
   /* Texto */
   --cor-texto: #1d1d1f;                 /* 16,8:1 na superfície · 15,5:1 no fundo */
-  --cor-texto-rgb: 29, 29, 31;
-  --cor-texto-2: #6e6e73;               /* secundário; 5,1:1 na superfície · 4,5:1 na superfície-2 */
-  --cor-texto-2-rgb: 110, 110, 115;
+  --cor-texto-2: #6e6e73;               /* secundário; 5,1:1 na superfície · 4,7:1 no fundo */
+  --cor-texto-3: #8e8e93;               /* só para elementos grandes ou desabilitados */
 
   /* Linhas */
-  --cor-borda-campo: #8e8e93;           /* borda de campos e controles; 3,3:1 (mínimo 3:1) */
-  --cor-divisoria: #e5e5ea;             /* separadores, bordas de card e tabela (decorativas) */
+  --cor-borda-campo: #86868b;           /* borda de campos; 3,6:1 na superfície (mínimo 3:1) */
+  --cor-divisoria: #e5e5ea;             /* separadores (decorativos) */
 
-  /* Estados. O erro é mais alaranjado que a marca para não se confundir com ela,
-     e sempre vem acompanhado de texto, nunca só de cor */
+  /* Estados. Sempre acompanhados de texto, nunca só de cor */
   --cor-erro: #c4320a;                  /* borda de campo inválido; 5,5:1 */
-  --cor-erro-texto: #b0300b;            /* mensagem abaixo do campo; 6,4:1 */
+  --cor-erro-texto: #b0300b;            /* 6,4:1 · 5,9:1 no fundo */
   --cor-erro-fundo: #fdf0eb;
   --cor-erro-fundo-texto: #8a2a08;      /* 7,8:1 sobre o fundo de erro */
-  --cor-sucesso: #1b7f3b;               /* 5,1:1 */
+  --cor-perigo: #c4320a;                /* botão de ação destrutiva; branco 5,5:1 nos dois temas */
+  --cor-perigo-hover: #a82b08;
+  --cor-sucesso: #1b7f3b;               /* 5,1:1 · 4,7:1 no fundo */
+  --cor-atencao: #a15c00;               /* 5,2:1 · 4,8:1 no fundo */
   --cor-info-fundo: #f2f2f7;
 
   /* Painel da marca nas telas de acesso */
@@ -70,14 +74,59 @@
   --cor-painel-brilho: rgba(143, 11, 17, 0.7);
   --cor-painel-texto-2: #f2c8c8;        /* 9,2:1 */
 
-  /* Sombras */
+  /* Sombras: só o que flutua de verdade (menus, painéis, avisos) */
   --sombra-leve: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
-  --sombra-elevada: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+  --sombra-flutuante: 0 12px 32px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
 
-  /* Forma e medidas */
-  --raio: 10px;
+  /* Tipografia: a fonte do sistema (San Francisco no Apple, Segoe no Windows) */
+  --fonte: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', system-ui,
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --fonte-titulo: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI Variable Display', 'Segoe UI',
+    system-ui, Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --texto-legenda: 0.75rem;             /* 12px */
+  --texto-pequeno: 0.8125rem;           /* 13px */
+  --texto-corpo: 0.9375rem;             /* 15px */
+  --texto-destaque: 1.0625rem;          /* 17px */
+  --texto-titulo-3: 1.25rem;            /* 20px */
+  --texto-titulo-2: 1.5rem;             /* 24px */
+  --texto-titulo-1: 2rem;               /* 32px: título grande da página */
+  --texto-numero: 1.75rem;              /* 28px: números de destaque */
+
+  /* Espaços (escala de 4px) */
+  --esp-1: 0.25rem;
+  --esp-2: 0.5rem;
+  --esp-3: 0.75rem;
+  --esp-4: 1rem;
+  --esp-5: 1.25rem;
+  --esp-6: 1.5rem;
+  --esp-7: 2rem;
+  --esp-8: 3rem;
+
+  /* Forma */
   --raio-pequeno: 8px;
-  --altura-controle: 2.75rem;           /* 44px: alvo de toque mínimo */
+  --raio: 10px;
+  --raio-grande: 14px;
+  --raio-cheio: 999px;
+  --altura-controle: 2.5rem;            /* 40px no computador */
+  --altura-controle-pequeno: 2rem;
+
+  /* Estrutura */
+  --largura-lateral: 15.5rem;
+  --largura-conteudo: 70rem;
+  --altura-abas: 3.5rem;
+
+  /* Movimento: curto e discreto; some com prefers-reduced-motion */
+  --duracao-rapida: 120ms;
+  --duracao: 200ms;
+  --curva: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Dedo precisa de alvo maior que o cursor: 44px, como pede a Apple */
+@media (pointer: coarse) {
+  :root {
+    --altura-controle: 2.75rem;
+    --altura-controle-pequeno: 2.5rem;
+  }
 }
 
 /* ---------------------------------------------------------
@@ -87,7 +136,7 @@
    como texto ela clareia para #ff8a8f, porque o vermelho escuro
    some sobre o cinza.
    --------------------------------------------------------- */
-:root[data-bs-theme='dark'] {
+:root[data-theme='dark'] {
   color-scheme: dark;
 
   --cor-marca: #8f0b11;
@@ -96,9 +145,7 @@
   --cor-marca-pressionada: #7a090e;
   --cor-sobre-marca: #ffffff;
   --cor-marca-texto: #ff8a8f;           /* 7,5:1 na superfície · 9,3:1 no fundo */
-  --cor-marca-texto-rgb: 255, 138, 143;
   --cor-marca-texto-hover: #ffb3b6;
-  --cor-marca-texto-hover-rgb: 255, 179, 182;
   --cor-marca-enfase: #ffb3b6;
   --cor-marca-suave: #3b1013;           /* marca-texto sobre ele 7,3:1 */
   --cor-marca-suave-ativa: #4a1418;
@@ -107,15 +154,21 @@
 
   --cor-fundo: #000000;
   --cor-superficie: #1c1c1e;
-  --cor-superficie-rgb: 28, 28, 30;
   --cor-superficie-2: #2c2c2e;
   --cor-trilho: #3a3a3c;
   --cor-segmento-ativo: #636366;        /* texto sobre ele 5,5:1 */
+  --cor-preenchimento: rgba(118, 118, 128, 0.24);
+  --cor-preenchimento-hover: rgba(118, 118, 128, 0.34);
+  --cor-hover: rgba(255, 255, 255, 0.06);
+  --cor-selecao: rgba(255, 255, 255, 0.1);
+  --cor-barra: rgba(28, 28, 30, 0.78);
+  --cor-veu: rgba(0, 0, 0, 0.5);
+  --cor-flutuante: #2c2c2e;             /* elevado: no escuro, mais claro que a superfície */
+  --cor-balao-outro: #2c2c2e;           /* texto 12,8:1 */
 
   --cor-texto: #f5f5f7;                 /* 15,6:1 na superfície · 19,3:1 no fundo */
-  --cor-texto-rgb: 245, 245, 247;
-  --cor-texto-2: #98989d;               /* 5,9:1 na superfície · 4,9:1 na superfície-2 */
-  --cor-texto-2-rgb: 152, 152, 157;
+  --cor-texto-2: #98989d;               /* 5,9:1 na superfície · 7,3:1 no fundo */
+  --cor-texto-3: #636366;
 
   --cor-borda-campo: #8e8e93;           /* 5,2:1 */
   --cor-divisoria: #38383a;
@@ -125,6 +178,7 @@
   --cor-erro-fundo: #3a1a10;
   --cor-erro-fundo-texto: #ffb59a;      /* 9,2:1 */
   --cor-sucesso: #30d158;               /* 8,4:1 */
+  --cor-atencao: #ff9f0a;               /* 8,3:1 */
   --cor-info-fundo: #2c2c2e;
 
   --cor-painel: #4a060a;                /* branco 15,9:1 */
@@ -132,40 +186,12 @@
   --cor-painel-texto-2: #f2c8c8;        /* 10,5:1 */
 
   --sombra-leve: 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
-  --sombra-elevada: 0 0.5rem 1rem rgba(0, 0, 0, 0.6);
+  --sombra-flutuante: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 0 0.5px rgba(255, 255, 255, 0.12);
 }
 
-/* ---------------------------------------------------------
-   Ligação com o Bootstrap 5.3
-   Os mesmos nomes servem para os dois temas, porque apontam
-   para os tokens acima. A especificidade (:root[data-bs-theme])
-   garante que estes valores vençam os do bootstrap.min.css.
-   --------------------------------------------------------- */
-:root,
-:root[data-bs-theme='light'],
-:root[data-bs-theme='dark'] {
-  --bs-body-color: var(--cor-texto);
-  --bs-body-color-rgb: var(--cor-texto-rgb);
-  --bs-body-bg: var(--cor-superficie);
-  --bs-body-bg-rgb: var(--cor-superficie-rgb);
-  --bs-emphasis-color: var(--cor-texto);
-  --bs-emphasis-color-rgb: var(--cor-texto-rgb);
-  --bs-secondary-color: var(--cor-texto-2);
-  --bs-secondary-color-rgb: var(--cor-texto-2-rgb);
-  --bs-secondary-bg: var(--cor-trilho);
-  --bs-tertiary-bg: var(--cor-superficie-2);
-  --bs-border-color: var(--cor-divisoria);
-  --bs-border-color-translucent: var(--cor-divisoria);
-
-  --bs-primary: var(--cor-marca);
-  --bs-primary-rgb: var(--cor-marca-rgb);
-  --bs-primary-text-emphasis: var(--cor-marca-enfase);
-  --bs-primary-bg-subtle: var(--cor-marca-suave);
-  --bs-primary-border-subtle: var(--cor-marca-suave-borda);
-
-  --bs-link-color: var(--cor-marca-texto);
-  --bs-link-color-rgb: var(--cor-marca-texto-rgb);
-  --bs-link-hover-color: var(--cor-marca-texto-hover);
-  --bs-link-hover-color-rgb: var(--cor-marca-texto-hover-rgb);
-  --bs-focus-ring-color: var(--cor-marca-foco);
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duracao-rapida: 0ms;
+    --duracao: 0ms;
+  }
 }

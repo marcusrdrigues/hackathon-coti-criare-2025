@@ -1,144 +1,121 @@
-<app-navbar />
-
-<div class="container mt-4 mb-5">
-
-  <a routerLink="/pages/consultar-cotacao" class="link-voltar d-inline-block mb-3">
-    <i class="bi bi-arrow-left me-1"></i> Voltar para listagem
+<div class="pagina">
+  <a class="voltar" routerLink="/pages/consultar-cotacao">
+    <ui-icone nome="voltar" [tamanho]="18" />
+    Cotações
   </a>
 
   @if (erro(); as mensagem) {
-    <div class="alert alert-danger">{{ mensagem }}</div>
-  }
-
-  @if (cotacao(); as c) {
-    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
-      <div>
-        <h2 class="fw-bold text-primary mb-1">{{ c.nomeServico }}</h2>
-        <div class="d-flex flex-wrap align-items-center gap-2 small">
-          <span class="badge" [class]="statusCotacao[c.status].classe">{{ statusCotacao[c.status].texto }}</span>
-          @if (c.categoriaDescricao) {
-            <span class="badge bg-body-tertiary text-body border">{{ c.categoriaDescricao }}</span>
-          }
-          <span class="text-muted">Criada em {{ c.dataCriacao | date: 'dd/MM/yyyy' }}</span>
+    <p class="nota nota-erro" role="alert"><ui-icone nome="alerta" [tamanho]="18" />{{ mensagem }}</p>
+  } @else if (cotacao(); as c) {
+    <header class="cabecalho">
+      <div class="cabecalho-texto">
+        <h1 class="titulo-pagina">{{ c.nomeServico }}</h1>
+        <p class="meta">
+          <ui-status [tom]="statusCotacao[c.status].tom">{{ statusCotacao[c.status].texto }}</ui-status>
+          <span>{{ c.categoriaDescricao ?? 'Sem categoria' }}</span>
+          <span>Criada em {{ c.dataCriacao | date: 'dd/MM/yyyy' }}</span>
           @if (c.dataLimite) {
-            <span class="text-muted">· Prazo: {{ c.dataLimite | date: 'dd/MM/yyyy' }}</span>
+            <span>Prazo {{ c.dataLimite | date: 'dd/MM/yyyy' }}</span>
           }
+        </p>
+      </div>
+      @if (c.status === 'ABERTA') {
+        <div class="cabecalho-acoes">
+          <a class="botao botao-secundario" [routerLink]="['/pages/cadastro-cotacao', c.id]">Editar</a>
+          <ui-menu rotulo="Mais ações">
+            <ui-icone gatilho nome="reticencias" />
+            <button type="button" uiMenuItem class="menu-item-destrutivo" (click)="cancelarCotacao()">Cancelar cotação</button>
+          </ui-menu>
         </div>
-      </div>
+      }
+    </header>
 
-      <div class="text-end">
-        <small class="text-muted d-block">Melhor oferta até agora</small>
-        <h3 class="fw-bold text-success mb-0">
-          {{ c.melhorOferta !== null ? (c.melhorOferta | currency) : '—' }}
-        </h3>
+    <dl class="metricas">
+      <div class="metrica">
+        <dt class="metrica-rotulo">Propostas</dt>
+        <dd class="metrica-valor">{{ c.quantidadePropostas }}</dd>
       </div>
-    </div>
+      <div class="metrica">
+        <dt class="metrica-rotulo">Menor proposta</dt>
+        <dd class="metrica-valor">{{ c.melhorOferta !== null ? (c.melhorOferta | currency: 'BRL' : 'symbol' : '1.0-0') : '–' }}</dd>
+      </div>
+      <div class="metrica">
+        <dt class="metrica-rotulo">Orçamento estimado</dt>
+        <dd class="metrica-valor">{{ c.orcamentoEstimado !== null ? (c.orcamentoEstimado | currency: 'BRL' : 'symbol' : '1.0-0') : '–' }}</dd>
+      </div>
+    </dl>
 
-    <div class="card shadow-sm mb-4">
-      <div class="card-body">
-        <h6 class="fw-bold text-uppercase text-muted small mb-2">Requisitos</h6>
-        <p class="mb-0 texto-quebrado">{{ c.requisitos }}</p>
-        @if (c.orcamentoEstimado !== null) {
-          <p class="mb-0 mt-3 small text-muted">
-            Orçamento estimado: <strong>{{ c.orcamentoEstimado | currency }}</strong>
-          </p>
+    <section class="secao" aria-labelledby="titulo-requisitos">
+      <div class="secao-cabecalho">
+        <h2 class="secao-titulo" id="titulo-requisitos">Requisitos</h2>
+      </div>
+      <p class="requisitos texto-quebrado">{{ c.requisitos }}</p>
+    </section>
+
+    <section class="secao" aria-labelledby="titulo-propostas">
+      <div class="secao-cabecalho">
+        <h2 class="secao-titulo" id="titulo-propostas">Propostas</h2>
+        @if (propostas().length > 1) {
+          <span class="ajuda">Da menor para a maior</span>
         }
-
-        @if (c.status === 'ABERTA') {
-          <div class="d-flex gap-2 mt-3 pt-3 border-top">
-            <a class="btn btn-sm btn-outline-primary" [routerLink]="['/pages/cadastro-cotacao', c.id]">
-              <i class="bi bi-pencil me-1"></i>Editar
-            </a>
-            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="cancelarCotacao()">
-              <i class="bi bi-x-circle me-1"></i>Cancelar cotação
-            </button>
-          </div>
-        }
-      </div>
-    </div>
-
-    @if (c.status === 'EM_NEGOCIACAO') {
-      <div class="alert alert-warning d-flex align-items-center gap-2">
-        <i class="bi bi-chat-dots-fill"></i>
-        Há uma negociação em andamento. As outras propostas ficam em espera até ela ser fechada ou encerrada.
-      </div>
-    }
-
-    <div class="card shadow-sm">
-      <div class="card-header bg-body py-3 border-bottom d-flex justify-content-between align-items-center">
-        <h5 class="mb-0 fw-bold text-body-emphasis">
-          <i class="bi bi-people-fill me-2 text-secondary"></i>Propostas Recebidas
-        </h5>
-        <span class="badge bg-body-tertiary text-body border">
-          {{ propostas().length }} {{ propostas().length === 1 ? 'fornecedor' : 'fornecedores' }}
-        </span>
       </div>
 
-      <div class="table-responsive">
-        <table class="table table-hover table-criare align-middle mb-0">
-          <thead>
-            <tr>
-              <th class="ps-4">Fornecedor</th>
-              <th>Valor proposto</th>
-              <th>Condições</th>
-              <th>Status</th>
-              <th class="text-end pe-4">Ação</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (p of propostas(); track p.id) {
-              <tr [class.text-muted]="p.status === 'RECUSADA'">
-                <td class="ps-4 py-3">
-                  <div class="fw-bold text-body-emphasis">{{ p.fornecedorNome }}</div>
-                  <small class="text-muted">CNPJ: {{ p.fornecedorCnpj | cnpj }}</small>
-                </td>
-                <td>
-                  <span class="fw-bold" [class.text-success]="p.valor === c.melhorOferta && p.status !== 'RECUSADA'">
-                    {{ p.valor | currency }}
-                  </span>
-                  @if (p.valorFinal !== null) {
-                    <small class="d-block text-success">Fechado: {{ p.valorFinal | currency }}</small>
-                  }
-                </td>
-                <td class="small condicoes">{{ p.descricao }}</td>
-                <td>
-                  <span class="badge rounded-pill" [class]="statusDa(p).classe">{{ statusDa(p).texto }}</span>
-                </td>
-                <td class="text-end pe-4 text-nowrap">
+      @if (negociacaoAtiva(); as ativa) {
+        <div class="nota em-negociacao">
+          <ui-icone nome="negociacoes" [tamanho]="18" />
+          <span class="nota-texto">
+            Negociação em andamento com <strong>{{ ativa.fornecedorNome }}</strong>. As outras propostas ficam em espera até ela terminar.
+          </span>
+          <a class="botao botao-secundario botao-pequeno" [routerLink]="['/pages/negociacao', ativa.negociacaoId]">Abrir</a>
+        </div>
+      }
+
+      @if (ordenadas().length > 0) {
+        <ul class="lista" role="list">
+          @for (p of ordenadas(); track p.id) {
+            <li class="linha proposta">
+              <span class="inicial" aria-hidden="true">{{ iniciais(p.fornecedorNome) }}</span>
+              <div class="linha-principal">
+                <p class="linha-titulo">{{ p.fornecedorNome }}</p>
+                <p class="linha-detalhe">CNPJ {{ p.fornecedorCnpj | cnpj }} · enviada em {{ p.dataEnvio | date: 'dd/MM/yyyy' }}</p>
+                <p class="condicoes texto-quebrado">{{ p.descricao }}</p>
+              </div>
+              <div class="linha-lateral">
+                <span class="linha-valor valor">{{ p.valor | currency: 'BRL' }}</span>
+                @if (p.valorFinal !== null) {
+                  <span class="etiqueta etiqueta-sucesso">Fechado em {{ p.valorFinal | currency: 'BRL' }}</span>
+                } @else if (menorValor() === p.valor && p.status !== 'RECUSADA') {
+                  <span class="etiqueta etiqueta-sucesso">Menor valor</span>
+                }
+                <ui-status [tom]="statusDa(p).tom">{{ statusDa(p).texto }}</ui-status>
+                <div class="linha-acoes">
                   @if (p.negociacaoId) {
-                    <a class="btn btn-sm btn-primary" [routerLink]="['/pages/negociacao', p.negociacaoId]">
-                      <i class="bi bi-chat-left-text me-1"></i>
+                    <a class="botao botao-secundario botao-pequeno" [routerLink]="['/pages/negociacao', p.negociacaoId]">
                       {{ p.negociacaoStatus === 'EM_ANDAMENTO' ? 'Abrir negociação' : 'Ver histórico' }}
                     </a>
                   } @else if (podeNegociar(p)) {
-                    <button type="button" class="btn btn-sm btn-primary me-1" [disabled]="processando() === p.id"
-                            (click)="negociar(p)">
-                      <i class="bi bi-chat-left-text me-1"></i>Negociar
+                    <button type="button" class="botao botao-destrutivo botao-pequeno" [disabled]="processando() === p.id" (click)="recusar(p)">
+                      Recusar
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="processando() === p.id"
-                            (click)="recusar(p)" title="Recusar proposta">
-                      <i class="bi bi-x-lg"></i>
+                    <button type="button" class="botao botao-primario botao-pequeno" [disabled]="processando() === p.id" (click)="negociar(p)">
+                      Negociar
                     </button>
-                  } @else {
-                    <span class="small text-muted">{{ p.status === 'RECUSADA' ? 'Arquivada' : 'Em espera' }}</span>
                   }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-
-      @if (propostas().length === 0) {
-        <div class="estado-vazio">
-          <i class="bi bi-inbox"></i>
-          Ainda não há propostas para esta cotação.
+                </div>
+              </div>
+            </li>
+          }
+        </ul>
+      } @else {
+        <div class="lista">
+          <div class="vazio">
+            <p class="vazio-titulo">Nenhuma proposta ainda</p>
+            <p>Os fornecedores veem esta cotação no mural. As propostas aparecem aqui.</p>
+          </div>
         </div>
       }
-    </div>
-  } @else if (!erro()) {
-    <div class="text-center py-5">
-      <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div>
-    </div>
+    </section>
+  } @else {
+    <div class="carregando-pagina" role="status"><span class="girando"></span><span class="visually-hidden">Carregando</span></div>
   }
 </div>

@@ -1,23 +1,30 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Proposta } from '../../../core/models';
 import { NotificacaoService } from '../../../core/services/notificacao.service';
 import { PropostaService } from '../../../core/services/proposta.service';
 import { mensagemDeErro } from '../../../core/utils/erros';
-import { InfoStatus } from '../../../core/utils/formatos';
-import { Navbar } from '../../shared/navbar/navbar';
+import { InfoStatus, iniciais } from '../../../core/utils/formatos';
+import { ConfirmacaoService } from '../../../ui/confirmacao';
+import { Icone } from '../../../ui/icone';
+import { Status } from '../../../ui/status';
+import { AbasPropostas } from '../../shared/abas-propostas';
 
 /** Propostas do fornecedor que ainda não tiveram desfecho. */
 @Component({
   selector: 'app-propostas-enviadas',
-  imports: [Navbar, RouterLink, CurrencyPipe, DatePipe],
+  imports: [RouterLink, CurrencyPipe, DatePipe, Icone, Status, AbasPropostas],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './propostas-enviadas.html',
   styleUrl: './propostas-enviadas.css',
 })
 export class PropostasEnviadas implements OnInit {
   private readonly propostaService = inject(PropostaService);
   private readonly notificacao = inject(NotificacaoService);
+  private readonly confirmacao = inject(ConfirmacaoService);
+
+  protected readonly iniciais = iniciais;
 
   protected readonly propostas = signal<Proposta[] | null>(null);
   protected readonly erro = signal<string | null>(null);
@@ -42,18 +49,22 @@ export class PropostasEnviadas implements OnInit {
 
   situacao(p: Proposta): InfoStatus {
     if (p.negociacaoStatus === 'EM_ANDAMENTO') {
-      return { texto: 'Em negociação', classe: 'text-bg-warning' };
+      return { texto: 'Em negociação', tom: 'atencao' };
     }
     if (p.cotacaoStatus === 'EM_NEGOCIACAO') {
-      return { texto: 'Empresa negociando com outro fornecedor', classe: 'bg-body-tertiary text-body border' };
+      return { texto: 'Empresa negociando com outro fornecedor', tom: 'neutro' };
     }
-    return p.status === 'EM_ANALISE'
-      ? { texto: 'Em análise', classe: 'text-bg-info' }
-      : { texto: 'Aguardando análise', classe: 'text-bg-info' };
+    return p.status === 'EM_ANALISE' ? { texto: 'Em análise', tom: 'neutro' } : { texto: 'Aguardando análise', tom: 'neutro' };
   }
 
-  retirar(p: Proposta): void {
-    if (!confirm(`Retirar sua proposta para "${p.cotacaoNome}"?`)) {
+  async retirar(p: Proposta): Promise<void> {
+    const confirmou = await this.confirmacao.confirmar({
+      titulo: 'Retirar a proposta?',
+      mensagem: `A proposta para "${p.cotacaoNome}" deixa de aparecer para ${p.empresaNome}.`,
+      confirmar: 'Retirar',
+      destrutivo: true,
+    });
+    if (!confirmou) {
       return;
     }
     this.propostaService.retirar(p.id).subscribe({

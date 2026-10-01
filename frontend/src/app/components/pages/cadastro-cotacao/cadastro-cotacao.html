@@ -1,94 +1,73 @@
-<app-navbar />
+<div class="pagina pagina-estreita">
+  <a class="voltar" [routerLink]="id() ? ['/pages/detalhe-cotacao', id()] : '/pages/consultar-cotacao'">
+    <ui-icone nome="voltar" [tamanho]="18" />
+    {{ id() ? 'Cotação' : 'Cotações' }}
+  </a>
 
-<div class="container mt-4 mb-5">
+  <header class="cabecalho">
+    <div class="cabecalho-texto">
+      <h1 class="titulo-pagina">{{ id() ? 'Editar cotação' : 'Nova cotação' }}</h1>
+      <p class="subtitulo-pagina">Os fornecedores veem estas informações no mural e respondem com propostas.</p>
+    </div>
+  </header>
 
-  <div class="mb-3">
-    <a class="link-voltar" [routerLink]="id() ? ['/pages/detalhe-cotacao', id()] : '/pages/consultar-cotacao'">
-      <i class="bi bi-arrow-left"></i> {{ id() ? 'Voltar para a cotação' : 'Voltar para listagem' }}
-    </a>
-  </div>
+  <form class="formulario" (ngSubmit)="salvarCotacao()" novalidate>
+    @if (erro(); as mensagem) {
+      <p class="nota nota-erro" role="alert"><ui-icone nome="alerta" [tamanho]="18" />{{ mensagem }}</p>
+    }
 
-  <div class="card shadow-sm border-start-primary">
-    <div class="card-body p-4">
+    <div class="campo">
+      <label class="rotulo" for="nomeServico">Título</label>
+      <input id="nomeServico" class="entrada" type="text" name="nomeServico" maxlength="200" required
+             placeholder="Ex.: 20 notebooks para o time de vendas"
+             [ngModel]="form.nomeServico()" (ngModelChange)="form.nomeServico.set($event)" />
+    </div>
 
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="card-title mb-0 fw-bold">{{ id() ? 'Editar Cotação' : 'Nova Cotação' }}</h4>
-        <span class="badge bg-primary">{{ id() ? 'Edição' : 'Cadastro' }}</span>
+    <div class="campo">
+      <span class="rotulo" id="rotulo-categoria">Categoria</span>
+      <ui-seletor idRotulo="rotulo-categoria" [opcoes]="categorias()" [(valor)]="form.categoria" />
+    </div>
+
+    <div class="campo">
+      <label class="rotulo" for="requisitos">Requisitos</label>
+      <textarea id="requisitos" class="entrada" name="requisitos" rows="6" maxlength="1000" required
+                aria-describedby="requisitos-ajuda"
+                placeholder="Especificações, quantidades, prazo de entrega, garantia…"
+                [ngModel]="form.requisitos()" (ngModelChange)="form.requisitos.set($event)"></textarea>
+      <span class="ajuda contador numeros" id="requisitos-ajuda">{{ form.requisitos().length }} de 1000 caracteres</span>
+    </div>
+
+    <div class="formulario-linha">
+      <div class="campo">
+        <label class="rotulo" for="orcamento">Orçamento estimado <span class="opcional">(opcional)</span></label>
+        <div class="grupo-entrada">
+          <span class="prefixo" aria-hidden="true">R$</span>
+          <input id="orcamento" class="entrada numeros" type="number" name="orcamento" min="0" step="0.01"
+                 inputmode="decimal" placeholder="0,00" aria-describedby="orcamento-ajuda"
+                 [ngModel]="form.orcamentoEstimado()" (ngModelChange)="form.orcamentoEstimado.set($event)" />
+        </div>
+        <span class="ajuda" id="orcamento-ajuda">Aparece para os fornecedores como referência.</span>
       </div>
 
-      <p class="text-muted small mb-4">
-        Preencha os detalhes abaixo para que os fornecedores possam enviar propostas.
-      </p>
-
-      @if (erro(); as mensagem) {
-        <div class="alert alert-danger py-2"><i class="bi bi-exclamation-circle me-1"></i>{{ mensagem }}</div>
-      }
-
-      <form (ngSubmit)="salvarCotacao()">
-
-        <div class="row mb-3">
-          <div class="col-md-8 mb-3 mb-md-0">
-            <label for="nomeServico" class="form-label fw-bold">Título do serviço/produto</label>
-            <input id="nomeServico" type="text" class="form-control" [(ngModel)]="form.nomeServico" name="nomeServico"
-                   placeholder="Ex: Compra de 10 notebooks" maxlength="200" required />
-          </div>
-          <div class="col-md-4">
-            <label for="categoria" class="form-label fw-bold">Categoria</label>
-            <select id="categoria" class="form-select" [(ngModel)]="form.categoria" name="categoria">
-              @for (cat of categorias$ | async; track cat.codigo) {
-                <option [value]="cat.codigo">{{ cat.descricao }}</option>
-              }
-            </select>
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <div class="col-md-4 mb-3 mb-md-0">
-            <label for="dataCriacao" class="form-label fw-bold">Data de abertura</label>
-            <input id="dataCriacao" type="text" class="form-control bg-body-tertiary" [value]="hoje | date: 'dd/MM/yyyy'" readonly />
-            <div class="form-text">Início da coleta de preços.</div>
-          </div>
-
-          <div class="col-md-4 mb-3 mb-md-0">
-            <label for="dataLimite" class="form-label fw-bold text-danger">Data limite para propostas</label>
-            <input id="dataLimite" type="date" class="form-control" [(ngModel)]="form.dataLimite" name="dataLimite"
-                   [min]="dataMinima" />
-            <div class="form-text">Depois desta data a cotação sai do mural. Deixe vazio para não ter prazo.</div>
-          </div>
-
-          <div class="col-md-4">
-            <label for="orcamento" class="form-label fw-bold">Orçamento estimado <span class="fw-normal text-muted">(opcional)</span></label>
-            <div class="input-group">
-              <span class="input-group-text">R$</span>
-              <input id="orcamento" type="number" min="0" step="0.01" class="form-control"
-                     [(ngModel)]="form.orcamentoEstimado" name="orcamentoEstimado" placeholder="0,00" />
-            </div>
-            <div class="form-text">Aparece para os fornecedores como referência.</div>
-          </div>
-        </div>
-
-        <div class="mb-4">
-          <label for="requisitos" class="form-label fw-bold">Requisitos detalhados</label>
-          <textarea id="requisitos" class="form-control" rows="5" [(ngModel)]="form.requisitos" name="requisitos"
-                    maxlength="1000" required
-                    placeholder="Descreva especificações técnicas, quantidades, prazos de entrega desejados, etc."></textarea>
-          <div class="form-text text-end">{{ form.requisitos.length }}/1000</div>
-        </div>
-
-        <hr class="my-4">
-
-        <div class="d-flex justify-content-end gap-2">
-          <a class="btn btn-outline-secondary"
-             [routerLink]="id() ? ['/pages/detalhe-cotacao', id()] : '/pages/consultar-cotacao'">Cancelar</a>
-          <button type="submit" class="btn btn-primary px-4" [disabled]="salvando()">
-            @if (salvando()) {
-              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Salvando...
-            } @else {
-              <i class="bi bi-send-fill me-2"></i>{{ id() ? 'Salvar alterações' : 'Publicar Cotação' }}
-            }
-          </button>
-        </div>
-      </form>
+      <div class="campo">
+        <label class="rotulo" for="dataLimite">Prazo para propostas <span class="opcional">(opcional)</span></label>
+        <input id="dataLimite" class="entrada" type="date" name="dataLimite" [min]="dataMinima"
+               aria-describedby="prazo-ajuda"
+               [ngModel]="form.dataLimite()" (ngModelChange)="form.dataLimite.set($event)" />
+        <span class="ajuda" id="prazo-ajuda">Depois dessa data a cotação sai do mural.</span>
+      </div>
     </div>
-  </div>
+
+    <div class="formulario-acoes">
+      <a class="botao botao-secundario" [routerLink]="id() ? ['/pages/detalhe-cotacao', id()] : '/pages/consultar-cotacao'">Cancelar</a>
+      <button type="submit" class="botao botao-primario" [disabled]="salvando()">
+        @if (salvando()) {
+          <span class="girando" aria-hidden="true"></span>
+          Salvando…
+        } @else {
+          {{ id() ? 'Salvar alterações' : 'Publicar cotação' }}
+        }
+      </button>
+    </div>
+  </form>
 </div>

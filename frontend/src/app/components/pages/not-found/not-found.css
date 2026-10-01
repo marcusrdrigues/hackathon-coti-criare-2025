@@ -39,12 +39,3 @@
   color: var(--cor-texto-2);
 }
 
-.botao {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--altura-controle);
-  padding-inline: 1.5rem;
-  border-radius: var(--raio);
-  font-weight: 600;
-}

@@ -12,7 +12,7 @@ export const routes: Routes = [
   // Raiz: manda cada perfil para o seu painel (ou para o login)
   { path: '', pathMatch: 'full', redirectTo: () => inject(AuthService).rotaInicial() },
 
-  // Acesso
+  // Acesso (fora da estrutura com barra lateral)
   {
     path: 'pages/login',
     canActivate: [visitanteGuard],
@@ -26,74 +26,89 @@ export const routes: Routes = [
     loadComponent: () => import('./components/pages/cadastro/cadastro').then((m) => m.CadastroComponent),
   },
 
-  // Empresa
+  // Telas internas: todas dentro da estrutura (barra lateral no computador, abas no celular)
   {
-    path: 'pages/dashboard',
-    canActivate: [empresa],
-    title: 'Visão geral | Portal Criare',
-    loadComponent: () => import('./components/pages/dashboard/dashboard').then((m) => m.DashboardComponent),
-  },
-  {
-    path: 'pages/cadastro-cotacao',
-    canActivate: [empresa],
-    title: 'Nova cotação | Portal Criare',
-    loadComponent: () => import('./components/pages/cadastro-cotacao/cadastro-cotacao').then((m) => m.CadastroCotacao),
-  },
-  {
-    path: 'pages/cadastro-cotacao/:id',
-    canActivate: [empresa],
-    title: 'Editar cotação | Portal Criare',
-    loadComponent: () => import('./components/pages/cadastro-cotacao/cadastro-cotacao').then((m) => m.CadastroCotacao),
-  },
-  {
-    path: 'pages/consultar-cotacao',
-    canActivate: [empresa],
-    title: 'Minhas cotações | Portal Criare',
-    loadComponent: () => import('./components/pages/consultar-cotacao/consultar-cotacao').then((m) => m.ConsultarCotacao),
-  },
-  {
-    path: 'pages/detalhe-cotacao/:id',
-    canActivate: [empresa],
-    title: 'Cotação | Portal Criare',
-    loadComponent: () => import('./components/pages/detalhe-cotacao/detalhe-cotacao').then((m) => m.DetalheCotacao),
-  },
-
-  // Fornecedor
-  {
-    path: 'pages/dashboard-fornecedor',
-    canActivate: [fornecedor],
-    title: 'Painel | Portal Criare',
-    loadComponent: () =>
-      import('./components/pages/dashboard-fornecedor/dashboard-fornecedor').then((m) => m.DashboardFornecedor),
-  },
-  {
-    path: 'pages/mural-oportunidades',
-    canActivate: [fornecedor],
-    title: 'Mural de cotações | Portal Criare',
-    loadComponent: () =>
-      import('./components/pages/mural-oportunidades/mural-oportunidades').then((m) => m.MuralOportunidades),
-  },
-  {
-    path: 'pages/propostas-enviadas',
-    canActivate: [fornecedor],
-    title: 'Propostas em andamento | Portal Criare',
-    loadComponent: () =>
-      import('./components/pages/propostas-enviadas/propostas-enviadas').then((m) => m.PropostasEnviadas),
-  },
-  {
-    path: 'pages/historico-propostas',
-    canActivate: [fornecedor],
-    title: 'Histórico | Portal Criare',
-    loadComponent: () =>
-      import('./components/pages/historico-propostas/historico-propostas').then((m) => m.HistoricoPropostas),
-  },
-
-  // Os dois perfis
-  {
-    path: 'pages/negociacao/:id',
+    path: 'pages',
     canActivate: [perfilGuard()],
-    title: 'Negociação | Portal Criare',
-    loadComponent: () => import('./components/pages/negociacao/negociacao').then((m) => m.Negociacao),
+    loadComponent: () => import('./components/shared/shell/shell').then((m) => m.Shell),
+    children: [
+      // Empresa
+      {
+        path: 'dashboard',
+        canActivate: [empresa],
+        title: 'Início | Portal Criare',
+        loadComponent: () => import('./components/pages/dashboard/dashboard').then((m) => m.DashboardComponent),
+      },
+      {
+        path: 'cadastro-cotacao',
+        canActivate: [empresa],
+        title: 'Nova cotação | Portal Criare',
+        loadComponent: () =>
+          import('./components/pages/cadastro-cotacao/cadastro-cotacao').then((m) => m.CadastroCotacao),
+      },
+      {
+        path: 'cadastro-cotacao/:id',
+        canActivate: [empresa],
+        title: 'Editar cotação | Portal Criare',
+        loadComponent: () =>
+          import('./components/pages/cadastro-cotacao/cadastro-cotacao').then((m) => m.CadastroCotacao),
+      },
+      {
+        path: 'consultar-cotacao',
+        canActivate: [empresa],
+        title: 'Cotações | Portal Criare',
+        loadComponent: () =>
+          import('./components/pages/consultar-cotacao/consultar-cotacao').then((m) => m.ConsultarCotacao),
+      },
+      {
+        path: 'detalhe-cotacao/:id',
+        canActivate: [empresa],
+        title: 'Cotação | Portal Criare',
+        loadComponent: () => import('./components/pages/detalhe-cotacao/detalhe-cotacao').then((m) => m.DetalheCotacao),
+      },
+
+      // Fornecedor
+      {
+        path: 'dashboard-fornecedor',
+        canActivate: [fornecedor],
+        title: 'Início | Portal Criare',
+        loadComponent: () =>
+          import('./components/pages/dashboard-fornecedor/dashboard-fornecedor').then((m) => m.DashboardFornecedor),
+      },
+      {
+        path: 'mural-oportunidades',
+        canActivate: [fornecedor],
+        title: 'Mural | Portal Criare',
+        loadComponent: () =>
+          import('./components/pages/mural-oportunidades/mural-oportunidades').then((m) => m.MuralOportunidades),
+      },
+      {
+        path: 'propostas-enviadas',
+        canActivate: [fornecedor],
+        title: 'Propostas | Portal Criare',
+        loadComponent: () =>
+          import('./components/pages/propostas-enviadas/propostas-enviadas').then((m) => m.PropostasEnviadas),
+      },
+      {
+        path: 'historico-propostas',
+        canActivate: [fornecedor],
+        title: 'Histórico | Portal Criare',
+        loadComponent: () =>
+          import('./components/pages/historico-propostas/historico-propostas').then((m) => m.HistoricoPropostas),
+      },
+
+      // Os dois perfis
+      {
+        path: 'negociacoes',
+        title: 'Negociações | Portal Criare',
+        loadComponent: () => import('./components/pages/negociacoes/negociacoes').then((m) => m.Negociacoes),
+      },
+      {
+        path: 'negociacao/:id',
+        title: 'Negociação | Portal Criare',
+        loadComponent: () => import('./components/pages/negociacao/negociacao').then((m) => m.Negociacao),
+      },
+    ],
   },
 
   {

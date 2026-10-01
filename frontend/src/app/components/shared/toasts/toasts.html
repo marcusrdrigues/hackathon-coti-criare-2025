@@ -1,14 +1,11 @@
-<div class="toast-container position-fixed bottom-0 end-0 p-3" aria-live="polite">
+<div class="avisos" aria-live="polite" aria-atomic="false">
   @for (n of notificacao.notificacoes(); track n.id) {
-    <div class="toast show align-items-center border-0 shadow fade-in" [class]="estilos[n.tipo].classe" role="alert">
-      <div class="d-flex">
-        <div class="toast-body d-flex align-items-start gap-2">
-          <i class="bi" [class]="estilos[n.tipo].icone"></i>
-          <span>{{ n.texto }}</span>
-        </div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" aria-label="Fechar"
-                (click)="notificacao.fechar(n.id)"></button>
-      </div>
+    <div class="aviso" [attr.data-tipo]="n.tipo" [attr.role]="n.tipo === 'erro' ? 'alert' : 'status'">
+      <ui-icone class="aviso-icone" [nome]="icones[n.tipo]" [tamanho]="18" />
+      <span class="aviso-texto">{{ n.texto }}</span>
+      <button type="button" class="aviso-fechar" aria-label="Fechar aviso" (click)="notificacao.fechar(n.id)">
+        <ui-icone nome="fechar" [tamanho]="14" />
+      </button>
     </div>
   }
 </div>

@@ -32,7 +32,7 @@ export class TemaService {
     this.midia?.addEventListener('change', (evento) => this.sistemaEscuro.set(evento.matches));
 
     effect(() => {
-      document.documentElement.setAttribute('data-bs-theme', this.escuro() ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', this.escuro() ? 'dark' : 'light');
     });
   }
 

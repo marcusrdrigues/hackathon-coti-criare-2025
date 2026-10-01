@@ -1,151 +1,116 @@
-<app-navbar />
-
-<div class="container mt-4 mb-5">
-
-  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-    <div>
-      <h2 class="text-body-emphasis fw-bold mb-0">Visão Geral</h2>
-      <p class="text-muted small mb-0">Olá, {{ auth.usuario()?.nome }}</p>
+<div class="pagina">
+  <header class="cabecalho">
+    <div class="cabecalho-texto">
+      <h1 class="titulo-pagina">Início</h1>
+      <p class="subtitulo-pagina">{{ auth.usuario()?.nome }}</p>
     </div>
-    <div class="d-flex align-items-center gap-3">
-      @if (atualizadoEm(); as data) {
-        <span class="text-muted small">Atualizado às {{ data | date: 'HH:mm' }}</span>
-      }
-      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="carregar()" title="Atualizar">
-        <i class="bi bi-arrow-clockwise"></i>
-      </button>
-      <a class="btn btn-primary" routerLink="/pages/cadastro-cotacao">
-        <i class="bi bi-plus-circle me-2"></i>Nova Cotação
+    <div class="cabecalho-acoes">
+      <a class="botao botao-primario" routerLink="/pages/cadastro-cotacao">
+        <ui-icone nome="mais" [tamanho]="18" />
+        Nova cotação
       </a>
     </div>
-  </div>
+  </header>
 
   @if (erro(); as mensagem) {
-    <div class="alert alert-danger">{{ mensagem }}</div>
-  }
+    <p class="nota nota-erro" role="alert"><ui-icone nome="alerta" [tamanho]="18" />{{ mensagem }}</p>
+  } @else if (dados(); as d) {
+    <dl class="metricas">
+      <div class="metrica">
+        <dt class="metrica-rotulo">Cotações abertas</dt>
+        <dd class="metrica-valor">{{ d.cotacoesAbertas }}</dd>
+      </div>
+      <div class="metrica">
+        <dt class="metrica-rotulo">Propostas recebidas</dt>
+        <dd class="metrica-valor">{{ d.propostasRecebidas }}</dd>
+      </div>
+      <div class="metrica">
+        <dt class="metrica-rotulo">Em negociação</dt>
+        <dd class="metrica-valor">{{ d.cotacoesEmNegociacao }}</dd>
+      </div>
+      <div class="metrica">
+        <dt class="metrica-rotulo">Negócios fechados</dt>
+        <dd class="metrica-valor">{{ d.cotacoesFechadas }}</dd>
+      </div>
+    </dl>
 
-  @if (dados(); as d) {
-    <div class="row mb-2">
-      <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card shadow-sm border-start-primary h-100 card-hover">
-          <div class="card-body d-flex justify-content-between align-items-center">
-            <div>
-              <h6 class="text-muted text-uppercase small mb-1">Cotações em aberto</h6>
-              <h2 class="mb-0 fw-bold text-body-emphasis">{{ d.cotacoesAbertas }}</h2>
-            </div>
-            <div class="icon-shape bg-primary text-white"><i class="bi bi-megaphone-fill fs-4"></i></div>
+    <section class="secao" aria-labelledby="titulo-pendencias">
+      <div class="secao-cabecalho">
+        <h2 class="secao-titulo" id="titulo-pendencias">Precisa da sua atenção</h2>
+      </div>
+      @if (pendencias().length > 0) {
+        <ul class="lista" role="list">
+          @for (p of pendencias(); track p.rota.join('/') + p.titulo) {
+            <li>
+              <a class="linha" [routerLink]="p.rota">
+                <span class="linha-principal">
+                  <span class="linha-titulo">{{ p.titulo }}</span>
+                  <span class="linha-detalhe">{{ p.detalhe }}</span>
+                </span>
+                <ui-icone class="linha-seta" nome="avancar" [tamanho]="18" />
+              </a>
+            </li>
+          }
+        </ul>
+      } @else {
+        <div class="lista">
+          <div class="vazio">
+            <p class="vazio-titulo">Nada pendente agora</p>
+            <p>Propostas novas e negociações em andamento aparecem aqui.</p>
           </div>
         </div>
-      </div>
+      }
+    </section>
 
-      <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card shadow-sm border-start-warning h-100 card-hover">
-          <div class="card-body d-flex justify-content-between align-items-center">
-            <div>
-              <h6 class="text-muted text-uppercase small mb-1">Propostas recebidas</h6>
-              <h2 class="mb-0 fw-bold text-body-emphasis">{{ d.propostasRecebidas }}</h2>
-            </div>
-            <div class="icon-shape text-bg-warning"><i class="bi bi-file-earmark-text-fill fs-4"></i></div>
-          </div>
+    <div class="colunas secao">
+      <section aria-labelledby="titulo-categorias">
+        <div class="secao-cabecalho">
+          <h2 class="secao-titulo" id="titulo-categorias">Demandas por categoria</h2>
         </div>
-      </div>
-
-      <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card shadow-sm border-start-secondary h-100 card-hover">
-          <div class="card-body d-flex justify-content-between align-items-center">
-            <div>
-              <h6 class="text-muted text-uppercase small mb-1">Em negociação</h6>
-              <h2 class="mb-0 fw-bold text-body-emphasis">{{ d.cotacoesEmNegociacao }}</h2>
-            </div>
-            <div class="icon-shape bg-secondary text-white"><i class="bi bi-chat-dots-fill fs-4"></i></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card shadow-sm border-start-success h-100 card-hover">
-          <div class="card-body d-flex justify-content-between align-items-center">
-            <div>
-              <h6 class="text-muted text-uppercase small mb-1">Negócios fechados</h6>
-              <h2 class="mb-0 fw-bold text-success">{{ d.cotacoesFechadas }}</h2>
-            </div>
-            <div class="icon-shape bg-success text-white"><i class="bi bi-trophy-fill fs-4"></i></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="col-lg-7 mb-4">
-        <div class="card shadow-sm h-100">
-          <div class="card-header bg-body py-3 border-0">
-            <h5 class="mb-0 fw-bold text-body-emphasis">Demandas por Categoria</h5>
-          </div>
-          <div class="card-body pt-0">
-            @for (cat of d.categorias; track cat.categoria; let i = $index) {
-              <div class="mb-4">
-                <div class="d-flex justify-content-between mb-1">
-                  <span class="fw-semibold">{{ cat.descricao }}</span>
-                  <small class="text-muted">{{ cat.total }} ({{ cat.percentual }}%)</small>
-                </div>
-                <div class="progress" role="progressbar" [attr.aria-valuenow]="cat.percentual"
-                     aria-valuemin="0" aria-valuemax="100" [attr.aria-label]="cat.descricao">
-                  <div class="progress-bar" [class]="cores[i % cores.length]" [style.width.%]="cat.percentual"></div>
-                </div>
-              </div>
-            } @empty {
-              <div class="estado-vazio">
-                <i class="bi bi-bar-chart"></i>
-                Publique sua primeira cotação para ver as demandas por categoria.
-              </div>
-            }
-            @if (d.categorias.length > 0) {
-              <div class="text-center mt-2 pt-3 border-top">
-                <small class="text-muted">Distribuição de todas as cotações publicadas pela sua empresa.</small>
-              </div>
-            }
-          </div>
-        </div>
-      </div>
-
-      <div class="col-lg-5 mb-4">
-        <div class="card shadow-sm h-100">
-          <div class="card-header bg-body py-3 border-0">
-            <h5 class="mb-0 fw-bold text-body-emphasis">Top Fornecedores</h5>
-            <small class="text-muted">Quem mais enviou propostas para você</small>
-          </div>
-          <div class="card-body p-0">
-            <ul class="list-group list-group-flush">
-              @for (f of d.topFornecedores; track f.id; let i = $index) {
-                <li class="list-group-item d-flex justify-content-between align-items-center px-4">
-                  <div class="d-flex align-items-center">
-                    <div class="avatar-circle me-3">{{ f.nome.charAt(0) }}</div>
-                    <div>
-                      <h6 class="mb-0 fw-semibold text-body-emphasis">{{ f.nome }}</h6>
-                      <small class="text-muted">{{ f.email }}</small>
-                    </div>
-                  </div>
-                  <span class="badge rounded-pill bg-body-tertiary text-body border">
-                    {{ f.totalPropostas }} {{ f.totalPropostas === 1 ? 'proposta' : 'propostas' }}
-                    @if (i === 0) {
-                      <i class="bi bi-star-fill text-warning ms-1"></i>
-                    }
+        @if (d.categorias.length > 0) {
+          <ul class="lista" role="list">
+            @for (c of d.categorias; track c.categoria) {
+              <li class="linha categoria">
+                <span class="linha-principal">
+                  <span class="categoria-cabecalho">
+                    <span class="linha-titulo">{{ c.descricao }}</span>
+                    <span class="texto-2 numeros">{{ c.total }} · {{ c.percentual | number: '1.0-0' }}%</span>
                   </span>
-                </li>
-              } @empty {
-                <li class="list-group-item estado-vazio border-0">
-                  <i class="bi bi-people"></i>
-                  Nenhuma proposta recebida ainda.
-                </li>
-              }
-            </ul>
-          </div>
+                  <span class="barra" aria-hidden="true">
+                    <span class="barra-valor" [style.width.%]="(c.total / maiorCategoria()) * 100"></span>
+                  </span>
+                </span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <div class="lista"><p class="vazio">Publique uma cotação para ver a distribuição.</p></div>
+        }
+      </section>
+
+      <section aria-labelledby="titulo-fornecedores">
+        <div class="secao-cabecalho">
+          <h2 class="secao-titulo" id="titulo-fornecedores">Fornecedores mais ativos</h2>
         </div>
-      </div>
+        @if (d.topFornecedores.length > 0) {
+          <ul class="lista" role="list">
+            @for (f of d.topFornecedores; track f.id) {
+              <li class="linha">
+                <span class="inicial" aria-hidden="true">{{ iniciais(f.nome) }}</span>
+                <span class="linha-principal">
+                  <span class="linha-titulo">{{ f.nome }}</span>
+                  <span class="linha-detalhe">{{ f.email }}</span>
+                </span>
+                <span class="texto-2 numeros">{{ f.totalPropostas === 1 ? '1 proposta' : f.totalPropostas + ' propostas' }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <div class="lista"><p class="vazio">Nenhuma proposta recebida ainda.</p></div>
+        }
+      </section>
     </div>
-  } @else if (!erro()) {
-    <div class="text-center py-5">
-      <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div>
-    </div>
+  } @else {
+    <div class="carregando-pagina" role="status"><span class="girando"></span><span class="visually-hidden">Carregando</span></div>
   }
 </div>

@@ -2,11 +2,11 @@ import { TestBed } from '@angular/core/testing';
 import { TemaService } from './tema.service';
 
 describe('TemaService', () => {
-  const tema = () => document.documentElement.getAttribute('data-bs-theme');
+  const tema = () => document.documentElement.getAttribute('data-theme');
 
   beforeEach(() => {
     localStorage.clear();
-    document.documentElement.removeAttribute('data-bs-theme');
+    document.documentElement.removeAttribute('data-theme');
     TestBed.resetTestingModule();
   });
 
