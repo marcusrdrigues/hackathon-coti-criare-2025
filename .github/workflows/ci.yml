@@ -80,19 +80,6 @@ jobs:
           path: backend/target/site/jacoco/
           retention-days: 14
 
-      - name: Verificar se o SonarCloud está configurado
-        id: sonar
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: echo "ativo=$([ -n "$SONAR_TOKEN" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-
-      - name: Análise no SonarCloud
-        if: steps.sonar.outputs.ativo == 'true'
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./mvnw -B -ntp org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
-
       - name: Resumo dos erros de build/teste
         if: failure()
         run: |
@@ -119,6 +106,28 @@ jobs:
       - name: Log da API em caso de falha
         if: failure()
         run: tail -n 150 api.log || true
+
+      - name: Verificar se o SonarCloud está configurado
+        id: sonar
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: echo "ativo=$([ -n "$SONAR_TOKEN" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      # Por último: um problema no SonarCloud não impede o teste de fumaça de rodar
+      - name: Análise no SonarCloud
+        if: steps.sonar.outputs.ativo == 'true'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -o pipefail
+          ./mvnw -B -ntp org.sonarsource.scanner.maven:sonar-maven-plugin:sonar 2>&1 | tee sonar.log
+
+      - name: Motivo da falha no SonarCloud
+        if: failure() && steps.sonar.outputs.ativo == 'true'
+        run: |
+          motivo=$(grep -E "^\[ERROR\]" sonar.log | grep -v "^\[ERROR\] *$" | head -15 || true)
+          [ -n "$motivo" ] && echo "::error title=SonarCloud::$(echo "$motivo" | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')" || true
 
   frontend:
     name: Frontend (Angular)
