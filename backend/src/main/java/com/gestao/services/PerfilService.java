@@ -1,9 +1,12 @@
 package com.gestao.services;
 
 import com.gestao.entities.Perfil;
+import com.gestao.exceptions.DuplicateResourceException;
+import com.gestao.exceptions.ResourceNotFoundException;
 import com.gestao.repositories.PerfilRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -14,27 +17,27 @@ public class PerfilService {
 
     private final PerfilRepository perfilRepository;
 
-    // Criar perfil
+    @Transactional
     public Perfil criarPerfil(Perfil perfil) {
         if (perfilRepository.existsByNome(perfil.getNome())) {
-            throw new RuntimeException("Perfil já existe com esse nome!");
+            throw new DuplicateResourceException("Perfil já existe com esse nome!");
         }
         return perfilRepository.save(perfil);
     }
 
-    // Buscar perfil por nome
+    @Transactional(readOnly = true)
     public Perfil buscarPorNome(String nome) {
         return perfilRepository.findByNome(nome)
-                .orElseThrow(() -> new RuntimeException("Perfil não encontrado!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Perfil não encontrado!"));
     }
 
-    // Buscar perfil por ID
+    @Transactional(readOnly = true)
     public Perfil buscarPorId(UUID id) {
         return perfilRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Perfil não encontrado!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Perfil não encontrado!"));
     }
 
-    // Listar todos os perfis
+    @Transactional(readOnly = true)
     public List<Perfil> listarTodos() {
         return perfilRepository.findAll();
     }

@@ -10,7 +10,7 @@ public record FornecedorCadastroRequest(
         String nomeCompleto,
 
         @NotBlank(message = "CNPJ é obrigatório")
-        @Size(min = 14, max = 14, message = "CNPJ inválido")
+        @Size(min = 14, max = 18, message = "CNPJ deve ter 14 dígitos")
         String cnpj,
 
         @NotBlank(message = "Email é obrigatório")
@@ -19,6 +19,6 @@ public record FornecedorCadastroRequest(
         String email,
 
         @NotBlank(message = "Senha é obrigatória")
-        @Size(min = 6, max = 100, message = "Senha deve ter entre 6 e 100 caracteres")
+        @Size(min = 6, max = 72, message = "Senha deve ter entre 6 e 72 caracteres")
         String senha
 ) {}

@@ -23,7 +23,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/empresas")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 @Tag(name = "Empresas", description = "Endpoints para gerenciamento de empresas")
 public class EmpresaController {
 
@@ -91,11 +90,7 @@ public class EmpresaController {
     public ResponseEntity<EmpresaResponse> atualizarEmpresa(
             @Parameter(description = "ID da empresa") @PathVariable UUID id,
             @Valid @RequestBody EmpresaUpdateRequest request) {
-        Empresa empresa = empresaService.buscarPorId(id);
-        if (request.razaoSocial() != null) {
-            empresa.setRazaoSocial(request.razaoSocial());
-        }
-        Empresa empresaAtualizada = empresaService.atualizarEmpresa(id, empresa);
+        Empresa empresaAtualizada = empresaService.atualizarEmpresa(id, request.razaoSocial());
         EmpresaResponse response = empresaMapper.toResponse(empresaAtualizada);
         return ResponseEntity.ok(response);
     }

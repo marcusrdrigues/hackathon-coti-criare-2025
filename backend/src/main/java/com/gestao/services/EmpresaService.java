@@ -5,8 +5,10 @@ import com.gestao.entities.Perfil;
 import com.gestao.exceptions.DuplicateResourceException;
 import com.gestao.exceptions.ResourceNotFoundException;
 import com.gestao.repositories.EmpresaRepository;
+import com.gestao.utils.Documentos;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,53 +19,54 @@ public class EmpresaService {
 
     private final EmpresaRepository empresaRepository;
     private final PerfilService perfilService;
+    private final CredenciaisService credenciaisService;
 
-    // Cadastrar empresa
+    @Transactional
     public Empresa cadastrarEmpresa(Empresa empresa) {
-        // Validar se email já existe
-        if (empresaRepository.existsByEmail(empresa.getEmail())) {
-            throw new DuplicateResourceException("Email já cadastrado!");
-        }
+        empresa.setEmail(Documentos.normalizarEmail(empresa.getEmail()));
+        empresa.setCnpj(credenciaisService.normalizarCnpj(empresa.getCnpj()));
+        empresa.setRazaoSocial(empresa.getRazaoSocial().trim());
 
-        // Validar se CNPJ já existe
+        credenciaisService.validarEmailDisponivel(empresa.getEmail());
+
         if (empresaRepository.existsByCnpj(empresa.getCnpj())) {
             throw new DuplicateResourceException("CNPJ já cadastrado!");
         }
 
-        // Buscar perfil "EMPRESA"
         Perfil perfilEmpresa = perfilService.buscarPorNome("EMPRESA");
         empresa.setPerfil(perfilEmpresa);
-
-        // TODO: Criptografar senha (implementar depois)
+        empresa.setSenha(credenciaisService.gerarHash(empresa.getSenha()));
 
         return empresaRepository.save(empresa);
     }
 
-    // Buscar empresa por ID
+    @Transactional(readOnly = true)
     public Empresa buscarPorId(UUID id) {
         return empresaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa não encontrada!"));
     }
 
-    // Buscar empresa por email
+    @Transactional(readOnly = true)
     public Empresa buscarPorEmail(String email) {
-        return empresaRepository.findByEmail(email)
+        return empresaRepository.findByEmail(Documentos.normalizarEmail(email))
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa não encontrada!"));
     }
 
-    // Atualizar empresa
-    public Empresa atualizarEmpresa(UUID id, Empresa empresaAtualizada) {
+    @Transactional
+    public Empresa atualizarEmpresa(UUID id, String razaoSocial) {
         Empresa empresa = buscarPorId(id);
-        empresa.setRazaoSocial(empresaAtualizada.getRazaoSocial());
+        if (razaoSocial != null && !razaoSocial.isBlank()) {
+            empresa.setRazaoSocial(razaoSocial.trim());
+        }
         return empresaRepository.save(empresa);
     }
 
-    // Listar todas as empresas
+    @Transactional(readOnly = true)
     public List<Empresa> listarTodas() {
         return empresaRepository.findAll();
     }
 
-    // Deletar empresa
+    @Transactional
     public void deletarEmpresa(UUID id) {
         Empresa empresa = buscarPorId(id);
         empresaRepository.delete(empresa);

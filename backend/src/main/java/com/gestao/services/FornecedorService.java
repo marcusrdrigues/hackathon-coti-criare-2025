@@ -5,8 +5,10 @@ import com.gestao.entities.Perfil;
 import com.gestao.exceptions.DuplicateResourceException;
 import com.gestao.exceptions.ResourceNotFoundException;
 import com.gestao.repositories.FornecedorRepository;
+import com.gestao.utils.Documentos;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,53 +19,54 @@ public class FornecedorService {
 
     private final FornecedorRepository fornecedorRepository;
     private final PerfilService perfilService;
+    private final CredenciaisService credenciaisService;
 
-    // Cadastrar fornecedor
+    @Transactional
     public Fornecedor cadastrarFornecedor(Fornecedor fornecedor) {
-        // Validar se email já existe
-        if (fornecedorRepository.existsByEmail(fornecedor.getEmail())) {
-            throw new DuplicateResourceException("Email já cadastrado!");
-        }
+        fornecedor.setEmail(Documentos.normalizarEmail(fornecedor.getEmail()));
+        fornecedor.setCnpj(credenciaisService.normalizarCnpj(fornecedor.getCnpj()));
+        fornecedor.setNomeCompleto(fornecedor.getNomeCompleto().trim());
 
-        // Validar se CNPJ já existe
+        credenciaisService.validarEmailDisponivel(fornecedor.getEmail());
+
         if (fornecedorRepository.existsByCnpj(fornecedor.getCnpj())) {
             throw new DuplicateResourceException("CNPJ já cadastrado!");
         }
 
-        // Buscar perfil "FORNECEDOR"
         Perfil perfilFornecedor = perfilService.buscarPorNome("FORNECEDOR");
         fornecedor.setPerfil(perfilFornecedor);
-
-        // TODO: Criptografar senha (implementar depois)
+        fornecedor.setSenha(credenciaisService.gerarHash(fornecedor.getSenha()));
 
         return fornecedorRepository.save(fornecedor);
     }
 
-    // Buscar fornecedor por ID
+    @Transactional(readOnly = true)
     public Fornecedor buscarPorId(UUID id) {
         return fornecedorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Fornecedor não encontrado!"));
     }
 
-    // Buscar fornecedor por email
+    @Transactional(readOnly = true)
     public Fornecedor buscarPorEmail(String email) {
-        return fornecedorRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Fornecedor não encontrada!"));
+        return fornecedorRepository.findByEmail(Documentos.normalizarEmail(email))
+                .orElseThrow(() -> new ResourceNotFoundException("Fornecedor não encontrado!"));
     }
 
-    // Atualizar fornecedor
-    public Fornecedor atualizarFornecedor(UUID id, Fornecedor fornecedorAtualizado) {
+    @Transactional
+    public Fornecedor atualizarFornecedor(UUID id, String nomeCompleto) {
         Fornecedor fornecedor = buscarPorId(id);
-        fornecedor.setNomeCompleto(fornecedorAtualizado.getNomeCompleto());
+        if (nomeCompleto != null && !nomeCompleto.isBlank()) {
+            fornecedor.setNomeCompleto(nomeCompleto.trim());
+        }
         return fornecedorRepository.save(fornecedor);
     }
 
-    // Listar todos os fornecedores
+    @Transactional(readOnly = true)
     public List<Fornecedor> listarTodos() {
         return fornecedorRepository.findAll();
     }
 
-    // Deletar fornecedor
+    @Transactional
     public void deletarFornecedor(UUID id) {
         Fornecedor fornecedor = buscarPorId(id);
         fornecedorRepository.delete(fornecedor);

@@ -17,7 +17,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/perfis")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 @Tag(name = "Perfis", description = "Endpoints para gerenciamento de perfis")
 public class PerfilController {
 

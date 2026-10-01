@@ -19,7 +19,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/fornecedores")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class FornecedorController {
 
     private final FornecedorService fornecedorService;
@@ -65,11 +64,7 @@ public class FornecedorController {
     public ResponseEntity<FornecedorResponse> atualizarFornecedor(
             @PathVariable UUID id,
             @Valid @RequestBody FornecedorUpdateRequest request) {
-        Fornecedor fornecedor = fornecedorService.buscarPorId(id);
-        if (request.nomeCompleto() != null) {
-            fornecedor.setNomeCompleto(request.nomeCompleto());
-        }
-        Fornecedor fornecedorAtualizado = fornecedorService.atualizarFornecedor(id, fornecedor);
+        Fornecedor fornecedorAtualizado = fornecedorService.atualizarFornecedor(id, request.nomeCompleto());
         FornecedorResponse response = fornecedorMapper.toResponse(fornecedorAtualizado);
         return ResponseEntity.ok(response);
     }

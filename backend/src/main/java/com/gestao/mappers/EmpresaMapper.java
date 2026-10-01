@@ -1,8 +1,8 @@
 package com.gestao.mappers;
 
-import com.gestao.entities.Empresa;
 import com.gestao.dtos.empresa.EmpresaCadastroRequest;
 import com.gestao.dtos.empresa.EmpresaResponse;
+import com.gestao.entities.Empresa;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -23,7 +23,7 @@ public class EmpresaMapper {
                 empresa.getRazaoSocial(),
                 empresa.getCnpj(),
                 empresa.getEmail(),
-                empresa.getPerfil().getNome()
+                empresa.getPerfil() != null ? empresa.getPerfil().getNome() : "EMPRESA"
         );
     }
 }
