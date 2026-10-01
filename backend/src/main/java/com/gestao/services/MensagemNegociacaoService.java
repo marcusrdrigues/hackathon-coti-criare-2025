@@ -18,8 +18,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MensagemNegociacaoService {
 
-    private MensagemNegociacaoRepository mensagemRepository;
-    private NegociacaoService negociacaoService;
+    private final MensagemNegociacaoRepository mensagemRepository;
+    private final NegociacaoService negociacaoService;
 
     // Enviar mensagem
     public MensagemNegociacao enviarMensagem(UUID negociacaoId, String mensagem,

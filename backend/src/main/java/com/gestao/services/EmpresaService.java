@@ -15,8 +15,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class EmpresaService {
 
-    private EmpresaRepository empresaRepository;
-    private PerfilService perfilService;
+    private final EmpresaRepository empresaRepository;
+    private final PerfilService perfilService;
 
     // Cadastrar empresa
     public Empresa cadastrarEmpresa(Empresa empresa) {

@@ -17,8 +17,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CotacaoService {
 
-    private CotacaoRepository cotacaoRepository;
-    private EmpresaService empresaService;
+    private final CotacaoRepository cotacaoRepository;
+    private final EmpresaService empresaService;
 
     // Criar cotação
     public Cotacao criarCotacao(Cotacao cotacao, UUID empresaId) {

@@ -20,8 +20,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class NegociacaoService {
 
-    private NegociacaoRepository negociacaoRepository;
-    private PropostaService propostaService;
+    private final NegociacaoRepository negociacaoRepository;
+    private final PropostaService propostaService;
 
     // Criar negociação (após aceitar proposta)
     public Negociacao criarNegociacao(UUID propostaId) {

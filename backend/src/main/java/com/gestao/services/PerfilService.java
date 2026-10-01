@@ -12,7 +12,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PerfilService {
 
-    private PerfilRepository perfilRepository;
+    private final PerfilRepository perfilRepository;
 
     // Criar perfil
     public Perfil criarPerfil(Perfil perfil) {

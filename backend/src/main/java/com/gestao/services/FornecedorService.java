@@ -15,8 +15,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FornecedorService {
 
-    private FornecedorRepository fornecedorRepository;
-    private PerfilService perfilService;
+    private final FornecedorRepository fornecedorRepository;
+    private final PerfilService perfilService;
 
     // Cadastrar fornecedor
     public Fornecedor cadastrarFornecedor(Fornecedor fornecedor) {
