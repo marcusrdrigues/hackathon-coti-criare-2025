@@ -1,0 +1,45 @@
+# Análise estática de segurança (CodeQL) do back-end e do front-end.
+# Os alertas aparecem em Security → Code scanning.
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "17 6 * * 1"   # toda segunda, 03:17 em Brasília
+
+permissions:
+  contents: read
+
+jobs:
+  analisar:
+    name: Analisar (${{ matrix.linguagem }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - linguagem: java-kotlin
+            build-mode: none
+          - linguagem: javascript-typescript
+            build-mode: none
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Iniciar CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.linguagem }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-extended
+
+      - name: Analisar
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{ matrix.linguagem }}"
