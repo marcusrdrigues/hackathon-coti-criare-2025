@@ -184,11 +184,9 @@ jobs:
           tail -n 80 api.log
           exit 1
 
-      - name: Instalar dependências e o Chromium
+      - name: Instalar dependências
         working-directory: frontend
-        run: |
-          npm ci
-          npx playwright install --with-deps chromium
+        run: npm ci   # o navegador é o Google Chrome do próprio runner (ver playwright.config.ts)
 
       - name: Testes ponta a ponta
         working-directory: frontend

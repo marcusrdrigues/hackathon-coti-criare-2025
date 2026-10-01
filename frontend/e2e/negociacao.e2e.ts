@@ -45,19 +45,20 @@ test('empresa e fornecedor negociam até fechar o negócio', async ({ browser, b
 
     await empresa.getByLabel('Mensagem').fill('Fechamos em 10.800 com o mesmo prazo?');
     await empresa.getByLabel('Valor da contraproposta (opcional)').fill('10800');
-    await empresa.getByRole('button', { name: 'Enviar', exact: true }).click();
+    // O nome acessível dos botões inclui o glifo do ícone, por isso as expressões não usam ^
+    await empresa.getByRole('button', { name: /Enviar$/ }).click();
     await expect(empresa.getByText('Fechamos em 10.800 com o mesmo prazo?')).toBeVisible();
   });
 
   await test.step('fornecedor aceita a oferta', async () => {
     await fornecedor.goto(empresa.url().replace(/^https?:\/\/[^/]+/, ''));
-    await fornecedor.getByRole('button', { name: /^Aceitar R\$\s?10\.800,00$/ }).click();
+    await fornecedor.getByRole('button', { name: /Aceitar R\$\s?10\.800,00$/ }).click();
     await expect(fornecedor.getByText('Aceito a sua oferta')).toBeVisible();
   });
 
   await test.step('empresa fecha o negócio', async () => {
     await empresa.reload();
-    await empresa.getByRole('button', { name: /^Fechar por R\$\s?10\.800,00$/ }).click();
+    await empresa.getByRole('button', { name: /Fechar por R\$\s?10\.800,00$/ }).click();
     await expect(empresa.getByText(/Negócio fechado em/)).toBeVisible();
   });
 });

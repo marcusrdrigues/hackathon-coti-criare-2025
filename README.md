@@ -541,6 +541,9 @@ cd frontend && npm test -- --watch=false
 
 # Relatório de cobertura do back-end (gerado pelo verify): backend/target/site/jacoco/index.html
 
+# Ponta a ponta (Playwright): com a API rodando no profile demo; o front-end sobe sozinho
+cd frontend && npx playwright install chromium && npm run e2e
+
 # Teste de fumaça: com a API rodando no profile demo, percorre o fluxo via HTTP
 cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 ```
@@ -555,9 +558,10 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | `DemonstracaoApiTest` | Login de demonstração em um clique, health check e reset diário dos dados de exemplo |
 | `DocumentosTest` | Validação de CNPJ e normalização de dados |
 | `smoke-test-api.sh` | Contra a API real com PostgreSQL: login, proteção das rotas, CORS, validações, regras de perfil e de posse, cotação → proposta → negociação → mensagens → fechamento, dashboards, refresh com rotação e reuso, logout e força bruta |
+| Playwright (`frontend/e2e`) | No navegador, com API e banco reais: empresa e fornecedor negociam do começo ao fim (publicar, propor pelo mural, contraproposta, aceitar, fechar), rota protegida, login com erro, cadastro com validação de CNPJ, sessão após F5, sair e tema claro/escuro. As telas de acesso rodam também num celular emulado |
 | Front-end | Interceptor (token, renovação automática e expiração), guards por perfil, tema claro/escuro, máscara de CNPJ e componente raiz |
 
-O **GitHub Actions** (`.github/workflows/ci.yml`) roda a cada push: compila e testa o back-end (inclusive contra PostgreSQL com Testcontainers), sobe a API com PostgreSQL e executa o teste de fumaça, e faz o build de produção e os testes do front-end. O **CodeQL** procura vulnerabilidades no código Java e TypeScript, e o **Dependabot** abre PRs semanais com as atualizações de dependências.
+O **GitHub Actions** (`.github/workflows/ci.yml`) roda a cada push: compila e testa o back-end (inclusive contra PostgreSQL com Testcontainers), sobe a API com PostgreSQL e executa o teste de fumaça, faz o build de produção e os testes do front-end, e roda os testes ponta a ponta com Playwright. O **CodeQL** procura vulnerabilidades no código Java e TypeScript, e o **Dependabot** abre PRs semanais com as atualizações de dependências.
 
 ---
 
@@ -596,7 +600,7 @@ Permitir que qualquer pessoa experimente o sistema sem instalar nada.
 - [ ] GIF de uma negociação ponta a ponta no topo do README ([roteiro](docs/gravar-demo.md))
 - [x] Design system com tokens de cor, modo claro e escuro ([documentação](docs/design-system.md))
 
-### Fase 2 · Engenharia
+### Fase 2 · Engenharia &nbsp;`quase pronta`
 
 Deixar o projeto mais fácil de manter e com qualidade medida.
 
@@ -606,7 +610,7 @@ Deixar o projeto mais fácil de manter e com qualidade medida.
 - [ ] Análise no **SonarCloud**, com badges de qualidade e cobertura no README
 - [x] **Dependabot** e **CodeQL** para dependências e vulnerabilidades
 - [x] **ADRs** em [`docs/adr/`](docs/adr/README.md): registros curtos das decisões de arquitetura (ex.: por que o refresh token é opaco)
-- [ ] **Testes ponta a ponta com Playwright** no CI, simulando empresa e fornecedor no navegador
+- [x] **Testes ponta a ponta com Playwright** no CI, simulando empresa e fornecedor no navegador
 
 ### Fase 3 · Produto
 

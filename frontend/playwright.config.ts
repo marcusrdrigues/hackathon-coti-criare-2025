@@ -7,6 +7,9 @@ import { defineConfig, devices } from '@playwright/test';
  * Localmente: suba a API (ver README) e rode `npm run e2e`.
  * No CI: o job "Ponta a ponta" sobe PostgreSQL, API e front-end sozinho.
  */
+// No CI usa o Google Chrome que já vem nos runners do GitHub, sem baixar navegador
+const navegador = process.env['CI'] ? { channel: 'chrome' } : {};
+
 export default defineConfig({
   testDir: './e2e',
   testMatch: '**/*.e2e.ts',
@@ -25,8 +28,8 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
-    { name: 'celular', use: { ...devices['Pixel 7'] }, testMatch: '**/acesso.e2e.ts' },
+    { name: 'desktop', use: { ...devices['Desktop Chrome'], ...navegador } },
+    { name: 'celular', use: { ...devices['Pixel 7'], ...navegador }, testMatch: '**/acesso.e2e.ts' },
   ],
   webServer: {
     command: 'npm start -- --port 4200',
