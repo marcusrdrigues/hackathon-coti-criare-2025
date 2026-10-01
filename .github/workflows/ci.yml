@@ -121,7 +121,27 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -o pipefail
-          ./mvnw -B -ntp org.sonarsource.scanner.maven:sonar-maven-plugin:sonar 2>&1 | tee sonar.log
+          ./mvnw -B -ntp org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.qualitygate.wait=true 2>&1 | tee sonar.log
+
+      - name: Issues abertas no SonarCloud
+        if: always() && steps.sonar.outputs.ativo == 'true'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          # Lista as issues como anotações no GitHub, com arquivo e linha, para corrigir sem sair do PR
+          curl -sf -u "$SONAR_TOKEN:" \
+            "https://sonarcloud.io/api/issues/search?componentKeys=marcusrdrigues_hackathon-coti-criare-2025&resolved=false&ps=100" \
+            -o issues.json || exit 0
+          python3 - <<'PY'
+          import json
+          dados = json.load(open('issues.json'))
+          print(f"::notice title=SonarCloud::{dados['total']} issue(s) aberta(s)")
+          for i in dados['issues']:
+              caminho = 'backend/' + i['component'].split(':', 1)[-1]
+              linha = i.get('line', 1)
+              texto = f"{i['message']} ({i['rule']}, {i.get('severity', '')})".replace('%', '%25')
+              print(f"::warning file={caminho},line={linha},title=SonarCloud::{texto}")
+          PY
 
       - name: Motivo da falha no SonarCloud
         if: failure() && steps.sonar.outputs.ativo == 'true'
