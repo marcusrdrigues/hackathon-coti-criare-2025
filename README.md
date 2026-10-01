@@ -527,7 +527,8 @@ Erros de validação trazem também o campo de cada problema:
 ## 🧪 Testes e CI
 
 ```bash
-# Back-end: testes unitários e de integração (H2 em memória, não precisa do PostgreSQL)
+# Back-end: testes unitários e de integração. Com Docker, as suítes *Postgres*
+# sobem um PostgreSQL 16 real (Testcontainers); sem Docker elas são puladas e o resto roda no H2
 cd backend && ./mvnw verify
 
 # Front-end: testes unitários (Vitest)
@@ -542,12 +543,14 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | `FluxoCotacaoIntegrationTest` | Cadastro, login, CNPJ inválido, e-mail duplicado, proposta duplicada, negociação, contrapropostas, fechamento, cancelamento, prazo vencido, dashboards e regras de posse (empresa concorrente, fornecedor concorrente, intruso na negociação) |
 | `AutenticacaoIntegrationTest` | Conteúdo do JWT, token adulterado, refresh gravado como hash, rotação, detecção de reuso, logout e bloqueio de força bruta |
 | `SegurancaApiTest` | Pela camada HTTP: 401 sem token e com token inválido, rotas públicas, cookie `HttpOnly`/`SameSite`, 403 por perfil e por posse, identidade vinda do token, refresh pelo cookie, logout e CORS |
+| `MigracoesPostgresTest` | Num PostgreSQL 16 real (Testcontainers): o Flyway aplica as migrações, o Hibernate valida o esquema e todas as tabelas existem |
+| `FluxoCotacaoPostgresTest` e `AutenticacaoPostgresTest` | Os mesmos cenários das duas suítes acima, agora no PostgreSQL real, para pegar diferenças que o H2 esconde |
 | `DemonstracaoApiTest` | Login de demonstração em um clique, health check e reset diário dos dados de exemplo |
 | `DocumentosTest` | Validação de CNPJ e normalização de dados |
 | `smoke-test-api.sh` | Contra a API real com PostgreSQL: login, proteção das rotas, CORS, validações, regras de perfil e de posse, cotação → proposta → negociação → mensagens → fechamento, dashboards, refresh com rotação e reuso, logout e força bruta |
-| Front-end | Interceptor (token, renovação automática e expiração), guards por perfil, máscara de CNPJ e componente raiz |
+| Front-end | Interceptor (token, renovação automática e expiração), guards por perfil, tema claro/escuro, máscara de CNPJ e componente raiz |
 
-O **GitHub Actions** (`.github/workflows/ci.yml`) roda a cada push: compila e testa o back-end, sobe a API com PostgreSQL e executa o teste de fumaça, e faz o build de produção e os testes do front-end.
+O **GitHub Actions** (`.github/workflows/ci.yml`) roda a cada push: compila e testa o back-end (inclusive contra PostgreSQL com Testcontainers), sobe a API com PostgreSQL e executa o teste de fumaça, e faz o build de produção e os testes do front-end.
 
 ---
 
@@ -589,7 +592,7 @@ Permitir que qualquer pessoa experimente o sistema sem instalar nada.
 Deixar o projeto mais fácil de manter e com qualidade medida.
 
 - [x] **Flyway** no lugar do `ddl-auto`, com o esquema versionado em migrações
-- [ ] **Testcontainers**: testes de integração contra um PostgreSQL real, e não só H2
+- [x] **Testcontainers**: testes de integração contra um PostgreSQL real, e não só H2
 - [ ] **Cobertura com JaCoCo** e análise no **SonarCloud**, com badges no README
 - [ ] **Dependabot** e **CodeQL** para dependências e vulnerabilidades
 - [ ] **ADRs** em `docs/adr/`: registros curtos das decisões de arquitetura (ex.: por que o refresh token é opaco)
