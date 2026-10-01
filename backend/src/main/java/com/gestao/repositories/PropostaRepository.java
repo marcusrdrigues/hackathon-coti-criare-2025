@@ -2,12 +2,15 @@ package com.gestao.repositories;
 
 import com.gestao.entities.Proposta;
 import com.gestao.enums.StatusProposta;
+import com.gestao.repositories.projections.FornecedorResumoProjection;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -76,4 +79,25 @@ public interface PropostaRepository extends JpaRepository<Proposta, UUID> {
     // Buscar proposta com negociação (JOIN FETCH)
     @Query("SELECT p FROM Proposta p LEFT JOIN FETCH p.negociacao WHERE p.id = :id")
     Optional<Proposta> findByIdWithNegociacao(@Param("id") UUID id);
+
+    // Total de propostas recebidas pelas cotações de uma empresa
+    @Query("SELECT COUNT(p) FROM Proposta p WHERE p.cotacao.empresa.id = :empresaId")
+    long countByEmpresaId(@Param("empresaId") UUID empresaId);
+
+    // Propostas de um fornecedor em determinados status
+    @Query("SELECT COUNT(p) FROM Proposta p WHERE p.fornecedor.id = :fornecedorId AND p.status IN :status")
+    long countByFornecedorIdAndStatusIn(
+            @Param("fornecedorId") UUID fornecedorId,
+            @Param("status") Collection<StatusProposta> status
+    );
+
+    // Fornecedores que mais enviaram propostas para as cotações de uma empresa
+    @Query("""
+            SELECT f.id AS id, f.nomeCompleto AS nome, f.email AS email, COUNT(p) AS totalPropostas
+            FROM Proposta p
+            JOIN p.fornecedor f
+            WHERE p.cotacao.empresa.id = :empresaId
+            GROUP BY f.id, f.nomeCompleto, f.email
+            ORDER BY COUNT(p) DESC""")
+    List<FornecedorResumoProjection> topFornecedoresPorEmpresa(@Param("empresaId") UUID empresaId, Pageable pageable);
 }

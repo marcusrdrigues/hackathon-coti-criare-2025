@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -49,11 +50,11 @@ public interface NegociacaoRepository extends JpaRepository<Negociacao, UUID> {
     boolean existsByPropostaId(@Param("propostaId") UUID propostaId);
 
     // Buscar negociações em andamento de uma empresa
-    @Query("SELECT n FROM Negociacao n WHERE n.empresa.id = :empresaId AND n.status = 'EM_ANDAMENTO' ORDER BY n.dataInicio DESC")
+    @Query("SELECT n FROM Negociacao n WHERE n.empresa.id = :empresaId AND n.status = com.gestao.enums.StatusNegociacao.EM_ANDAMENTO ORDER BY n.dataInicio DESC")
     List<Negociacao> findNegociacoesAtivasByEmpresaId(@Param("empresaId") UUID empresaId);
 
     // Buscar negociações em andamento de um fornecedor
-    @Query("SELECT n FROM Negociacao n WHERE n.fornecedor.id = :fornecedorId AND n.status = 'EM_ANDAMENTO' ORDER BY n.dataInicio DESC")
+    @Query("SELECT n FROM Negociacao n WHERE n.fornecedor.id = :fornecedorId AND n.status = com.gestao.enums.StatusNegociacao.EM_ANDAMENTO ORDER BY n.dataInicio DESC")
     List<Negociacao> findNegociacoesAtivasByFornecedorId(@Param("fornecedorId") UUID fornecedorId);
 
     // Buscar negociação com mensagens (JOIN FETCH para evitar N+1)
@@ -75,4 +76,17 @@ public interface NegociacaoRepository extends JpaRepository<Negociacao, UUID> {
     // Contar negociações de um fornecedor
     @Query("SELECT COUNT(n) FROM Negociacao n WHERE n.fornecedor.id = :fornecedorId")
     long countByFornecedorId(@Param("fornecedorId") UUID fornecedorId);
+
+    // Soma dos valores fechados por um fornecedor (null quando não há nenhum)
+    @Query("SELECT SUM(n.valorFinal) FROM Negociacao n WHERE n.fornecedor.id = :fornecedorId AND n.status = :status")
+    BigDecimal somarValorFinalPorFornecedorEStatus(
+            @Param("fornecedorId") UUID fornecedorId,
+            @Param("status") StatusNegociacao status
+    );
+
+    @Query("SELECT COUNT(n) FROM Negociacao n WHERE n.fornecedor.id = :fornecedorId AND n.status = :status")
+    long countByFornecedorIdAndStatus(
+            @Param("fornecedorId") UUID fornecedorId,
+            @Param("status") StatusNegociacao status
+    );
 }

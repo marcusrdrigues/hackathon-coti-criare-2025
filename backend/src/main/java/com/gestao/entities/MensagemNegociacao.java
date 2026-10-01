@@ -1,13 +1,16 @@
 package com.gestao.entities;
 
-import com.gestao.enums.TipoRemetente;  // ← MUDOU
+import com.gestao.enums.TipoRemetente;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.time.LocalDate;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "tb_mensagem_negociacao")
 public class MensagemNegociacao {
@@ -20,6 +23,10 @@ public class MensagemNegociacao {
     @Column(name = "mensagem", length = 1000, nullable = false)
     private String mensagem;
 
+    /** Preenchido quando a mensagem é uma oferta/contraproposta de valor. */
+    @Column(name = "valor_ofertado", precision = 15, scale = 2)
+    private BigDecimal valorOfertado;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_remetente", nullable = false)
     private TipoRemetente tipoRemetente;
@@ -27,8 +34,8 @@ public class MensagemNegociacao {
     @Column(name = "remetente_id", nullable = false)
     private UUID remetenteId;
 
-    @Column(name = "data_envio", nullable = false)
-    private LocalDate dataEnvio;
+    @Column(name = "data_hora_envio", nullable = false)
+    private LocalDateTime dataEnvio;
 
     @ManyToOne
     @JoinColumn(name = "negociacao_id", nullable = false)

@@ -5,9 +5,11 @@ import com.gestao.repositories.PerfilRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 @Component
+@Order(1)
 @RequiredArgsConstructor
 @Slf4j
 public class CriarPerfis implements CommandLineRunner {
@@ -27,9 +29,9 @@ public class CriarPerfis implements CommandLineRunner {
             Perfil perfilEmpresa = new Perfil();
             perfilEmpresa.setNome("EMPRESA");
             perfilRepository.save(perfilEmpresa);
-            log.info("✅ Perfil EMPRESA criado com sucesso!");
+            log.info("Perfil EMPRESA criado com sucesso!");
         } else {
-            log.info("✓ Perfil EMPRESA já existe");
+            log.info("Perfil EMPRESA já existe");
         }
 
         // Criar perfil FORNECEDOR se não existir
@@ -37,9 +39,9 @@ public class CriarPerfis implements CommandLineRunner {
             Perfil perfilFornecedor = new Perfil();
             perfilFornecedor.setNome("FORNECEDOR");
             perfilRepository.save(perfilFornecedor);
-            log.info("✅ Perfil FORNECEDOR criado com sucesso!");
+            log.info("Perfil FORNECEDOR criado com sucesso!");
         } else {
-            log.info("✓ Perfil FORNECEDOR já existe");
+            log.info("Perfil FORNECEDOR já existe");
         }
     }
 }

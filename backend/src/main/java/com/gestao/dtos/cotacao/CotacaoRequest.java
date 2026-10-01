@@ -1,9 +1,12 @@
 package com.gestao.dtos.cotacao;
 
+import com.gestao.enums.CategoriaCotacao;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -15,6 +18,11 @@ public record CotacaoRequest(
         @NotBlank(message = "Requisitos são obrigatórios")
         @Size(max = 1000, message = "Requisitos devem ter no máximo 1000 caracteres")
         String requisitos,
+
+        CategoriaCotacao categoria,
+
+        @DecimalMin(value = "0.01", message = "Orçamento estimado deve ser maior que zero")
+        BigDecimal orcamentoEstimado,
 
         LocalDateTime dataLimite,
 

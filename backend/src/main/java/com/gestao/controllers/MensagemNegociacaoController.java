@@ -18,7 +18,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/mensagens")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class MensagemNegociacaoController {
 
     private final MensagemNegociacaoService mensagemService;
@@ -30,6 +29,7 @@ public class MensagemNegociacaoController {
         MensagemNegociacao mensagem = mensagemService.enviarMensagem(
                 request.negociacaoId(),
                 request.mensagem(),
+                request.valorOfertado(),
                 request.tipoRemetente(),
                 request.remetenteId()
         );

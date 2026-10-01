@@ -6,5 +6,5 @@ public interface FornecedorResumoProjection {
     UUID getId();
     String getNome();
     String getEmail();
-    long getTotalPropostas();
+    Long getTotalPropostas();
 }

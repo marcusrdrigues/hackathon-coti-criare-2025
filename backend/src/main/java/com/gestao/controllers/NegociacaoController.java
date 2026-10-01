@@ -19,7 +19,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/negociacoes")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class NegociacaoController {
 
     private final NegociacaoService negociacaoService;

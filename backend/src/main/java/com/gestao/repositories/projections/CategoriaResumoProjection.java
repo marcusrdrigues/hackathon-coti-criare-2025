@@ -1,6 +1,8 @@
 package com.gestao.repositories.projections;
 
+import com.gestao.enums.CategoriaCotacao;
+
 public interface CategoriaResumoProjection {
-    String getLabel();
-    long getTotal();
+    CategoriaCotacao getCategoria();
+    Long getTotal();
 }

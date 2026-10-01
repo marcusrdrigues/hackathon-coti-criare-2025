@@ -1,5 +1,6 @@
 package com.gestao.dtos.negociacao;
 
+import com.gestao.enums.StatusCotacao;
 import com.gestao.enums.StatusNegociacao;
 
 import java.math.BigDecimal;
@@ -17,5 +18,11 @@ public record NegociacaoResponse(
         String empresaNome,
         UUID fornecedorId,
         String fornecedorNome,
-        UUID propostaId
+        UUID propostaId,
+        BigDecimal valorProposta,
+        BigDecimal ultimaOferta,
+        UUID cotacaoId,
+        String cotacaoNome,
+        String cotacaoRequisitos,
+        StatusCotacao cotacaoStatus
 ) {}

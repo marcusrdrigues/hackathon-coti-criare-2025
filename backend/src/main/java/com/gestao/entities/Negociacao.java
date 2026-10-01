@@ -1,16 +1,19 @@
 package com.gestao.entities;
 
-import com.gestao.enums.StatusNegociacao;  // ← MUDOU
+import com.gestao.enums.StatusNegociacao;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "tb_negociacao")
 public class Negociacao {
@@ -20,7 +23,7 @@ public class Negociacao {
     @Column(name = "id")
     private UUID id;
 
-    @Column(name = "valor_final")
+    @Column(name = "valor_final", precision = 15, scale = 2)
     private BigDecimal valorFinal;
 
     @Enumerated(EnumType.STRING)
@@ -46,5 +49,23 @@ public class Negociacao {
     private Fornecedor fornecedor;
 
     @OneToMany(mappedBy = "negociacao")
-    private List<MensagemNegociacao> mensagens;
+    @OrderBy("dataEnvio ASC")
+    private List<MensagemNegociacao> mensagens = new ArrayList<>();
+
+    /**
+     * Último valor ofertado por qualquer uma das partes.
+     * Se ninguém fez contraproposta ainda, vale o valor da proposta original.
+     */
+    public BigDecimal getUltimaOferta() {
+        // A lista já vem em ordem cronológica (@OrderBy); vale a última com valor
+        if (mensagens != null) {
+            for (int i = mensagens.size() - 1; i >= 0; i--) {
+                BigDecimal valor = mensagens.get(i).getValorOfertado();
+                if (valor != null) {
+                    return valor;
+                }
+            }
+        }
+        return proposta != null ? proposta.getValor() : null;
+    }
 }

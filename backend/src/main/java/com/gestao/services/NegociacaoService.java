@@ -1,14 +1,21 @@
 package com.gestao.services;
 
-import com.gestao.entities.*;
+import com.gestao.entities.Cotacao;
+import com.gestao.entities.MensagemNegociacao;
+import com.gestao.entities.Negociacao;
+import com.gestao.entities.Proposta;
 import com.gestao.enums.StatusCotacao;
 import com.gestao.enums.StatusNegociacao;
 import com.gestao.enums.StatusProposta;
+import com.gestao.enums.TipoRemetente;
 import com.gestao.exceptions.BusinessException;
 import com.gestao.exceptions.ResourceNotFoundException;
+import com.gestao.repositories.MensagemNegociacaoRepository;
 import com.gestao.repositories.NegociacaoRepository;
+import com.gestao.repositories.PropostaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -21,96 +28,131 @@ import java.util.UUID;
 public class NegociacaoService {
 
     private final NegociacaoRepository negociacaoRepository;
+    private final PropostaRepository propostaRepository;
+    private final MensagemNegociacaoRepository mensagemRepository;
     private final PropostaService propostaService;
 
-    // Criar negociação (após aceitar proposta)
+    /**
+     * Abre a negociação com o fornecedor da proposta escolhida.
+     * Se a proposta ainda não foi aceita, ela é aceita aqui mesmo (na mesma
+     * transação), e a cotação passa para EM_NEGOCIACAO.
+     */
+    @Transactional
     public Negociacao criarNegociacao(UUID propostaId) {
-        // Buscar proposta
-        Proposta proposta = propostaService.buscarPorId(propostaId);
-
-        // Validar se proposta foi aceita
-        if (proposta.getStatus() != StatusProposta.ACEITA) {
-            throw new BusinessException("Só é possível criar negociação com proposta aceita!");
-        }
-
-        // Validar se já existe negociação para esta proposta
         if (negociacaoRepository.existsByPropostaId(propostaId)) {
             throw new BusinessException("Já existe uma negociação para esta proposta!");
         }
 
-        // Criar negociação
+        Proposta proposta = propostaService.buscarPorId(propostaId);
+        if (proposta.getStatus() == StatusProposta.ENVIADA || proposta.getStatus() == StatusProposta.EM_ANALISE) {
+            proposta = propostaService.aceitarProposta(propostaId);
+        }
+        if (proposta.getStatus() != StatusProposta.ACEITA) {
+            throw new BusinessException("Só é possível negociar uma proposta enviada ou aceita!");
+        }
+
         Negociacao negociacao = new Negociacao();
         negociacao.setProposta(proposta);
         negociacao.setEmpresa(proposta.getCotacao().getEmpresa());
         negociacao.setFornecedor(proposta.getFornecedor());
         negociacao.setStatus(StatusNegociacao.EM_ANDAMENTO);
         negociacao.setDataInicio(LocalDateTime.now());
+        negociacao = negociacaoRepository.save(negociacao);
+        proposta.setNegociacao(negociacao);
 
-        return negociacaoRepository.save(negociacao);
+        // A proposta original abre o histórico da negociação
+        MensagemNegociacao inicial = new MensagemNegociacao();
+        inicial.setNegociacao(negociacao);
+        inicial.setTipoRemetente(TipoRemetente.FORNECEDOR);
+        inicial.setRemetenteId(proposta.getFornecedor().getId());
+        inicial.setMensagem(proposta.getDescricao());
+        inicial.setValorOfertado(proposta.getValor());
+        inicial.setDataEnvio(proposta.getDataEnvio() != null ? proposta.getDataEnvio() : negociacao.getDataInicio());
+        negociacao.getMensagens().add(mensagemRepository.save(inicial));
+
+        return negociacao;
     }
 
-    // Buscar negociação por ID
+    @Transactional(readOnly = true)
     public Negociacao buscarPorId(UUID id) {
         return negociacaoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Negociação não encontrada!"));
     }
 
-    // Buscar negociação por proposta
+    @Transactional(readOnly = true)
     public Negociacao buscarPorProposta(UUID propostaId) {
         return negociacaoRepository.findByPropostaId(propostaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Negociação não encontrada!"));
     }
 
-    // Listar negociações de uma empresa
+    @Transactional(readOnly = true)
     public List<Negociacao> listarPorEmpresa(UUID empresaId) {
         return negociacaoRepository.findByEmpresaId(empresaId);
     }
 
-    // Listar negociações de um fornecedor
+    @Transactional(readOnly = true)
     public List<Negociacao> listarPorFornecedor(UUID fornecedorId) {
         return negociacaoRepository.findByFornecedorId(fornecedorId);
     }
 
-    // Listar negociações por status
+    @Transactional(readOnly = true)
     public List<Negociacao> listarPorStatus(StatusNegociacao status) {
         return negociacaoRepository.findByStatus(status);
     }
 
-    // Finalizar negociação
+    /**
+     * Fecha o negócio: grava o valor final, fecha a cotação e recusa as demais
+     * propostas que ainda estavam pendentes.
+     */
+    @Transactional
     public Negociacao finalizarNegociacao(UUID id, BigDecimal valorFinal) {
         Negociacao negociacao = buscarPorId(id);
 
-        // Validar se está em andamento
         if (negociacao.getStatus() != StatusNegociacao.EM_ANDAMENTO) {
             throw new BusinessException("Negociação não está em andamento!");
         }
 
-        negociacao.setValorFinal(valorFinal);
+        negociacao.setValorFinal(valorFinal != null ? valorFinal : negociacao.getUltimaOferta());
         negociacao.setStatus(StatusNegociacao.FINALIZADA);
         negociacao.setDataFinalizacao(LocalDate.now());
 
-        // Atualizar status da cotação para FECHADA
-        Cotacao cotacao = negociacao.getProposta().getCotacao();
+        Proposta vencedora = negociacao.getProposta();
+        Cotacao cotacao = vencedora.getCotacao();
         cotacao.setStatus(StatusCotacao.FECHADA);
+
+        for (Proposta outra : propostaRepository.findByCotacaoId(cotacao.getId())) {
+            if (!outra.getId().equals(vencedora.getId())
+                    && (outra.getStatus() == StatusProposta.ENVIADA || outra.getStatus() == StatusProposta.EM_ANALISE)) {
+                outra.setStatus(StatusProposta.RECUSADA);
+            }
+        }
 
         return negociacaoRepository.save(negociacao);
     }
 
-    // Cancelar negociação
+    /**
+     * Encerra a negociação sem acordo: a proposta é recusada e a cotação
+     * volta a ficar aberta para negociar com outro fornecedor.
+     */
+    @Transactional
     public Negociacao cancelarNegociacao(UUID id) {
         Negociacao negociacao = buscarPorId(id);
+
+        if (negociacao.getStatus() != StatusNegociacao.EM_ANDAMENTO) {
+            throw new BusinessException("Negociação não está em andamento!");
+        }
 
         negociacao.setStatus(StatusNegociacao.CANCELADA);
         negociacao.setDataFinalizacao(LocalDate.now());
 
-        // Voltar cotação para ABERTA
-        Cotacao cotacao = negociacao.getProposta().getCotacao();
-        cotacao.setStatus(StatusCotacao.ABERTA);
+        Proposta proposta = negociacao.getProposta();
+        proposta.setStatus(StatusProposta.RECUSADA);
+        proposta.getCotacao().setStatus(StatusCotacao.ABERTA);
 
         return negociacaoRepository.save(negociacao);
     }
 
-    // Listar todas as negociações
+    @Transactional(readOnly = true)
     public List<Negociacao> listarTodas() {
         return negociacaoRepository.findAll();
     }

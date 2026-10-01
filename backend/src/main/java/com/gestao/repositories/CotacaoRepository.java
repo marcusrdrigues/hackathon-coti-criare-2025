@@ -2,6 +2,7 @@ package com.gestao.repositories;
 
 import com.gestao.entities.Cotacao;
 import com.gestao.enums.StatusCotacao;
+import com.gestao.repositories.projections.CategoriaResumoProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -53,4 +54,30 @@ public interface CotacaoRepository extends JpaRepository<Cotacao, UUID> {
     // Buscar cotações com propostas (JOIN FETCH para evitar N+1)
     @Query("SELECT DISTINCT c FROM Cotacao c LEFT JOIN FETCH c.propostas WHERE c.id = :id")
     Cotacao findByIdWithPropostas(@Param("id") UUID id);
+
+    // Cotações abertas cujo prazo ainda não venceu (mural do fornecedor)
+    @Query("""
+            SELECT c FROM Cotacao c
+            WHERE c.status = com.gestao.enums.StatusCotacao.ABERTA
+            AND (c.dataLimite IS NULL OR c.dataLimite > :agora)
+            ORDER BY c.dataCriacao DESC""")
+    List<Cotacao> findAbertasVigentes(@Param("agora") LocalDateTime agora);
+
+    @Query("""
+            SELECT COUNT(c) FROM Cotacao c
+            WHERE c.status = com.gestao.enums.StatusCotacao.ABERTA
+            AND (c.dataLimite IS NULL OR c.dataLimite > :agora)""")
+    long countAbertasVigentes(@Param("agora") LocalDateTime agora);
+
+    // Contar cotações de uma empresa por status
+    @Query("SELECT COUNT(c) FROM Cotacao c WHERE c.empresa.id = :empresaId AND c.status = :status")
+    long countByEmpresaIdAndStatus(@Param("empresaId") UUID empresaId, @Param("status") StatusCotacao status);
+
+    // Quantidade de cotações da empresa agrupadas por categoria (dashboard)
+    @Query("""
+            SELECT c.categoria AS categoria, COUNT(c) AS total
+            FROM Cotacao c
+            WHERE c.empresa.id = :empresaId
+            GROUP BY c.categoria""")
+    List<CategoriaResumoProjection> resumirPorCategoria(@Param("empresaId") UUID empresaId);
 }

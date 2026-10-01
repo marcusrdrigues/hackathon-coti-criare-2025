@@ -18,7 +18,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/propostas")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class PropostaController {
 
     private final PropostaService propostaService;
@@ -88,7 +87,7 @@ public class PropostaController {
             @PathVariable UUID id,
             @Valid @RequestBody PropostaRequest request) {
         Proposta proposta = propostaMapper.toEntity(request);
-        Proposta propostaAtualizada = propostaService.atualizarProposta(id, proposta);
+        Proposta propostaAtualizada = propostaService.atualizarProposta(id, request.fornecedorId(), proposta);
         PropostaResponse response = propostaMapper.toResponse(propostaAtualizada);
         return ResponseEntity.ok(response);
     }

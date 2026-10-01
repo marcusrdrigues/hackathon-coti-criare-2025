@@ -2,7 +2,7 @@ package com.gestao.mappers;
 
 import com.gestao.dtos.mensagem.MensagemResponse;
 import com.gestao.entities.MensagemNegociacao;
-import com.gestao.enums.TipoRemetente;  // ← MUDOU
+import com.gestao.enums.TipoRemetente;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -16,6 +16,7 @@ public class MensagemMapper {
         return new MensagemResponse(
                 mensagem.getId(),
                 mensagem.getMensagem(),
+                mensagem.getValorOfertado(),
                 mensagem.getTipoRemetente(),
                 mensagem.getRemetenteId(),
                 remetenteNome,

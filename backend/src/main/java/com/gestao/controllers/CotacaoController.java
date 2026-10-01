@@ -3,7 +3,8 @@ package com.gestao.controllers;
 import com.gestao.dtos.cotacao.CotacaoRequest;
 import com.gestao.dtos.cotacao.CotacaoResponse;
 import com.gestao.entities.Cotacao;
-import com.gestao.enums.StatusCotacao;
+import com.gestao.dtos.cotacao.CategoriaResponse;
+import com.gestao.enums.CategoriaCotacao;
 import com.gestao.mappers.CotacaoMapper;
 import com.gestao.services.CotacaoService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,13 +18,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/cotacoes")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 @Tag(name = "Cotações", description = "Endpoints para gerenciamento de cotações")
 public class CotacaoController {
 
@@ -53,6 +54,15 @@ public class CotacaoController {
                 .map(cotacaoMapper::toResponse)
                 .toList();
         return ResponseEntity.ok(responses);
+    }
+
+    @Operation(summary = "Listar categorias", description = "Categorias disponíveis para classificar uma cotação")
+    @GetMapping("/categorias")
+    public ResponseEntity<List<CategoriaResponse>> listarCategorias() {
+        List<CategoriaResponse> categorias = Arrays.stream(CategoriaCotacao.values())
+                .map(c -> new CategoriaResponse(c.name(), c.getDescricao()))
+                .toList();
+        return ResponseEntity.ok(categorias);
     }
 
     @Operation(summary = "Listar cotações abertas", description = "Retorna todas as cotações com status ABERTA")
@@ -132,5 +142,4 @@ public class CotacaoController {
         return ResponseEntity.noContent().build();
     }
 
-    public record StatusRequest(StatusCotacao status) {}
 }
