@@ -1,6 +1,6 @@
 # Etapa 1: BUILD (Compilação)
 # Instalando uma imagem do JDK para compilar o projeto
-FROM eclipse-temurin:21-jdk AS build
+FROM eclipse-temurin:25-jdk AS build
 
 #Criando uma pasta para o BUILD do projeto
 WORKDIR /app
@@ -16,7 +16,7 @@ RUN ./mvnw clean package -DskipTests
 
 # Etapa 2: DEPLOY (Execução)
 #Instalando uma imagem do JRE para executar o projeto
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:25-jre
 
 #Criando uma pasta para o DEPLOY do projeto
 WORKDIR /app
