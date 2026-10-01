@@ -7,6 +7,7 @@ import com.gestao.exceptions.UnauthorizedException;
 import com.gestao.repositories.RefreshTokenRepository;
 import com.gestao.services.AuthService;
 import com.gestao.services.FornecedorService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,7 @@ class AutenticacaoIntegrationTest {
     @Autowired private FornecedorService fornecedorService;
     @Autowired private JwtDecoder jwtDecoder;
     @Autowired private RefreshTokenRepository refreshTokenRepository;
+    @Autowired private TentativasLoginService tentativas;
 
     private Fornecedor fornecedor;
 
@@ -45,6 +47,12 @@ class AutenticacaoIntegrationTest {
         f.setEmail("auth@fornecedor.com");
         f.setSenha(SENHA);
         fornecedor = fornecedorService.cadastrarFornecedor(f);
+    }
+
+    /** O contador de tentativas fica em memória e é compartilhado entre os testes. */
+    @AfterEach
+    void limparTentativas() {
+        tentativas.limpar("auth@fornecedor.com");
     }
 
     @Test
