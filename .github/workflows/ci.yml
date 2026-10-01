@@ -51,7 +51,7 @@ jobs:
         run: |
           nohup java -jar target/Gestao-*.jar --spring.profiles.active=demo > api.log 2>&1 &
           for i in $(seq 1 60); do
-            curl -sf http://localhost:8085/api-docs > /dev/null && exit 0
+            curl -sf http://localhost:8085/actuator/health > /dev/null && exit 0
             sleep 2
           done
           echo "::error::A API não subiu em 120 segundos"

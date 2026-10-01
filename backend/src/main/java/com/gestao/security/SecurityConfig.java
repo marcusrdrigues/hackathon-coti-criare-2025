@@ -32,7 +32,8 @@ import java.util.List;
 /**
  * Segurança da API:
  * - stateless: cada requisição traz um access token JWT no header Authorization
- * - rotas públicas só para login, renovação de sessão, cadastro e documentação
+ * - rotas públicas só para login (inclusive o de demonstração), renovação de sessão,
+ *   cadastro, documentação e health check
  * - o perfil (EMPRESA/FORNECEDOR) vira a role usada nos @PreAuthorize
  */
 @Slf4j
@@ -57,7 +58,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(rotas -> rotas
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/refresh",
-                                "/api/v1/auth/logout").permitAll()
+                                "/api/v1/auth/logout", "/api/v1/auth/demo/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/demo").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/empresas", "/api/v1/fornecedores").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/cotacoes/categorias").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/api-docs", "/api-docs/**").permitAll()

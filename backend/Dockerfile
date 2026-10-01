@@ -24,8 +24,11 @@ WORKDIR /app
 #Copiar os arquivos do BUILD para dentro da pasta /app
 COPY --from=build /app/target/Gestao-*.jar app.jar
 
-#Definir a porta de execução
+#Definir a porta de execução (pode ser trocada pelas variáveis SERVER_PORT ou PORT)
 EXPOSE 8085
 
+# Ajusta a memória da JVM ao limite do container (planos gratuitos costumam ter 512 MB)
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+UseSerialGC"
+
 #Inicializar e rodar a aplicação
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]

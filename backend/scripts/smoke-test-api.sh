@@ -58,6 +58,12 @@ TOKEN_TECH=$(chamar POST "$V1/auth/login" 200 "{\"email\":\"fornecedor@demo.com\
 chamar POST "$V1/auth/login" 401 '{"email":"empresa@demo.com","senha":"errada123"}' >/dev/null
 passo "login (empresa, fornecedores e senha errada)"
 
+# 1b. Demo de um clique (profile demo) e health check
+[[ $(chamar GET "$V1/auth/demo" 200 | jq length) -eq 2 ]] || falhar "esperava 2 contas de demonstração"
+[[ $(chamar POST "$V1/auth/demo/FORNECEDOR" 200 | jq -r .usuario.tipo) == "FORNECEDOR" ]] || falhar "login demo do fornecedor falhou"
+[[ $(chamar GET "$API/actuator/health" 200 | jq -r .status) == "UP" ]] || falhar "health check não está UP"
+passo "login de demonstração em um clique e health check"
+
 # 2. Proteção das rotas
 chamar GET "$V1/cotacoes/abertas" 401 >/dev/null
 chamar GET "$V1/cotacoes/abertas" 401 "" "token.invalido.aqui" >/dev/null
