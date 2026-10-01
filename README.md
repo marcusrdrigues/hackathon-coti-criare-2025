@@ -114,6 +114,8 @@ sequenceDiagram
 - Máscara de CNPJ no cadastro
 - Sala de negociação atualiza sozinha a cada 10 segundos
 - Telas carregadas sob demanda (*lazy loading*)
+- **Modo claro e escuro**: segue o tema do sistema e pode ser fixado no menu do usuário ou no canto das telas de acesso
+- Layout responsivo, do celular ao monitor largo; login e cadastro cabem na tela sem rolagem
 
 ---
 
@@ -203,12 +205,13 @@ O Swagger já vem com o botão **Authorize**: faça o login em `/api/v1/auth/log
 hackathon-coti-criare-2025/
 ├── .github/workflows/ci.yml     Build, testes e teste de fumaça a cada push
 ├── render.yaml                  Deploy da API no Render (Blueprint)
-├── docs/                        Guias de deploy e de gravação da demo
+├── docs/                        Deploy, gravação da demo e design system
 │
 ├── backend/                     API REST · Spring Boot 4 · Java 21
 │   ├── docker-compose.yml       PostgreSQL 16 + API
 │   ├── scripts/
 │   │   └── smoke-test-api.sh    Percorre o fluxo completo via HTTP
+│   ├── src/main/resources/db/migration/   Esquema do banco versionado (Flyway)
 │   └── src/main/java/com/gestao/
 │       ├── configurations/      CORS, Swagger, BCrypt, perfis iniciais, dados de demonstração
 │       ├── controllers/         Endpoints REST (/api/v1/...)
@@ -225,6 +228,7 @@ hackathon-coti-criare-2025/
 └── frontend/                    SPA · Angular 21 · Bootstrap 5
     ├── vercel.json              Deploy na Vercel; repassa /api/* para a API
     ├── src/environments/        URL da API em desenvolvimento e em produção
+    ├── src/styles/tokens.css    Design tokens: cores do tema claro e do escuro
     └── src/app/
         ├── core/
         │   ├── api.config.ts    URL da API
@@ -235,7 +239,7 @@ hackathon-coti-criare-2025/
         │   └── utils/           Máscara de CNPJ, status, mensagens de erro
         └── components/
             ├── pages/           Uma pasta por tela
-            └── shared/          Navbar e avisos (toasts)
+            └── shared/          Navbar, avisos, moldura das telas de acesso, seletor de tema
 ```
 
 ### Modelo de dados
@@ -405,7 +409,7 @@ A demo pública está em **[portal-criare.vercel.app](https://portal-criare.verc
 |---|---|---|
 | Front-end | Vercel | [`frontend/vercel.json`](frontend/vercel.json): build do Angular e repasse de `/api/*` para a API |
 | API | Render | [`render.yaml`](render.yaml): Docker, health check e `JWT_SECRET` gerado pela plataforma |
-| Banco | Neon | PostgreSQL gerenciado; a API cria o esquema sozinha |
+| Banco | Neon | PostgreSQL gerenciado; o Flyway cria e atualiza o esquema na inicialização |
 
 Com o repasse da Vercel, o navegador fala só com um domínio: o cookie da sessão funciona com `SameSite=Strict` e não há chamada entre domínios. O passo a passo completo está em **[docs/deploy.md](docs/deploy.md)**.
 
@@ -560,7 +564,8 @@ O **GitHub Actions** (`.github/workflows/ci.yml`) roda a cada push: compila e te
 - **Refresh token opaco e não JWT**: como fica no banco, dá para revogar no logout e detectar reuso, algo que um JWT puro não permite.
 - **Autorização em duas camadas**: perfil no controller (`@PreAuthorize`) e posse no service, perto da regra de negócio.
 - **Front-end com signals e componentes standalone**, controle de fluxo `@if`/`@for` e um service por recurso da API.
-- **Tema visual centralizado** sobrescrevendo as variáveis do Bootstrap, em vez de repetir as cores da marca em cada componente.
+- **Esquema do banco versionado com Flyway**: cada mudança vira uma migração revisável, e o Hibernate só confere (`ddl-auto=validate`) se as entidades batem com o banco.
+- **Design tokens** ([`tokens.css`](frontend/src/styles/tokens.css)): as cores existem num lugar só, com uma versão para o claro e outra para o escuro, e o Bootstrap é ligado a elas. Nenhum componente usa hexadecimal solto, e todos os pares de texto e fundo passam no contraste da WCAG. Detalhes em [docs/design-system.md](docs/design-system.md).
 
 ---
 
@@ -577,12 +582,13 @@ Permitir que qualquer pessoa experimente o sistema sem instalar nada.
 - [x] Configuração de deploy (Vercel + Render + Neon) e [guia passo a passo](docs/deploy.md)
 - [x] Publicar a demo: [portal-criare.vercel.app](https://portal-criare.vercel.app)
 - [ ] GIF de uma negociação ponta a ponta no topo do README ([roteiro](docs/gravar-demo.md))
+- [x] Design system com tokens de cor, modo claro e escuro ([documentação](docs/design-system.md))
 
 ### Fase 2 · Engenharia
 
 Deixar o projeto mais fácil de manter e com qualidade medida.
 
-- [ ] **Flyway** no lugar do `ddl-auto`, com o esquema versionado em migrações
+- [x] **Flyway** no lugar do `ddl-auto`, com o esquema versionado em migrações
 - [ ] **Testcontainers**: testes de integração contra um PostgreSQL real, e não só H2
 - [ ] **Cobertura com JaCoCo** e análise no **SonarCloud**, com badges no README
 - [ ] **Dependabot** e **CodeQL** para dependências e vulnerabilidades

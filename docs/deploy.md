@@ -50,7 +50,7 @@ O navegador só conversa com o domínio da Vercel. Quando o Angular chama `/api/
    - **Tire o `-pooler` do nome**, se aparecer (ex.: `ep-nome-123-pooler.us-east-1...` vira `ep-nome-123.us-east-1...`). O pooler do Neon serve para apps sem pool de conexões; a API já tem o Hikari, e a conexão direta evita problemas com os *prepared statements* do Hibernate.
    - O `channel_binding=require` pode ficar de fora: `sslmode=require` já garante a conexão criptografada.
 
-Não é preciso criar tabelas: a API cria o esquema na primeira inicialização.
+Não é preciso criar tabelas: na primeira inicialização o Flyway aplica as migrações de `backend/src/main/resources/db/migration`.
 
 ## 2. API no Render
 
