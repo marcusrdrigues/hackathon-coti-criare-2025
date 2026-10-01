@@ -29,12 +29,6 @@
 	<properties>
 		<java.version>21</java.version>
 		<jacoco.version>0.8.14</jacoco.version>
-		<!-- SonarCloud (a análise roda no CI quando o secret SONAR_TOKEN existe) -->
-		<sonar.organization>marcusrdrigues</sonar.organization>
-		<sonar.projectKey>marcusrdrigues_hackathon-coti-criare-2025</sonar.projectKey>
-		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
-		<sonar.coverage.exclusions>**/dtos/**,**/GestaoApplication.java</sonar.coverage.exclusions>
-		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 	<dependencies>
 		<dependency>

@@ -119,12 +119,17 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: .
         run: |
+          # Da raiz, para analisar back-end e front-end juntos (ver sonar-project.properties)
           set -o pipefail
-          ./mvnw -B -ntp org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.qualitygate.wait=true 2>&1 | tee sonar.log
+          npx --yes @sonar/scan \
+            -Dsonar.java.libraries="$HOME/.m2/repository/**/*.jar" \
+            -Dsonar.qualitygate.wait=true 2>&1 | tee sonar.log
 
       - name: Issues abertas no SonarCloud
         if: always() && steps.sonar.outputs.ativo == 'true'
+        working-directory: .
         run: |
           # Lista as issues como anotações no GitHub, com arquivo e linha, para corrigir sem sair do PR
           # O projeto é público: a consulta não precisa de token
@@ -139,7 +144,7 @@ jobs:
           dados = json.load(open('issues.json'))
           print(f"::notice title=SonarCloud::{dados['total']} issue(s) aberta(s)")
           for i in dados['issues']:
-              caminho = 'backend/' + i['component'].split(':', 1)[-1]
+              caminho = i['component'].split(':', 1)[-1]
               linha = i.get('line', 1)
               texto = f"{i['message']} ({i['rule']}, {i.get('severity', '')})".replace('%', '%25')
               print(f"::warning file={caminho},line={linha},title=SonarCloud::{texto}")
@@ -147,8 +152,9 @@ jobs:
 
       - name: Motivo da falha no SonarCloud
         if: failure() && steps.sonar.outputs.ativo == 'true'
+        working-directory: .
         run: |
-          motivo=$(grep -E "^\[ERROR\]" sonar.log | grep -v "^\[ERROR\] *$" | head -15 || true)
+          motivo=$(grep -E "ERROR" sonar.log | head -15 || true)
           [ -n "$motivo" ] && echo "::error title=SonarCloud::$(echo "$motivo" | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')" || true
 
   frontend:
