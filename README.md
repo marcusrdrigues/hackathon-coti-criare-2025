@@ -14,6 +14,11 @@
 </p>
 
 <p align="center">
+  <a href="https://portal-criare.vercel.app"><b>Testar a demo</b></a> ·
+  <a href="https://portal-criare-api.onrender.com/swagger-ui.html">Documentação da API</a>
+</p>
+
+<p align="center">
   <a href="https://github.com/marcusrdrigues/hackathon-coti-criare-2025/actions/workflows/ci.yml"><img src="https://github.com/marcusrdrigues/hackathon-coti-criare-2025/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
 </p>
 
@@ -394,7 +399,7 @@ Para cadastrar contas novas, use um CNPJ válido (por exemplo `33.445.566/0001-8
 
 ## ☁️ Deploy
 
-O projeto está preparado para uma demo pública gratuita:
+A demo pública está em **[portal-criare.vercel.app](https://portal-criare.vercel.app)**, montada com serviços gratuitos:
 
 | Parte | Serviço | Configuração |
 |---|---|---|
@@ -570,7 +575,7 @@ Permitir que qualquer pessoa experimente o sistema sem instalar nada.
 - [x] Login de demonstração em um clique (empresa e fornecedor)
 - [x] Dados de exemplo realistas, restaurados todo dia
 - [x] Configuração de deploy (Vercel + Render + Neon) e [guia passo a passo](docs/deploy.md)
-- [ ] Publicar a demo e colocar o link **Testar a demo** no topo deste README
+- [x] Publicar a demo: [portal-criare.vercel.app](https://portal-criare.vercel.app)
 - [ ] GIF de uma negociação ponta a ponta no topo do README ([roteiro](docs/gravar-demo.md))
 
 ### Fase 2 · Engenharia
