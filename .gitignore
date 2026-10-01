@@ -1,0 +1,20 @@
+# Build / dependências
+bin/
+obj/
+target/
+node_modules/
+dist/
+.angular/
+
+# IDEs e sistema
+.vs/
+.idea/
+.vscode/
+.metadata/
+*.iml
+.DS_Store
+._*
+
+# Segredos locais
+.env
+*.local.json
