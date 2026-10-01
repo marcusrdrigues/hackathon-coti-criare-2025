@@ -29,10 +29,11 @@
 - [Arquitetura](#️-arquitetura)
 - [Como rodar](#️-como-rodar)
 - [Dados de demonstração](#-dados-de-demonstração)
+- [Deploy](#️-deploy)
 - [API REST](#-api-rest)
 - [Testes e CI](#-testes-e-ci)
 - [Decisões técnicas](#-decisões-técnicas)
-- [Limitações e próximos passos](#-limitações-e-próximos-passos)
+- [Roadmap](#️-roadmap)
 - [Equipe](#-equipe-javangers)
 
 ---
@@ -196,6 +197,8 @@ O Swagger já vem com o botão **Authorize**: faça o login em `/api/v1/auth/log
 ```text
 hackathon-coti-criare-2025/
 ├── .github/workflows/ci.yml     Build, testes e teste de fumaça a cada push
+├── render.yaml                  Deploy da API no Render (Blueprint)
+├── docs/                        Guias de deploy e de gravação da demo
 │
 ├── backend/                     API REST · Spring Boot 4 · Java 21
 │   ├── docker-compose.yml       PostgreSQL 16 + API
@@ -215,6 +218,8 @@ hackathon-coti-criare-2025/
 │       └── utils/               Validação de CNPJ e normalização de e-mail
 │
 └── frontend/                    SPA · Angular 21 · Bootstrap 5
+    ├── vercel.json              Deploy na Vercel; repassa /api/* para a API
+    ├── src/environments/        URL da API em desenvolvimento e em produção
     └── src/app/
         ├── core/
         │   ├── api.config.ts    URL da API
@@ -346,7 +351,7 @@ Depois é só rodar o front-end como no passo 3.
 
 | Variável | Padrão | Para que serve |
 |---|---|---|
-| `SERVER_PORT` | `8085` | Porta da API |
+| `SERVER_PORT` | `8085` | Porta da API (também aceita `PORT`, usada por plataformas como o Render) |
 | `SPRING_DATASOURCE_URL` | `jdbc:postgresql://localhost:5435/bdgestao` | Conexão com o banco |
 | `SPRING_DATASOURCE_USERNAME` | `user` | Usuário do banco |
 | `SPRING_DATASOURCE_PASSWORD` | `coti` | Senha do banco |
@@ -357,27 +362,47 @@ Depois é só rodar o front-end como no passo 3.
 | `JWT_EXPIRACAO_ACESSO` | `15m` | Validade do access token |
 | `JWT_EXPIRACAO_REFRESH` | `7d` | Validade do refresh token |
 | `JWT_COOKIE_SECURE` | `false` | `true` em produção (HTTPS): o cookie só trafega por conexão segura |
+| `DB_POOL_SIZE` | `10` | Máximo de conexões com o banco |
+| `DEMO_RESET_CRON` | `0 0 4 * * *` | Profile `demo`: quando os dados de exemplo voltam ao estado inicial (horário de Brasília) |
 
-Se a API rodar em outra porta ou servidor, ajuste a URL em `frontend/src/app/core/api.config.ts`.
+Se a API rodar em outra porta ou servidor, ajuste a URL em `frontend/src/environments/environment.development.ts`.
 
 ---
 
 ## 🎬 Dados de demonstração
 
-Com o profile `demo`, a API cria (só se o banco estiver vazio):
+Com o profile `demo`, a tela de login ganha os botões **Entrar como empresa** e **Entrar como fornecedor**: dá para conhecer o sistema com um clique, sem cadastro.
+
+A API popula o banco na primeira inicialização (se estiver vazio) e **volta os dados ao estado inicial todo dia às 4h**, para a demo pública não ficar bagunçada pelo uso dos visitantes.
 
 | Perfil | E-mail | Senha |
 |---|---|---|
 | Empresa — Criare Consulting | `empresa@demo.com` | `demo1234` |
+| Empresa — Hospital Santa Vida | `hospital@demo.com` | `demo1234` |
 | Fornecedor — Tech Soluções Ltda | `fornecedor@demo.com` | `demo1234` |
 | Fornecedor — InfoWorld Distribuidora | `infoworld@demo.com` | `demo1234` |
 | Fornecedor — Limpa Bem Serviços | `limpabem@demo.com` | `demo1234` |
+| Fornecedor — Clima Frio Ar-Condicionado | `climafrio@demo.com` | `demo1234` |
 
-Também cria três cotações (notebooks, limpeza pós-obra e cadeiras), três propostas e uma **negociação em andamento** entre a Criare e a Tech Soluções.
+O cenário inclui cotações abertas das duas empresas, uma **negociação em andamento** (notebooks, com contraproposta da Criare) e um **negócio já fechado** (licenças de software), para os dashboards e o histórico não começarem vazios.
 
-**Roteiro sugerido:** abra duas janelas (uma anônima), entre como `empresa@demo.com` numa e `fornecedor@demo.com` na outra, e negociem os notebooks. A sala de negociação se atualiza sozinha.
+**Roteiro sugerido:** abra duas janelas (uma anônima), entre como empresa numa e como fornecedor na outra, e continuem a negociação dos notebooks. A sala de negociação se atualiza sozinha.
 
 Para cadastrar contas novas, use um CNPJ válido (por exemplo `33.445.566/0001-86`) e uma senha com 8+ caracteres, letras e números.
+
+---
+
+## ☁️ Deploy
+
+O projeto está preparado para uma demo pública gratuita:
+
+| Parte | Serviço | Configuração |
+|---|---|---|
+| Front-end | Vercel | [`frontend/vercel.json`](frontend/vercel.json): build do Angular e repasse de `/api/*` para a API |
+| API | Render | [`render.yaml`](render.yaml): Docker, health check e `JWT_SECRET` gerado pela plataforma |
+| Banco | Neon | PostgreSQL gerenciado; a API cria o esquema sozinha |
+
+Com o repasse da Vercel, o navegador fala só com um domínio: o cookie da sessão funciona com `SameSite=Strict` e não há chamada entre domínios. O passo a passo completo está em **[docs/deploy.md](docs/deploy.md)**.
 
 ---
 
@@ -508,6 +533,7 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | `FluxoCotacaoIntegrationTest` | Cadastro, login, CNPJ inválido, e-mail duplicado, proposta duplicada, negociação, contrapropostas, fechamento, cancelamento, prazo vencido, dashboards e regras de posse (empresa concorrente, fornecedor concorrente, intruso na negociação) |
 | `AutenticacaoIntegrationTest` | Conteúdo do JWT, token adulterado, refresh gravado como hash, rotação, detecção de reuso, logout e bloqueio de força bruta |
 | `SegurancaApiTest` | Pela camada HTTP: 401 sem token e com token inválido, rotas públicas, cookie `HttpOnly`/`SameSite`, 403 por perfil e por posse, identidade vinda do token, refresh pelo cookie, logout e CORS |
+| `DemonstracaoApiTest` | Login de demonstração em um clique, health check e reset diário dos dados de exemplo |
 | `DocumentosTest` | Validação de CNPJ e normalização de dados |
 | `smoke-test-api.sh` | Contra a API real com PostgreSQL: login, proteção das rotas, CORS, validações, regras de perfil e de posse, cotação → proposta → negociação → mensagens → fechamento, dashboards, refresh com rotação e reuso, logout e força bruta |
 | Front-end | Interceptor (token, renovação automática e expiração), guards por perfil, máscara de CNPJ e componente raiz |
@@ -533,16 +559,47 @@ O **GitHub Actions** (`.github/workflows/ci.yml`) roda a cada push: compila e te
 
 ---
 
-## 🧭 Limitações e próximos passos
+## 🗺️ Roadmap
 
-Este projeto nasceu num hackathon de 24 horas. Alguns pontos ficaram fora do escopo e são os próximos passos naturais:
+O projeto nasceu num hackathon de 24 horas e continua em evolução. Este é o plano, em ordem de prioridade:
 
-- **Limite de tentativas distribuído**: o contador de força bruta fica em memória e vale para uma instância; com várias, iria para um Redis.
-- **Notificações em tempo real** (WebSocket/SSE) no lugar da atualização periódica da sala de negociação.
-- **Migrações de banco com Flyway**, no lugar do `ddl-auto=update`.
-- **Paginação** nas listagens.
-- **Recuperação de senha** e confirmação de e-mail.
-- **Anexos** nas cotações e propostas (especificações, catálogos).
+### Fase 1 · Demo pública &nbsp;`em andamento`
+
+Permitir que qualquer pessoa experimente o sistema sem instalar nada.
+
+- [x] Login de demonstração em um clique (empresa e fornecedor)
+- [x] Dados de exemplo realistas, restaurados todo dia
+- [x] Configuração de deploy (Vercel + Render + Neon) e [guia passo a passo](docs/deploy.md)
+- [ ] Publicar a demo e colocar o link **Testar a demo** no topo deste README
+- [ ] GIF de uma negociação ponta a ponta no topo do README ([roteiro](docs/gravar-demo.md))
+
+### Fase 2 · Engenharia
+
+Deixar o projeto mais fácil de manter e com qualidade medida.
+
+- [ ] **Flyway** no lugar do `ddl-auto`, com o esquema versionado em migrações
+- [ ] **Testcontainers**: testes de integração contra um PostgreSQL real, e não só H2
+- [ ] **Cobertura com JaCoCo** e análise no **SonarCloud**, com badges no README
+- [ ] **Dependabot** e **CodeQL** para dependências e vulnerabilidades
+- [ ] **ADRs** em `docs/adr/`: registros curtos das decisões de arquitetura (ex.: por que o refresh token é opaco)
+- [ ] **Testes ponta a ponta com Playwright** no CI, simulando empresa e fornecedor no navegador
+
+### Fase 3 · Produto
+
+Funcionalidades que aproximam a plataforma de um uso real.
+
+- [ ] **Tempo real** com WebSocket ou SSE na negociação, com aviso de mensagens não lidas
+- [ ] **IA com Spring AI**: resumir e comparar propostas, sugerir contrapropostas e ajudar a escrever os requisitos da cotação
+- [ ] **Contrato em PDF** gerado ao fechar o negócio, com as partes, o objeto e o valor acordado
+- [ ] **Comparador de propostas** com nota ponderada (preço, prazo, garantia)
+- [ ] **Auditoria com Hibernate Envers**: histórico de quem alterou o quê
+
+### Depois
+
+- [ ] Paginação nas listagens
+- [ ] Recuperação de senha e confirmação de e-mail
+- [ ] Anexos nas cotações e propostas (especificações, catálogos)
+- [ ] Limite de tentativas de login compartilhado entre instâncias (Redis)
 
 ---
 
