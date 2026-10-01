@@ -32,15 +32,23 @@ O navegador só conversa com o domínio da Vercel. Quando o Angular chama `/api/
 2. Crie um projeto:
    - **Name:** `portal-criare`
    - **Region:** `AWS US East (N. Virginia)`, perto da região do Render que vamos usar
-3. No painel do projeto, clique em **Connect** e copie os dados da conexão. Você vai precisar de três valores:
-   - **Host:** algo como `ep-cool-name-123456.us-east-1.aws.neon.tech`
-   - **Usuário:** por padrão `neondb_owner`
-   - **Senha:** a gerada pelo Neon
-4. Monte a URL JDBC (o Spring usa o formato JDBC, não o `postgresql://` que o Neon mostra):
+3. No painel do projeto, clique em **Connect**. O Neon mostra uma string neste formato:
 
    ```text
-   jdbc:postgresql://SEU-HOST/neondb?sslmode=require
+   postgresql://USUARIO:SENHA@HOST/neondb?sslmode=require&channel_binding=require
    ```
+
+4. Separe as partes em três variáveis. O Spring não aceita usuário e senha dentro da URL, e o driver Java usa o prefixo `jdbc:`:
+
+   | Variável | Valor |
+   |---|---|
+   | `SPRING_DATASOURCE_URL` | `jdbc:postgresql://HOST/neondb?sslmode=require` |
+   | `SPRING_DATASOURCE_USERNAME` | o `USUARIO` (por padrão `neondb_owner`) |
+   | `SPRING_DATASOURCE_PASSWORD` | a `SENHA` (o trecho entre `:` e `@`) |
+
+   Dois ajustes no `HOST`:
+   - **Tire o `-pooler` do nome**, se aparecer (ex.: `ep-nome-123-pooler.us-east-1...` vira `ep-nome-123.us-east-1...`). O pooler do Neon serve para apps sem pool de conexões; a API já tem o Hikari, e a conexão direta evita problemas com os *prepared statements* do Hibernate.
+   - O `channel_binding=require` pode ficar de fora: `sslmode=require` já garante a conexão criptografada.
 
 Não é preciso criar tabelas: a API cria o esquema na primeira inicialização.
 
