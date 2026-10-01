@@ -135,14 +135,20 @@ jobs:
           # O projeto é público: a consulta não precisa de token
           # A busca de issues do SonarCloud é indexada alguns segundos depois do fim da análise
           sleep 45
-          url="https://sonarcloud.io/api/issues/search?componentKeys=marcusrdrigues_hackathon-coti-criare-2025&resolved=false&ps=100"
+          # Mesma branch ou PR que acabou de ser analisada (sem isso a busca olha a main)
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            alvo="pullRequest=${{ github.event.number }}"
+          else
+            alvo="branch=${{ github.ref_name }}"
+          fi
+          url="https://sonarcloud.io/api/issues/search?componentKeys=marcusrdrigues_hackathon-coti-criare-2025&resolved=false&ps=100&$alvo"
           status=$(curl -s -o issues.json -w "%{http_code}" "$url")
           if [ "$status" != "200" ]; then
             echo "::warning title=SonarCloud::Não consegui listar as issues (HTTP $status): $(head -c 300 issues.json)"
             exit 0
           fi
           # Linhas de código por linguagem, para conferir que back-end e front-end entraram na análise
-          curl -s -o linguagens.json "https://sonarcloud.io/api/measures/component?component=marcusrdrigues_hackathon-coti-criare-2025&metricKeys=ncloc_language_distribution" || true
+          curl -s -o linguagens.json "https://sonarcloud.io/api/measures/component?component=marcusrdrigues_hackathon-coti-criare-2025&metricKeys=ncloc_language_distribution&$alvo" || true
           python3 - <<'PY'
           import json
           dados = json.load(open('issues.json'))
