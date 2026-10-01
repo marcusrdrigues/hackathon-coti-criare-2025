@@ -1,6 +1,8 @@
 # Atualizações automáticas de dependências.
 # Uma PR por ecossistema por semana (as atualizações menores vêm agrupadas),
 # para o histórico não virar uma fila de PRs. Toda PR passa pelo CI.
+# Versões maiores do front-end (Angular, Vitest) e do Java ficam de fora:
+# elas pedem migração planejada (ng update, troca de LTS), não um bump solto.
 version: 2
 updates:
   - package-ecosystem: maven
@@ -25,6 +27,9 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: "build(frontend)"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       angular:
         patterns: ["@angular/*", "@angular-devkit/*", "@schematics/angular"]
@@ -47,3 +52,6 @@ updates:
       interval: monthly
     commit-message:
       prefix: "build(docker)"
+    ignore:
+      - dependency-name: "eclipse-temurin"
+        update-types: ["version-update:semver-major"]
