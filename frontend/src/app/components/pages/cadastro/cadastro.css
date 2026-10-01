@@ -1,29 +1,89 @@
-.cadastro-card {
-  max-width: 450px;
+/* Exclusivo do cadastro. O resto vem do <app-layout-acesso> e do styles.css ("Telas de acesso"). */
+
+fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
 }
 
-.form-control {
-  padding: 10px 15px;
-  border-radius: 8px;
+/* Controle segmentado: dois rádios nativos com aparência de segmentos (teclado e leitor de tela funcionam) */
+.segmentado {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  padding: 2px;
+  background: #ececf0;
+  border-radius: 10px;
 }
 
-.btn-group .btn {
-  border: 1px solid #dee2e6;
+.segmento-entrada {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.segmento {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.5rem;
+  margin: 0;
+  font-size: 0.9375rem;
   font-weight: 600;
+  color: #1d1d1f;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s, box-shadow 0.15s;
 }
 
-.btn-selecionado {
-  background-color: var(--criare-red);
-  border-color: var(--criare-red);
-  color: #fff;
+.segmento-entrada:checked + .segmento {
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
 }
 
-.btn-selecionado:hover {
-  background-color: var(--criare-hover);
-  color: #fff;
+.segmento-entrada:not(:checked) + .segmento:hover {
+  background: rgba(255, 255, 255, 0.55);
 }
 
-.btn-light {
-  background-color: #f8f9fa;
-  color: #6c757d;
+.segmento-entrada:focus-visible + .segmento {
+  outline: 2px solid var(--criare-red);
+  outline-offset: 2px;
+}
+
+/* Requisitos da senha: o estado aparece no símbolo e no texto escondido, não só na cor */
+.requisitos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  font-size: 0.8125rem;
+  color: #6e6e73;
+}
+
+.requisitos li {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.marcador {
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 1.5px solid #8e8e93;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.requisitos li.cumprido {
+  color: #1d1d1f;
+}
+
+.requisitos li.cumprido .marcador {
+  border-color: #1b7f3b;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 6.2 5 8.2 9 4' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / 100% no-repeat,
+    #1b7f3b;
 }

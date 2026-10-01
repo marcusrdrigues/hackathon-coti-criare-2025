@@ -1,74 +1,91 @@
-<div class="login-container">
-  <div class="glass-card cadastro-card fade-in">
+<app-layout-acesso
+  titulo="Uma conta para comprar ou para vender."
+  texto="Empresas publicam o que precisam comprar. Fornecedores encontram oportunidades e enviam propostas. O cadastro é gratuito e usa o CNPJ da sua empresa.">
 
-    <h2 class="text-primary fw-bold mb-1">Crie sua conta</h2>
-    <p class="text-muted small mb-4">Junte-se ao nosso ecossistema</p>
+  <h1 class="titulo">Criar conta</h1>
+  <p class="subtitulo">Leva menos de um minuto. Depois você entra direto no portal.</p>
 
-    <div class="btn-group w-100 mb-4 shadow-sm" role="group" aria-label="Tipo de conta">
-      <button type="button" class="btn" [class.btn-selecionado]="registro.tipo === 'EMPRESA'"
-              [class.btn-light]="registro.tipo !== 'EMPRESA'" (click)="setTipo('EMPRESA')">
-        <i class="bi bi-building me-1"></i>Sou Empresa
-      </button>
-      <button type="button" class="btn" [class.btn-selecionado]="registro.tipo === 'FORNECEDOR'"
-              [class.btn-light]="registro.tipo !== 'FORNECEDOR'" (click)="setTipo('FORNECEDOR')">
-        <i class="bi bi-truck me-1"></i>Sou Fornecedor
-      </button>
-    </div>
+  @if (erroGeral(); as mensagem) {
+    <p class="aviso aviso-erro" role="alert">{{ mensagem }}</p>
+  }
 
-    <p class="small text-muted text-start mb-3">
-      @if (registro.tipo === 'EMPRESA') {
-        Publique cotações e receba propostas de fornecedores.
-      } @else {
-        Encontre cotações abertas e envie suas propostas.
+  <form (ngSubmit)="cadastrar()" novalidate>
+
+    <fieldset class="campo">
+      <legend class="rotulo">Tipo de conta</legend>
+      <div class="segmentado">
+        <input type="radio" class="segmento-entrada" id="tipo-empresa" name="tipo" value="EMPRESA"
+               [checked]="tipo() === 'EMPRESA'" (change)="tipo.set('EMPRESA')">
+        <label class="segmento" for="tipo-empresa">Empresa</label>
+
+        <input type="radio" class="segmento-entrada" id="tipo-fornecedor" name="tipo" value="FORNECEDOR"
+               [checked]="tipo() === 'FORNECEDOR'" (change)="tipo.set('FORNECEDOR')">
+        <label class="segmento" for="tipo-fornecedor">Fornecedor</label>
+      </div>
+      <p class="legenda" aria-live="polite">{{ textoDoTipo() }}</p>
+    </fieldset>
+
+    <div class="campo">
+      <label for="nome" class="rotulo">{{ tipo() === 'EMPRESA' ? 'Razão social' : 'Nome ou razão social' }}</label>
+      <input id="nome" type="text" class="entrada" name="nome" autocomplete="organization" maxlength="150"
+             [ngModel]="nome()" (ngModelChange)="alterar('nome', $event)" (blur)="tocar('nome')"
+             [attr.aria-invalid]="!!erroVisivel('nome')" aria-describedby="nome-erro">
+      @if (erroVisivel('nome'); as erro) {
+        <p id="nome-erro" class="erro-campo">{{ erro }}</p>
       }
-    </p>
-
-    @if (erro(); as mensagem) {
-      <div class="alert alert-danger py-2 small text-start" role="alert">
-        <i class="bi bi-exclamation-circle me-1"></i>{{ mensagem }}
-      </div>
-    }
-
-    <form (ngSubmit)="cadastrar()">
-      <div class="text-start mb-3">
-        <label for="nome" class="form-label small fw-bold text-secondary ps-1">
-          {{ registro.tipo === 'EMPRESA' ? 'Razão social' : 'Nome / Razão social' }}
-        </label>
-        <input id="nome" type="text" class="form-control" [(ngModel)]="registro.nome" name="nome"
-               placeholder="Ex: Tech Soluções Ltda" maxlength="150" required>
-      </div>
-
-      <div class="text-start mb-3">
-        <label for="cnpj" class="form-label small fw-bold text-secondary ps-1">CNPJ</label>
-        <input id="cnpj" type="text" inputmode="numeric" class="form-control" [ngModel]="registro.cnpj"
-               (ngModelChange)="aoDigitarCnpj($event)" name="cnpj" placeholder="00.000.000/0000-00"
-               maxlength="18" required>
-      </div>
-
-      <div class="text-start mb-3">
-        <label for="email" class="form-label small fw-bold text-secondary ps-1">E-mail corporativo</label>
-        <input id="email" type="email" class="form-control" [(ngModel)]="registro.email" name="email"
-               placeholder="contato@empresa.com" autocomplete="email" maxlength="100" required>
-      </div>
-
-      <div class="text-start mb-4">
-        <label for="senha" class="form-label small fw-bold text-secondary ps-1">Crie uma senha</label>
-        <input id="senha" type="password" class="form-control" [(ngModel)]="registro.senha" name="senha"
-               placeholder="8+ caracteres, letras e números" autocomplete="new-password" minlength="8" maxlength="72" required>
-      </div>
-
-      <button type="submit" class="btn btn-criare shadow-sm mb-3" [disabled]="carregando()">
-        @if (carregando()) {
-          <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>CADASTRANDO...
-        } @else {
-          CADASTRAR
-        }
-      </button>
-    </form>
-
-    <div class="mt-3 border-top pt-3">
-      <small class="text-muted">Já possui cadastro?</small>
-      <a routerLink="/pages/login" class="login-link ms-1">Faça login</a>
     </div>
-  </div>
-</div>
+
+    <div class="campo">
+      <label for="cnpj" class="rotulo">CNPJ</label>
+      <input id="cnpj" type="text" class="entrada" name="cnpj" inputmode="numeric" maxlength="18"
+             placeholder="00.000.000/0000-00"
+             [ngModel]="cnpj()" (ngModelChange)="alterar('cnpj', $event)" (blur)="tocar('cnpj')"
+             [attr.aria-invalid]="!!erroVisivel('cnpj')" aria-describedby="cnpj-erro">
+      @if (erroVisivel('cnpj'); as erro) {
+        <p id="cnpj-erro" class="erro-campo">{{ erro }}</p>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="email" class="rotulo">E-mail</label>
+      <input id="email" type="email" class="entrada" name="email" inputmode="email" autocomplete="email"
+             maxlength="100" placeholder="nome@empresa.com.br"
+             [ngModel]="email()" (ngModelChange)="alterar('email', $event)" (blur)="tocar('email')"
+             [attr.aria-invalid]="!!erroVisivel('email')" aria-describedby="email-erro">
+      @if (erroVisivel('email'); as erro) {
+        <p id="email-erro" class="erro-campo">{{ erro }}</p>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="senha" class="rotulo">Senha</label>
+      <input id="senha" type="password" class="entrada" name="senha" autocomplete="new-password" maxlength="72"
+             [ngModel]="senha()" (ngModelChange)="alterar('senha', $event)" (blur)="tocar('senha')"
+             [attr.aria-invalid]="!!erroVisivel('senha')" aria-describedby="senha-regras">
+      <!-- Os requisitos aparecem antes do erro: a pessoa sabe a regra enquanto digita -->
+      <ul id="senha-regras" class="requisitos">
+        <li [class.cumprido]="senhaTemTamanho()">
+          <span class="marcador" aria-hidden="true"></span>
+          Pelo menos 8 caracteres<span class="visually-hidden">{{ senhaTemTamanho() ? ': atendido' : ': pendente' }}</span>
+        </li>
+        <li [class.cumprido]="senhaTemLetraENumero()">
+          <span class="marcador" aria-hidden="true"></span>
+          Letras e números<span class="visually-hidden">{{ senhaTemLetraENumero() ? ': atendido' : ': pendente' }}</span>
+        </li>
+      </ul>
+    </div>
+
+    <button type="submit" class="botao-principal" [disabled]="carregando()">
+      @if (carregando()) {
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        <span>Criando conta…</span>
+      } @else {
+        Criar conta
+      }
+    </button>
+  </form>
+
+  <p class="rodape">
+    Já tem conta? <a routerLink="/pages/login" class="link">Entrar</a>
+  </p>
+</app-layout-acesso>

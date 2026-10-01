@@ -1,0 +1,200 @@
+/*
+ * Moldura das telas de acesso.
+ *   --vinho  #7a0020  fundo do painel da marca; branco nele 11,4:1
+ *   #f3c9d3           texto secundário no painel; 7,6:1 sobre o vinho
+ */
+:host {
+  --vinho: #7a0020;
+  --vinho-texto-2: #f3c9d3;
+  display: block;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  min-height: 100dvh;
+  background: #fff;
+}
+
+/* ---------- Painel da marca ---------- */
+.painel-marca {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: clamp(2rem, 5vh, 3.5rem) clamp(2rem, 5vw, 4.5rem);
+  background:
+    radial-gradient(120% 80% at 0% 0%, rgba(178, 0, 45, 0.55) 0%, transparent 60%),
+    var(--vinho);
+  color: #fff;
+}
+
+.marca {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.marca-nome {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.marca-produto {
+  font-size: 0.875rem;
+  color: var(--vinho-texto-2);
+}
+
+.manifesto {
+  max-width: 30rem;
+}
+
+.manifesto-titulo {
+  font-size: clamp(1.75rem, 2.6vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 0 0 1rem;
+}
+
+.manifesto-texto {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--vinho-texto-2);
+  margin: 0 0 2rem;
+}
+
+/* Assinatura: o valor convergindo ao longo da negociação */
+.negociacao {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.negociacao-passo {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.6rem 0 0.6rem 1.25rem;
+}
+
+.negociacao-passo::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 1.05rem;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--vinho-texto-2);
+}
+
+.passo-rotulo {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.passo-autor {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--vinho-texto-2);
+}
+
+.passo-valor {
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--vinho-texto-2);
+}
+
+.negociacao-passo.fechado .passo-valor {
+  color: #fff;
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+
+.negociacao-passo.fechado::before {
+  width: 11px;
+  height: 11px;
+  left: -6px;
+  top: 0.95rem;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.18);
+}
+
+.credito {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--vinho-texto-2);
+}
+
+/* ---------- Painel do conteúdo ---------- */
+.painel-acesso {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.5rem, 4vh, 3rem) 1.5rem;
+}
+
+.acesso {
+  width: 100%;
+  max-width: 22.5rem;
+}
+
+.marca-compacta {
+  display: none;
+  margin-bottom: 1.5rem;
+}
+
+.marca-compacta .marca-nome {
+  color: var(--criare-red);
+}
+
+.marca-compacta .marca-produto {
+  color: #6e6e73;
+}
+
+@media (max-width: 959.98px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .painel-marca {
+    display: none;
+  }
+
+  .marca-compacta {
+    display: flex;
+  }
+}
+
+@media (max-height: 720px) {
+  .painel-marca {
+    padding-top: 1.75rem;
+    padding-bottom: 1.75rem;
+  }
+
+  .manifesto-texto {
+    margin-bottom: 1.25rem;
+  }
+
+  .negociacao-passo {
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+  }
+
+  .marca-compacta {
+    margin-bottom: 1rem;
+  }
+}
+
+@media (max-height: 600px) {
+  .credito {
+    display: none;
+  }
+}

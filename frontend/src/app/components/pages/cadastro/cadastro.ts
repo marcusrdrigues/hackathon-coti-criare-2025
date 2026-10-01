@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Observable, switchMap } from 'rxjs';
@@ -7,11 +7,16 @@ import { AuthService } from '../../../core/services/auth.service';
 import { CadastroService } from '../../../core/services/cadastro.service';
 import { NotificacaoService } from '../../../core/services/notificacao.service';
 import { mensagemDeErro } from '../../../core/utils/erros';
-import { mascararCnpj } from '../../../core/utils/formatos';
+import { cnpjValido, mascararCnpj } from '../../../core/utils/formatos';
+import { LayoutAcesso } from '../../shared/layout-acesso/layout-acesso';
+
+type Campo = 'nome' | 'cnpj' | 'email' | 'senha';
+
+const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 @Component({
   selector: 'app-cadastro',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, LayoutAcesso],
   templateUrl: './cadastro.html',
   styleUrl: './cadastro.css',
 })
@@ -21,59 +26,108 @@ export class CadastroComponent {
   private readonly notificacao = inject(NotificacaoService);
   private readonly router = inject(Router);
 
-  registro = {
-    nome: '',
-    cnpj: '',
-    email: '',
-    senha: '',
-    tipo: 'FORNECEDOR' as TipoUsuario,
-  };
+  protected readonly tipo = signal<TipoUsuario>('EMPRESA');
+  protected readonly nome = signal('');
+  protected readonly cnpj = signal('');
+  protected readonly email = signal('');
+  protected readonly senha = signal('');
 
   protected readonly carregando = signal(false);
-  protected readonly erro = signal<string | null>(null);
+  protected readonly erroGeral = signal<string | null>(null);
+  /** Erros que vieram da API para um campo específico (ex.: e-mail já cadastrado). */
+  protected readonly errosServidor = signal<Partial<Record<Campo, string>>>({});
+  /** Campos que a pessoa já visitou: só então mostramos o erro, para não acusar antes da hora. */
+  protected readonly tocados = signal<Set<Campo>>(new Set());
 
-  setTipo(tipo: TipoUsuario): void {
-    this.registro.tipo = tipo;
+  protected readonly senhaTemTamanho = computed(() => this.senha().length >= 8);
+  protected readonly senhaTemLetraENumero = computed(
+    () => /[A-Za-z]/.test(this.senha()) && /\d/.test(this.senha()),
+  );
+
+  /** Validação no navegador, com a mesma regra da API. */
+  protected readonly erros = computed<Partial<Record<Campo, string>>>(() => {
+    const erros: Partial<Record<Campo, string>> = {};
+    if (!this.nome().trim()) {
+      erros.nome = this.tipo() === 'EMPRESA' ? 'Informe a razão social.' : 'Informe o nome ou a razão social.';
+    }
+    if (this.cnpj().replace(/\D/g, '').length !== 14) {
+      erros.cnpj = 'Informe os 14 dígitos do CNPJ.';
+    } else if (!cnpjValido(this.cnpj())) {
+      erros.cnpj = 'Esse CNPJ não é válido. Confira os números.';
+    }
+    if (!EMAIL_VALIDO.test(this.email().trim())) {
+      erros.email = 'Informe um e-mail no formato nome@empresa.com.br.';
+    }
+    if (!this.senhaTemTamanho() || !this.senhaTemLetraENumero()) {
+      erros.senha = 'Use pelo menos 8 caracteres, com letras e números.';
+    }
+    return { ...erros, ...this.errosServidor() };
+  });
+
+  protected readonly textoDoTipo = computed(() =>
+    this.tipo() === 'EMPRESA'
+      ? 'Publique o que precisa comprar e negocie com fornecedores.'
+      : 'Encontre cotações abertas e envie suas propostas.',
+  );
+
+  erroVisivel(campo: Campo): string | null {
+    return this.tocados().has(campo) ? (this.erros()[campo] ?? null) : null;
   }
 
-  aoDigitarCnpj(valor: string): void {
-    this.registro.cnpj = mascararCnpj(valor);
+  tocar(campo: Campo): void {
+    this.tocados.update((atual) => new Set(atual).add(campo));
+  }
+
+  alterar(campo: Campo, valor: string): void {
+    const sinal = { nome: this.nome, cnpj: this.cnpj, email: this.email, senha: this.senha }[campo];
+    sinal.set(campo === 'cnpj' ? mascararCnpj(valor) : valor);
+    // A pessoa corrigiu o campo: o erro que veio da API deixa de valer
+    this.errosServidor.update(({ [campo]: _removido, ...resto }) => resto);
   }
 
   cadastrar(): void {
-    const { nome, cnpj, email, senha, tipo } = this.registro;
+    this.tocados.set(new Set<Campo>(['nome', 'cnpj', 'email', 'senha']));
+    if (Object.keys(this.erros()).length > 0) {
+      return;
+    }
 
-    if (!nome.trim() || !cnpj || !email.trim() || !senha) {
-      this.erro.set('Preencha todos os campos.');
-      return;
-    }
-    if (cnpj.replace(/\D/g, '').length !== 14) {
-      this.erro.set('O CNPJ precisa ter 14 dígitos.');
-      return;
-    }
-    if (senha.length < 8 || !/[A-Za-z]/.test(senha) || !/\d/.test(senha)) {
-      this.erro.set('A senha precisa ter pelo menos 8 caracteres, com letras e números.');
-      return;
-    }
+    const nome = this.nome().trim();
+    const email = this.email().trim();
+    const cnpj = this.cnpj();
+    const senha = this.senha();
 
     this.carregando.set(true);
-    this.erro.set(null);
+    this.erroGeral.set(null);
 
     const cadastro$: Observable<unknown> =
-      tipo === 'EMPRESA'
+      this.tipo() === 'EMPRESA'
         ? this.cadastroService.cadastrarEmpresa({ razaoSocial: nome, cnpj, email, senha })
         : this.cadastroService.cadastrarFornecedor({ nomeCompleto: nome, cnpj, email, senha });
 
     // Depois do cadastro, já entra direto no portal
     cadastro$.pipe(switchMap(() => this.auth.login({ email, senha }))).subscribe({
       next: () => {
-        this.notificacao.sucesso('Cadastro realizado! Bem-vindo ao portal.');
+        this.notificacao.sucesso('Conta criada. Bem-vindo ao portal.');
         this.router.navigateByUrl(this.auth.rotaInicial());
       },
       error: (e) => {
-        this.erro.set(mensagemDeErro(e));
         this.carregando.set(false);
+        this.mostrarErroDoServidor(mensagemDeErro(e));
       },
     });
+  }
+
+  /** Coloca o erro da API ao lado do campo a que ele se refere, quando dá para saber qual é. */
+  private mostrarErroDoServidor(mensagem: string): void {
+    const texto = mensagem.toLowerCase();
+    if (texto.includes('email já cadastrado')) {
+      this.errosServidor.set({ email: 'Já existe uma conta com esse e-mail. Entre ou use outro e-mail.' });
+    } else if (texto.includes('cnpj já cadastrado')) {
+      this.errosServidor.set({ cnpj: 'Já existe uma conta com esse CNPJ.' });
+    } else if (texto.includes('cnpj inválido')) {
+      this.errosServidor.set({ cnpj: 'Esse CNPJ não é válido. Confira os números.' });
+    } else {
+      this.erroGeral.set(mensagem);
+    }
   }
 }

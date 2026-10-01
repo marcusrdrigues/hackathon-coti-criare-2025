@@ -5,13 +5,14 @@ import { Observable } from 'rxjs';
 import { ContaDemo, TipoUsuario, Usuario } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
 import { mensagemDeErro } from '../../../core/utils/erros';
+import { LayoutAcesso } from '../../shared/layout-acesso/layout-acesso';
 
 /** Depois de quanto tempo avisar que o servidor gratuito pode estar "acordando". */
 const AVISO_SERVIDOR_LENTO_MS = 4000;
 
 @Component({
   selector: 'app-login',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, LayoutAcesso],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })

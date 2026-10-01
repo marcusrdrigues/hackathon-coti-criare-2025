@@ -1,0 +1,42 @@
+<main class="layout">
+
+  <!-- Painel da marca: explica o produto e mostra a negociação como assinatura visual -->
+  <section class="painel-marca" aria-label="Sobre o Portal Criare">
+    <div class="marca">
+      <span class="marca-nome">Criare</span>
+      <span class="marca-produto">Portal de cotações</span>
+    </div>
+
+    <div class="manifesto">
+      <h2 class="manifesto-titulo">{{ titulo() }}</h2>
+      <p class="manifesto-texto">{{ texto() }}</p>
+
+      <ol class="negociacao" aria-label="Exemplo de negociação">
+        <li class="negociacao-passo">
+          <span class="passo-rotulo">Proposta inicial<span class="passo-autor">Tech Soluções</span></span>
+          <span class="passo-valor">R$ 58.000</span>
+        </li>
+        <li class="negociacao-passo">
+          <span class="passo-rotulo">Contraproposta<span class="passo-autor">Criare Consulting</span></span>
+          <span class="passo-valor">R$ 55.000</span>
+        </li>
+        <li class="negociacao-passo fechado">
+          <span class="passo-rotulo">Negócio fechado<span class="passo-autor">As duas partes</span></span>
+          <span class="passo-valor">R$ 56.500</span>
+        </li>
+      </ol>
+    </div>
+
+    <p class="credito">Hackathon Coti × Criare 2025 · 1º lugar</p>
+  </section>
+
+  <section class="painel-acesso">
+    <div class="acesso">
+      <div class="marca marca-compacta" aria-hidden="true">
+        <span class="marca-nome">Criare</span>
+        <span class="marca-produto">Portal de cotações</span>
+      </div>
+      <ng-content />
+    </div>
+  </section>
+</main>

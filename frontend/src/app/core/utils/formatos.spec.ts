@@ -1,4 +1,4 @@
-import { diasRestantes, mascararCnpj } from './formatos';
+import { cnpjValido, diasRestantes, mascararCnpj } from './formatos';
 
 describe('mascararCnpj', () => {
   it('formata um CNPJ completo', () => {
@@ -23,5 +23,18 @@ describe('diasRestantes', () => {
   it('conta os dias até a data informada', () => {
     const daqui3Dias = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 - 60_000).toISOString();
     expect(diasRestantes(daqui3Dias)).toBe(3);
+  });
+});
+
+describe('cnpjValido', () => {
+  it('aceita CNPJ com dígitos verificadores corretos, com ou sem máscara', () => {
+    expect(cnpjValido('11.222.333/0001-81')).toBe(true);
+    expect(cnpjValido('11222333000181')).toBe(true);
+  });
+
+  it('recusa dígito errado, tamanho errado e números repetidos', () => {
+    expect(cnpjValido('11.222.333/0001-82')).toBe(false);
+    expect(cnpjValido('1122233300018')).toBe(false);
+    expect(cnpjValido('11111111111111')).toBe(false);
   });
 });

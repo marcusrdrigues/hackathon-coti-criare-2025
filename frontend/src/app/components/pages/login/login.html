@@ -1,107 +1,63 @@
-<main class="login-page">
+<app-layout-acesso>
+  <h1 class="titulo">Entrar no portal</h1>
+  <p class="subtitulo">Use o e-mail cadastrado ou explore uma conta de demonstração.</p>
 
-  <!-- Painel da marca (telas largas): explica o produto e mostra a negociação como assinatura visual -->
-  <section class="painel-marca" aria-label="Sobre o Portal Criare">
-    <div class="marca">
-      <span class="marca-nome">Criare</span>
-      <span class="marca-produto">Portal de cotações</span>
-    </div>
+  @if (erro(); as mensagem) {
+    <p class="aviso aviso-erro" role="alert">{{ mensagem }}</p>
+  }
 
-    <div class="manifesto">
-      <h2 class="manifesto-titulo">Do pedido de compra ao negócio fechado, numa conversa só.</h2>
-      <p class="manifesto-texto">
-        Empresas publicam cotações, fornecedores enviam propostas e as duas partes negociam o valor
-        final com todo o histórico registrado.
-      </p>
+  @if (servidorLento()) {
+    <p class="aviso aviso-info" role="status">
+      O servidor estava em repouso e está iniciando. Na primeira vez, isso pode levar até 1 minuto.
+    </p>
+  }
 
-      <ol class="negociacao" aria-label="Exemplo de negociação">
-        <li class="negociacao-passo">
-          <span class="passo-rotulo">Proposta inicial<span class="passo-autor">Tech Soluções</span></span>
-          <span class="passo-valor">R$ 58.000</span>
-        </li>
-        <li class="negociacao-passo">
-          <span class="passo-rotulo">Contraproposta<span class="passo-autor">Criare Consulting</span></span>
-          <span class="passo-valor">R$ 55.000</span>
-        </li>
-        <li class="negociacao-passo fechado">
-          <span class="passo-rotulo">Negócio fechado<span class="passo-autor">As duas partes</span></span>
-          <span class="passo-valor">R$ 56.500</span>
-        </li>
-      </ol>
-    </div>
-
-    <p class="credito">Hackathon Coti × Criare 2025 · 1º lugar</p>
-  </section>
-
-  <!-- Acesso -->
-  <section class="painel-acesso">
-    <div class="acesso">
-      <div class="marca marca-compacta" aria-hidden="true">
-        <span class="marca-nome">Criare</span>
-        <span class="marca-produto">Portal de cotações</span>
-      </div>
-
-      <h1 class="titulo">Entrar no portal</h1>
-      <p class="subtitulo">Use o e-mail cadastrado ou explore uma conta de demonstração.</p>
-
-      @if (erro(); as mensagem) {
-        <p class="aviso aviso-erro" role="alert">{{ mensagem }}</p>
-      }
-
-      @if (servidorLento()) {
-        <p class="aviso aviso-info" role="status">
-          O servidor estava em repouso e está iniciando. Na primeira vez, isso pode levar até 1 minuto.
-        </p>
-      }
-
-      @if (contasDemo().length > 0) {
-        <div class="demo" role="group" aria-labelledby="demo-titulo">
-          <p id="demo-titulo" class="rotulo">Explorar sem cadastro</p>
-          <div class="demo-opcoes">
-            @for (conta of contasDemo(); track conta.perfil) {
-              <button type="button" class="botao-demo" [disabled]="carregando()" (click)="entrarDemo(conta.perfil)"
-                      [attr.aria-label]="'Entrar como ' + rotuloPerfil(conta.perfil) + ': ' + conta.nome">
-                @if (entrandoComo() === conta.perfil) {
-                  <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-                } @else {
-                  <span class="demo-perfil">Como {{ rotuloPerfil(conta.perfil) }}</span>
-                  <span class="demo-nome">{{ conta.nome }}</span>
-                }
-              </button>
+  @if (contasDemo().length > 0) {
+    <div class="demo" role="group" aria-labelledby="demo-titulo">
+      <p id="demo-titulo" class="rotulo">Explorar sem cadastro</p>
+      <div class="demo-opcoes">
+        @for (conta of contasDemo(); track conta.perfil) {
+          <button type="button" class="botao-demo" [disabled]="carregando()" (click)="entrarDemo(conta.perfil)"
+                  [attr.aria-label]="'Entrar como ' + rotuloPerfil(conta.perfil) + ': ' + conta.nome">
+            @if (entrandoComo() === conta.perfil) {
+              <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            } @else {
+              <span class="demo-perfil">Como {{ rotuloPerfil(conta.perfil) }}</span>
+              <span class="demo-nome">{{ conta.nome }}</span>
             }
-          </div>
-          <p class="legenda">Dados de exemplo, restaurados todo dia.</p>
-        </div>
-
-        <div class="divisor" aria-hidden="true"><span>ou</span></div>
-      }
-
-      <form class="formulario" (ngSubmit)="fazerLogin()" novalidate>
-        <div class="campo">
-          <label for="email" class="rotulo">E-mail</label>
-          <input id="email" type="email" class="entrada" [(ngModel)]="credenciais.email" name="email"
-                 placeholder="nome@empresa.com.br" autocomplete="username" inputmode="email" required>
-        </div>
-
-        <div class="campo">
-          <label for="senha" class="rotulo">Senha</label>
-          <input id="senha" type="password" class="entrada" [(ngModel)]="credenciais.senha" name="senha"
-                 autocomplete="current-password" required>
-        </div>
-
-        <button type="submit" class="botao-principal" [disabled]="carregando()">
-          @if (carregando() && !entrandoComo()) {
-            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-            <span>Entrando…</span>
-          } @else {
-            Entrar
-          }
-        </button>
-      </form>
-
-      <p class="rodape">
-        Ainda não tem conta? <a routerLink="/pages/cadastro" class="link">Criar conta</a>
-      </p>
+          </button>
+        }
+      </div>
+      <p class="legenda">Dados de exemplo, restaurados todo dia.</p>
     </div>
-  </section>
-</main>
+
+    <div class="divisor" aria-hidden="true"><span>ou</span></div>
+  }
+
+  <form class="formulario" (ngSubmit)="fazerLogin()" novalidate>
+    <div class="campo">
+      <label for="email" class="rotulo">E-mail</label>
+      <input id="email" type="email" class="entrada" [(ngModel)]="credenciais.email" name="email"
+             placeholder="nome@empresa.com.br" autocomplete="username" inputmode="email" required>
+    </div>
+
+    <div class="campo">
+      <label for="senha" class="rotulo">Senha</label>
+      <input id="senha" type="password" class="entrada" [(ngModel)]="credenciais.senha" name="senha"
+             autocomplete="current-password" required>
+    </div>
+
+    <button type="submit" class="botao-principal" [disabled]="carregando()">
+      @if (carregando() && !entrandoComo()) {
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        <span>Entrando…</span>
+      } @else {
+        Entrar
+      }
+    </button>
+  </form>
+
+  <p class="rodape">
+    Ainda não tem conta? <a routerLink="/pages/cadastro" class="link">Criar conta</a>
+  </p>
+</app-layout-acesso>
