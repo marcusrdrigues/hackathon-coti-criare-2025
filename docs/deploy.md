@@ -38,7 +38,7 @@ O navegador só conversa com o domínio da Vercel. Quando o Angular chama `/api/
    postgresql://USUARIO:SENHA@HOST/neondb?sslmode=require&channel_binding=require
    ```
 
-4. Separe as partes em três variáveis. O Spring não aceita usuário e senha dentro da URL, e o driver Java usa o prefixo `jdbc:`:
+4. Separe as partes em três variáveis. O driver JDBC do PostgreSQL não lê usuário e senha embutidos na URL, e usa o prefixo `jdbc:`:
 
    | Variável | Valor |
    |---|---|
