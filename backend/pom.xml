@@ -28,6 +28,13 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
+		<jacoco.version>0.8.14</jacoco.version>
+		<!-- SonarCloud (a análise roda no CI quando o secret SONAR_TOKEN existe) -->
+		<sonar.organization>marcusrdrigues</sonar.organization>
+		<sonar.projectKey>marcusrdrigues_hackathon-coti-criare-2025</sonar.projectKey>
+		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
+		<sonar.coverage.exclusions>**/dtos/**,**/GestaoApplication.java</sonar.coverage.exclusions>
+		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -134,6 +141,34 @@
 						</path>
 					</annotationProcessorPaths>
 				</configuration>
+			</plugin>
+			<!-- Cobertura de testes: relatório em target/site/jacoco (HTML, XML e CSV) -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<configuration>
+					<excludes>
+						<!-- Ponto de entrada e DTOs (records sem lógica) não entram na conta -->
+						<exclude>com/gestao/GestaoApplication.class</exclude>
+						<exclude>com/gestao/dtos/**</exclude>
+					</excludes>
+				</configuration>
+				<executions>
+					<execution>
+						<id>preparar-agente</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>relatorio</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

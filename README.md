@@ -539,6 +539,8 @@ cd backend && ./mvnw verify
 # Front-end: testes unitários (Vitest)
 cd frontend && npm test -- --watch=false
 
+# Relatório de cobertura do back-end (gerado pelo verify): backend/target/site/jacoco/index.html
+
 # Teste de fumaça: com a API rodando no profile demo, percorre o fluxo via HTTP
 cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 ```
@@ -600,7 +602,8 @@ Deixar o projeto mais fácil de manter e com qualidade medida.
 
 - [x] **Flyway** no lugar do `ddl-auto`, com o esquema versionado em migrações
 - [x] **Testcontainers**: testes de integração contra um PostgreSQL real, e não só H2
-- [ ] **Cobertura com JaCoCo** e análise no **SonarCloud**, com badges no README
+- [x] **Cobertura com JaCoCo**, publicada no resumo de cada execução do CI
+- [ ] Análise no **SonarCloud**, com badges de qualidade e cobertura no README
 - [x] **Dependabot** e **CodeQL** para dependências e vulnerabilidades
 - [x] **ADRs** em [`docs/adr/`](docs/adr/README.md): registros curtos das decisões de arquitetura (ex.: por que o refresh token é opaco)
 - [ ] **Testes ponta a ponta com Playwright** no CI, simulando empresa e fornecedor no navegador

@@ -27,6 +27,8 @@ jobs:
           --health-retries 10
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # histórico completo: o SonarCloud usa o blame para separar código novo
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -51,6 +53,44 @@ jobs:
           print(f'::notice title=PostgreSQL real::{rodaram} de {total} testes rodaram no PostgreSQL (Testcontainers)')
           sys.exit(0 if total and not puladas else 1)
           PY
+
+      - name: Cobertura de testes (JaCoCo)
+        run: |
+          python3 - <<'PY'
+          import csv, os
+          linhas = cobertas = ramos = ramos_cobertos = 0
+          with open('target/site/jacoco/jacoco.csv') as f:
+              for l in csv.DictReader(f):
+                  cobertas += int(l['LINE_COVERED'])
+                  linhas += int(l['LINE_COVERED']) + int(l['LINE_MISSED'])
+                  ramos_cobertos += int(l['BRANCH_COVERED'])
+                  ramos += int(l['BRANCH_COVERED']) + int(l['BRANCH_MISSED'])
+          pl = 100 * cobertas / linhas; pr = 100 * ramos_cobertos / ramos
+          texto = f'Linhas: {pl:.1f}% · Ramos: {pr:.1f}%'
+          print(f'::notice title=Cobertura do back-end::{texto}')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as resumo:
+              resumo.write(f'### Cobertura do back-end (JaCoCo)\n\n{texto}\n')
+          PY
+
+      - name: Guardar o relatório de cobertura
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-backend
+          path: backend/target/site/jacoco/
+          retention-days: 14
+
+      - name: Verificar se o SonarCloud está configurado
+        id: sonar
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: echo "ativo=$([ -n "$SONAR_TOKEN" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Análise no SonarCloud
+        if: steps.sonar.outputs.ativo == 'true'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./mvnw -B -ntp org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
 
       - name: Resumo dos erros de build/teste
         if: failure()
