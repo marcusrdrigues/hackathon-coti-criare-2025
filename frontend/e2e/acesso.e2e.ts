@@ -50,15 +50,13 @@ test.describe('Acesso', () => {
     await entrarComoDemo(page, 'empresa');
     await page.reload();
     await expect(page).toHaveURL(/\/pages\/dashboard$/);
-    await expect(page.getByRole('heading', { name: 'Visão Geral' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Início', level: 1 })).toBeVisible();
   });
 
-  test('sair encerra a sessão', async ({ page, isMobile }) => {
+  test('sair encerra a sessão', async ({ page }) => {
     await entrarComoDemo(page, 'fornecedor');
-    if (isMobile) {
-      await page.getByRole('button', { name: 'Abrir menu' }).click();
-    }
-    await page.getByLabel('Menu do usuário').click();
+    // Barra lateral no computador, topo no celular: o menu da conta é o mesmo
+    await page.getByRole('button', { name: 'Menu do usuário' }).click();
     await page.getByRole('button', { name: 'Sair' }).click();
     await expect(page).toHaveURL(/\/pages\/login/);
 
@@ -72,22 +70,22 @@ test.describe('Tema', () => {
     const contexto = await browser.newContext({ colorScheme: 'dark', baseURL });
     const pagina = await contexto.newPage();
     await pagina.goto('/pages/login');
-    await expect(pagina.locator('html')).toHaveAttribute('data-bs-theme', 'dark');
+    await expect(pagina.locator('html')).toHaveAttribute('data-theme', 'dark');
     await contexto.close();
   });
 
   test('escolha no seletor vale na hora e depois de recarregar', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
     await page.goto('/pages/login');
-    await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'light');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 
     await page.getByTitle('Escuro').click();
-    await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'dark');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
     await page.reload();
-    await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'dark');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
     await page.getByTitle('Igual ao sistema').click();
-    await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'light');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   });
 });

@@ -10,55 +10,58 @@ test('empresa e fornecedor negociam até fechar o negócio', async ({ browser, b
   const titulo = `Cotação E2E ${sufixo()}`;
   const empresa = await (await browser.newContext({ baseURL })).newPage();
   const fornecedor = await (await browser.newContext({ baseURL })).newPage();
-  // Confirmações (iniciar negociação, fechar negócio) são aceitas
-  empresa.on('dialog', (dialogo) => dialogo.accept());
 
   await test.step('empresa publica a cotação', async () => {
     await entrarComoDemo(empresa, 'empresa');
     await empresa.goto('/pages/cadastro-cotacao');
-    await empresa.getByLabel('Título do serviço/produto').fill(titulo);
-    await empresa.getByLabel('Requisitos detalhados').fill('20 cadeiras ergonômicas com regulagem de altura e apoio lombar.');
+    await empresa.getByLabel('Título').fill(titulo);
+    await empresa.getByLabel('Requisitos').fill('20 cadeiras ergonômicas com regulagem de altura e apoio lombar.');
     await empresa.getByLabel('Orçamento estimado').fill('12000');
-    await empresa.getByRole('button', { name: 'Publicar Cotação' }).click();
+    await empresa.getByRole('button', { name: 'Publicar cotação' }).click();
     await expect(empresa).toHaveURL(/\/pages\/detalhe-cotacao\//);
     await expect(empresa.getByRole('heading', { name: titulo })).toBeVisible();
   });
 
-  await test.step('fornecedor encontra no mural e envia a proposta', async () => {
+  await test.step('fornecedor encontra no mural e envia a proposta pelo painel', async () => {
     await entrarComoDemo(fornecedor, 'fornecedor');
     await fornecedor.goto('/pages/mural-oportunidades');
     await fornecedor.getByRole('searchbox', { name: 'Buscar' }).fill(titulo);
 
-    const cartao = fornecedor.locator('.card').filter({ hasText: titulo });
-    await cartao.getByRole('button', { name: 'Enviar Proposta' }).click();
-    await cartao.getByLabel('Condições da proposta').fill('Entrega em 10 dias, frete incluso.');
-    await cartao.getByLabel('Valor total (R$)').fill('11500');
-    await cartao.getByRole('button', { name: 'Confirmar' }).click();
-    await expect(cartao.getByText('Você ofertou')).toBeVisible();
+    await fornecedor.getByRole('button', { name: `Enviar proposta para ${titulo}` }).click();
+    const painel = fornecedor.getByRole('dialog', { name: 'Enviar proposta' });
+    await painel.getByLabel('Valor total').fill('11500');
+    await painel.getByLabel('Condições').fill('Entrega em 10 dias, frete incluso.');
+    await painel.getByRole('button', { name: 'Enviar proposta' }).click();
+
+    await expect(painel).toBeHidden();
+    const linha = fornecedor.getByRole('listitem').filter({ hasText: titulo });
+    await expect(linha.getByText('Você ofertou')).toBeVisible();
   });
 
   await test.step('empresa abre a negociação e faz uma contraproposta', async () => {
     await empresa.reload();
-    const linha = empresa.getByRole('row').filter({ hasText: 'Tech Soluções' });
-    await linha.getByRole('button', { name: 'Negociar' }).click();
+    const proposta = empresa.getByRole('listitem').filter({ hasText: 'Tech Soluções' });
+    await proposta.getByRole('button', { name: 'Negociar' }).click();
+    // Confirmação no diálogo do próprio sistema, não no confirm() do navegador
+    await empresa.getByRole('alertdialog').getByRole('button', { name: 'Negociar' }).click();
     await expect(empresa).toHaveURL(/\/pages\/negociacao\//);
 
-    await empresa.getByLabel('Mensagem').fill('Fechamos em 10.800 com o mesmo prazo?');
+    await empresa.getByLabel('Mensagem', { exact: true }).fill('Fechamos em 10.800 com o mesmo prazo?');
     await empresa.getByLabel('Valor da contraproposta (opcional)').fill('10800');
-    // O nome acessível dos botões inclui o glifo do ícone, por isso as expressões não usam ^
-    await empresa.getByRole('button', { name: /Enviar$/ }).click();
+    await empresa.getByRole('button', { name: 'Enviar', exact: true }).click();
     await expect(empresa.getByText('Fechamos em 10.800 com o mesmo prazo?')).toBeVisible();
   });
 
   await test.step('fornecedor aceita a oferta', async () => {
     await fornecedor.goto(empresa.url().replace(/^https?:\/\/[^/]+/, ''));
-    await fornecedor.getByRole('button', { name: /Aceitar R\$\s?10\.800,00$/ }).click();
+    await fornecedor.getByRole('button', { name: /Aceitar R\$\s?10\.800,00/ }).click();
     await expect(fornecedor.getByText('Aceito a sua oferta')).toBeVisible();
   });
 
   await test.step('empresa fecha o negócio', async () => {
     await empresa.reload();
-    await empresa.getByRole('button', { name: /Fechar por R\$\s?10\.800,00$/ }).click();
+    await empresa.getByRole('button', { name: /Fechar por R\$\s?10\.800,00/ }).click();
+    await empresa.getByRole('alertdialog').getByRole('button', { name: 'Fechar negócio' }).click();
     await expect(empresa.getByText(/Negócio fechado em/)).toBeVisible();
   });
 });

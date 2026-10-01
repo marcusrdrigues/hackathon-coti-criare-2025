@@ -1,4 +1,4 @@
-import { cnpjValido, diasRestantes, mascararCnpj } from './formatos';
+import { cnpjValido, diasRestantes, iniciais, mascararCnpj } from './formatos';
 
 describe('mascararCnpj', () => {
   it('formata um CNPJ completo', () => {
@@ -36,5 +36,12 @@ describe('cnpjValido', () => {
     expect(cnpjValido('11.222.333/0001-82')).toBe(false);
     expect(cnpjValido('1122233300018')).toBe(false);
     expect(cnpjValido('11111111111111')).toBe(false);
+  });
+
+  it('gera as iniciais do nome para o círculo de identificação', () => {
+    expect(iniciais('Tech Soluções Ltda')).toBe('TS');
+    expect(iniciais('Criare Consulting')).toBe('CC');
+    expect(iniciais('InfoWorld')).toBe('I');
+    expect(iniciais('')).toBe('?');
   });
 });
