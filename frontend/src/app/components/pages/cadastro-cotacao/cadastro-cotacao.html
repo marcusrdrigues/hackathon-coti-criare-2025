@@ -1,0 +1,87 @@
+<app-navbar/>
+
+<div class="container mt-4">
+  
+  <div class="mb-3">
+    <a class="text-decoration-none text-muted" style="cursor: pointer" (click)="cancelar()">
+      <i class="bi bi-arrow-left"></i> Voltar para listagem
+    </a>
+  </div>
+
+  <div class="card shadow-sm border-start-primary">
+    <div class="card-body p-4">
+
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="card-title mb-0">Nova Cotação</h4>
+        <span class="badge bg-primary">Cadastro</span>
+      </div>
+      
+      <p class="text-muted small mb-4">
+        Preencha os detalhes abaixo para que os fornecedores possam enviar propostas.
+      </p>
+
+      <form (ngSubmit)="salvarCotacao()">
+        
+        <div class="mb-3">
+          <label class="form-label fw-bold">Título do Serviço/Produto</label>
+          <input 
+            type="text" 
+            class="form-control"
+            [(ngModel)]="novaCotacao.titulo"
+            name="titulo"
+            placeholder="Ex: Compra de 10 notebooks" 
+            required />
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Data de Abertura</label>
+            <input 
+              type="date" 
+              class="form-control bg-light"
+              [(ngModel)]="novaCotacao.dataCriacao"
+              name="dataCriacao" />
+            <div class="form-text">Data de início da coleta de preços.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-bold text-danger">Data Limite para Propostas</label>
+            <input 
+              type="date" 
+              class="form-control"
+              [(ngModel)]="novaCotacao.dataLimite"
+              name="dataLimite" 
+              required />
+             <div class="form-text">Após esta data, a cotação será fechada automaticamente.</div>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-bold">Requisitos Detalhados</label>
+          <textarea 
+            class="form-control" 
+            rows="5"
+            [(ngModel)]="novaCotacao.descricao"
+            name="descricao"
+            placeholder="Descreva especificações técnicas, quantidades, prazos de entrega desejados, etc.">
+          </textarea>
+        </div>
+
+        <hr class="my-4">
+
+        <div class="d-flex justify-content-end gap-2">
+          
+          <button type="button" class="btn btn-outline-secondary" (click)="cancelar()">
+            Cancelar
+          </button>
+          
+          <button type="submit" class="btn btn-primary px-4">
+            <i class="bi bi-send-fill me-2"></i> Publicar Cotação
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+</div>

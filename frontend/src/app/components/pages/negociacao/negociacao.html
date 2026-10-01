@@ -1,0 +1,95 @@
+<app-navbar/>
+
+<div class="container mt-4 mb-5">
+  
+  <a routerLink="/pages/detalhe-cotacao/1" class="text-decoration-none text-muted mb-3 d-block">
+    <i class="bi bi-arrow-left"></i> Voltar para propostas
+  </a>
+
+  <div class="row">
+    
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h5 class="fw-bold text-dark">Resumo da Solicitação</h5>
+          <hr>
+          <p class="mb-1"><small class="text-muted">Produto</small></p>
+          <p class="fw-bold">20x Notebooks Dell Latitude</p>
+          
+          <p class="mb-1"><small class="text-muted">Empresa</small></p>
+          <p class="fw-bold">Criare Consulting</p>
+          
+          <div class="alert alert-warning mb-0 mt-3">
+            <i class="bi bi-exclamation-triangle me-1"></i> Aguardando sua resposta
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-8">
+      
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3">
+          <h5 class="mb-0 fw-bold">Histórico da Negociação</h5>
+        </div>
+        <div class="card-body">
+          
+          <div class="timeline-card">
+            <div class="timeline-dot"></div> <div class="p-3 rounded bg-contra">
+              <div class="d-flex justify-content-between">
+                <strong class="text-primary">Sua Proposta</strong>
+                <small class="text-muted">20/12 às 14:30</small>
+              </div>
+              <p class="mb-0 mt-2">Oferta Enviada: <span class="fw-bold">R$ 12.000,00</span></p>
+            </div>
+          </div>
+
+          <div class="timeline-card pb-0 border-0">
+            <div class="timeline-dot bg-success"></div>
+            <div class="p-3 rounded border border-success bg-light">
+              <div class="d-flex justify-content-between">
+                <strong>Empresa (Criare Consulting)</strong>
+                <small class="text-muted">Hoje às 09:00</small>
+              </div>
+              <div class="mt-2">
+                Nova Oferta: <span class="fs-4 fw-bold text-success">R$ 10.000,00</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="card shadow border-top-0 border-start-0 border-end-0 border-bottom-0" style="border-top: 5px solid #B2002D !important;">
+        <div class="card-body p-4">
+          <h5 class="fw-bold mb-3">Sua Resposta</h5>
+          
+          <div class="mb-4">
+            <label class="form-label text-muted small fw-bold">VALOR DA CONTRAPROPOSTA (R$)</label>
+            <div class="input-group mb-2">
+              <span class="input-group-text">R$</span>
+              <input type="number" class="form-control form-control-lg fw-bold" placeholder="Digite seu valor..." [(ngModel)]="valorContraposta">
+            </div>
+            <div class="form-text">O fornecedor ofertou R$ 10.000,00. Tente algo próximo.</div>
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-primary flex-grow-1 py-2" (click)="enviarContraproposta()">
+              <i class="bi bi-arrow-left-right me-2"></i> Enviar Contraproposta
+            </button>
+
+            <button class="btn btn-success flex-grow-1 py-2" (click)="aceitar()">
+              <i class="bi bi-check-lg me-2"></i> Aceitar Oferta
+            </button>
+            
+            <button class="btn btn-outline-secondary" (click)="recusar()">
+               Recusar
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

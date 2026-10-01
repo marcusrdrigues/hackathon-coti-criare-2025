@@ -1,0 +1,38 @@
+<app-navbar></app-navbar>
+
+<div class="container mt-4">
+    <h2 class="fw-bold text-dark mb-4">Histórico de Propostas</h2>
+
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Data</th>
+                        <th>Cotação</th>
+                        <th>Empresa</th>
+                        <th>Resultado</th>
+                        <th class="text-end pe-4">Valor Final</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let item of historico">
+                        <td class="ps-4 text-muted">{{ item.data }}</td>
+                        <td class="fw-bold">{{ item.titulo }}</td>
+                        <td>{{ item.empresa }}</td>
+                        <td>
+                            <span class="badge rounded-pill" 
+                                  [ngClass]="item.ganhou ? 'bg-success' : 'bg-secondary'">
+                                <i class="bi" [class.bi-trophy-fill]="item.ganhou" [class.bi-x-circle-fill]="!item.ganhou"></i>
+                                {{ item.ganhou ? 'Vencida' : 'Perdida' }}
+                            </span>
+                        </td>
+                        <td class="text-end pe-4 fw-bold" [class.text-muted]="!item.ganhou">
+                            {{ item.valor }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

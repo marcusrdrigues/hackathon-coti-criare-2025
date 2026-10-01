@@ -1,0 +1,103 @@
+/* --- CORES DA MARCA --- */
+:host {
+  --criare-red: #B2002D;
+  --criare-dark: #800020;
+}
+
+/* =========================================
+   1. ESTILO GERAL DOS CARDS
+   ========================================= */
+.card {
+  border: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 .5rem 1rem rgba(0,0,0,.10)!important;
+}
+
+/* =========================================
+   2. BORDAS LATERAIS (KPIs)
+   ========================================= */
+
+/* AQUI ESTÁ A MUDANÇA: Primary agora é Vermelho Criare */
+.border-start-primary { 
+  border-left: 5px solid var(--criare-red) !important; 
+}
+
+/* Mantendo o Amarelo/Dourado que você gostou para Propostas */
+.border-start-warning { 
+  border-left: 5px solid #f0bf0d !important; 
+}
+
+/* =========================================
+   3. ÍCONES E CORES DE FUNDO
+   ========================================= */
+.icon-shape {
+  width: 3.5rem;
+  height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50% !important;
+  opacity: 0.9;
+}
+
+/* Sobrescrevendo o fundo azul padrão pelo Vermelho Criare */
+.bg-primary {
+  background-color: var(--criare-red) !important;
+}
+
+/* =========================================
+   4. LISTA DE FORNECEDORES
+   ========================================= */
+.list-group-item {
+  border-left: none;
+  border-right: none;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  transition: background-color 0.2s;
+}
+
+.list-group-item:hover {
+  background-color: #f8f9fa;
+}
+
+/* Avatar: Letra Vermelha Criare */
+.avatar-circle {
+  width: 40px; 
+  height: 40px;
+  background-color: #fceceb; /* Um rosa bem clarinho pra combinar */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--criare-red); /* Letra vermelha */
+  font-weight: bold;
+}
+
+/* Botão "Ver todos" (Outline) em Vermelho */
+.btn-outline-primary {
+  color: var(--criare-red);
+  border-color: var(--criare-red);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--criare-red);
+  color: white;
+  border-color: var(--criare-red);
+}
+
+/* =========================================
+   5. BARRAS DE PROGRESSO
+   ========================================= */
+.progress {
+  border-radius: 10px;
+  background-color: #e9ecef;
+  overflow: hidden;
+}
+
+.progress-bar {
+  border-radius: 10px;
+}

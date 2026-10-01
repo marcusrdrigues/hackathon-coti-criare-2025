@@ -1,0 +1,123 @@
+<app-navbar/>
+
+<div class="container mt-4 mb-5">
+  
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="text-dark fw-bold mb-0">Visão Geral</h2>
+    <span class="text-muted small">Última atualização: Hoje, 14:30</span>
+  </div>
+
+  <div class="row mb-4">
+    
+    <div class="col-xl-4 col-md-6 mb-4">
+      <div class="card shadow-sm border-start-primary h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="text-muted text-uppercase mb-1">Cotações em Aberto</h6>
+              <h2 class="mb-0 fw-bold text-dark">{{ kpis.cotacoesAbertas }}</h2>
+            </div>
+            <div class="icon-shape bg-primary text-white rounded-circle">
+              <i class="bi bi-megaphone-fill fs-4"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-4">
+      <div class="card shadow-sm border-start-warning h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="text-muted text-uppercase mb-1">Propostas Recebidas</h6>
+              <h2 class="mb-0 fw-bold text-dark">{{ kpis.propostasRecebidas }}</h2>
+            </div>
+            <div class="icon-shape bg-warning text-white rounded-circle">
+              <i class="bi bi-file-earmark-text-fill fs-4"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-4">
+      <div class="card shadow-sm border-start-secondary h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="text-muted text-uppercase mb-1">Cotações em Negociação</h6>
+              <h2 class="mb-0 fw-bold text-dark">{{ kpis.cotacoesNegociacao }}</h2>
+            </div>
+            <div class="icon-shape bg-secondary text-white rounded-circle">
+              <i class="bi bi-file-earmark-text-fill fs-4"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="row">
+    
+    <div class="col-lg-7 mb-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-white py-3 border-0">
+          <h5 class="mb-0 fw-bold text-dark">Demandas por Categoria</h5>
+        </div>
+        <div class="card-body pt-0">
+          
+          <div *ngFor="let cat of categoriasStats" class="mb-4">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="fw-semibold">{{ cat.label }}</span>
+              <small class="text-muted">{{ cat.porcentagem }}%</small>
+            </div>
+            <div class="progress" style="height: 10px;">
+              <div class="progress-bar" 
+                   [ngClass]="cat.cor" 
+                   role="progressbar" 
+                   [style.width.%]="cat.porcentagem">
+              </div>
+            </div>
+          </div>
+
+          <div class="text-center mt-4 pt-3 border-top">
+            <small class="text-muted">Dados baseados nas cotações dos últimos 30 dias.</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5 mb-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-0">
+          <h5 class="mb-0 fw-bold text-dark">Top Fornecedores</h5>
+          <button class="btn btn-sm btn-outline-primary rounded-pill px-3">Ver todos</button>
+        </div>
+        <div class="card-body p-0">
+          <ul class="list-group list-group-flush">
+            
+            <li *ngFor="let fornecedor of topFornecedores" class="list-group-item d-flex justify-content-between align-items-center px-4">
+              <div class="d-flex align-items-center">
+                <div class="avatar-circle me-3">
+                  {{ fornecedor.nome.charAt(0) }}
+                </div>
+                <div>
+                  <h6 class="mb-0 fw-semibold text-dark">{{ fornecedor.nome }}</h6>
+                  <small class="text-muted">{{ fornecedor.categoria }}</small>
+                </div>
+              </div>
+              
+              <div class="text-warning d-flex align-items-center bg-light rounded px-2 py-1">
+                <i class="bi bi-star-fill small"></i>
+              </div>
+            </li>
+
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

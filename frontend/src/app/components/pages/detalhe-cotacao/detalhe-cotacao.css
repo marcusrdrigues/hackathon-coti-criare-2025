@@ -1,0 +1,62 @@
+/* --- IDENTIDADE VISUAL CRIARE --- */
+:host {
+    --criare-red: #B2002D;
+    --criare-dark: #800020;
+    --criare-light: #fff0f3;
+}
+
+/* 1. Sobrescrevendo o Azul do Bootstrap (Primary) */
+.text-primary {
+    color: var(--criare-red) !important;
+}
+
+.btn-primary {
+    background-color: var(--criare-red) !important;
+    border-color: var(--criare-red) !important;
+}
+
+.btn-primary:hover {
+    background-color: var(--criare-dark) !important;
+    border-color: var(--criare-dark) !important;
+}
+
+/* 2. Link de Voltar */
+.link-voltar {
+    color: #6c757d; /* Cinza */
+    transition: color 0.2s;
+    cursor: pointer;
+}
+
+.link-voltar:hover {
+    color: var(--criare-red); /* Fica vermelho no hover */
+}
+
+/* 3. Tabela */
+.table th {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* 4. Badges de Status Personalizados */
+.badge-negociacao {
+    background-color: #ffc107; /* Amarelo */
+    color: #000;
+}
+
+.badge-nova {
+    background-color: #0dcaf0; /* Ciano */
+    color: #000;
+}
+
+.badge-recusada {
+    background-color: #dee2e6; /* Cinza claro */
+    color: #6c757d;
+}

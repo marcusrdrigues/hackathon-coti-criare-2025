@@ -1,0 +1,92 @@
+/* --- Reutilizando Estilo do Login (Identidade Visual) --- */
+
+:root {
+    --criare-red: #B2002D;
+}
+  
+/* Fundo Vermelho Gradiente */
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #B2002D 0%, #4a0012 100%);
+    padding: 20px;
+}
+  
+/* Cartão de Vidro */
+.glass-card {
+    background: rgba(255, 255, 255, 0.9); /* Um pouco mais opaco para leitura */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    
+    max-width: 450px; /* Um pouco mais largo que o login */
+    width: 100%;
+    padding: 2.5rem 2rem;
+    text-align: center;
+}
+  
+/* Inputs */
+.form-control {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    padding: 10px 15px;
+    border-radius: 8px;
+}
+
+.form-control:focus {
+    border-color: #B2002D;
+    box-shadow: 0 0 0 0.25rem rgba(178, 0, 45, 0.25);
+}
+  
+/* Botão Principal */
+.btn-criare {
+    background-color: #B2002D;
+    color: white;
+    font-weight: bold;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    width: 100%;
+    transition: transform 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+  
+.btn-criare:hover {
+    background-color: #900024;
+    transform: scale(1.02);
+}
+
+/* Links */
+.login-link {
+    color: #B2002D;
+    text-decoration: none;
+    font-weight: 600;
+}
+.login-link:hover { text-decoration: underline; }
+
+/* --- Estilo Específico do Seletor (Empresa/Fornecedor) --- */
+.btn-group .btn {
+    border: 1px solid #dee2e6;
+    font-weight: 600;
+}
+
+/* Botão Selecionado (Vermelho) */
+.btn-danger {
+    background-color: #B2002D !important;
+    border-color: #B2002D !important;
+    color: white !important;
+}
+
+/* Botão Não Selecionado (Branco/Cinza) */
+.btn-light {
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
+.btn-light:hover {
+    background-color: #e2e6ea;
+}
