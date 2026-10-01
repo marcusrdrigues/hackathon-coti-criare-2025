@@ -602,14 +602,14 @@ Permitir que qualquer pessoa experimente o sistema sem instalar nada.
 - [ ] GIF de uma negociação ponta a ponta no topo do README ([roteiro](docs/gravar-demo.md))
 - [x] Design system com tokens de cor, modo claro e escuro ([documentação](docs/design-system.md))
 
-### Fase 2 · Engenharia &nbsp;`quase pronta`
+### Fase 2 · Engenharia &nbsp;`concluída`
 
 Deixar o projeto mais fácil de manter e com qualidade medida.
 
 - [x] **Flyway** no lugar do `ddl-auto`, com o esquema versionado em migrações
 - [x] **Testcontainers**: testes de integração contra um PostgreSQL real, e não só H2
 - [x] **Cobertura com JaCoCo**, publicada no resumo de cada execução do CI
-- [ ] Análise no **SonarCloud**, com badges de qualidade e cobertura no README
+- [x] Análise no **SonarCloud**, com badges de qualidade e cobertura no README
 - [x] **Dependabot** e **CodeQL** para dependências e vulnerabilidades
 - [x] **ADRs** em [`docs/adr/`](docs/adr/README.md): registros curtos das decisões de arquitetura (ex.: por que o refresh token é opaco)
 - [x] **Testes ponta a ponta com Playwright** no CI, simulando empresa e fornecedor no navegador
