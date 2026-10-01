@@ -5,12 +5,14 @@ import com.gestao.entities.Fornecedor;
 import com.gestao.entities.Proposta;
 import com.gestao.enums.StatusCotacao;
 import com.gestao.enums.StatusProposta;
+import com.gestao.eventos.PropostaRecebidaEvento;
 import com.gestao.exceptions.AcessoNegadoException;
 import com.gestao.exceptions.BusinessException;
 import com.gestao.exceptions.ResourceNotFoundException;
 import com.gestao.repositories.PropostaRepository;
 import com.gestao.security.UsuarioAutenticado;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,7 @@ public class PropostaService {
     private final PropostaRepository propostaRepository;
     private final CotacaoService cotacaoService;
     private final FornecedorService fornecedorService;
+    private final ApplicationEventPublisher eventos;
 
     @Transactional
     public Proposta criarProposta(Proposta proposta, UUID fornecedorId, UUID cotacaoId) {
@@ -46,7 +49,9 @@ public class PropostaService {
         proposta.setStatus(StatusProposta.ENVIADA);
         proposta.setDataEnvio(LocalDateTime.now());
 
-        return propostaRepository.save(proposta);
+        Proposta salva = propostaRepository.save(proposta);
+        eventos.publishEvent(new PropostaRecebidaEvento(salva.getId()));
+        return salva;
     }
 
     @Transactional(readOnly = true)

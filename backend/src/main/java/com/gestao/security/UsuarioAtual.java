@@ -21,12 +21,16 @@ public class UsuarioAtual {
     public UsuarioAutenticado obter() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth instanceof JwtAuthenticationToken token) {
-            Jwt jwt = token.getToken();
-            return new UsuarioAutenticado(
-                    UUID.fromString(jwt.getSubject()),
-                    TipoUsuario.valueOf(jwt.getClaimAsString(TokenService.CLAIM_TIPO)));
+            return de(token.getToken());
         }
         throw new UnauthorizedException("Usuário não autenticado.");
+    }
+
+    /** Identidade a partir de um token já validado (também usado na conexão WebSocket). */
+    public static UsuarioAutenticado de(Jwt jwt) {
+        return new UsuarioAutenticado(
+                UUID.fromString(jwt.getSubject()),
+                TipoUsuario.valueOf(jwt.getClaimAsString(TokenService.CLAIM_TIPO)));
     }
 
     /** Garante que o usuário só altere o próprio cadastro. */

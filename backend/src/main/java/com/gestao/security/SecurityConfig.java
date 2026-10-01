@@ -69,6 +69,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/cotacoes/categorias").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/api-docs", "/api-docs/**").permitAll()
                         .requestMatchers("/error").permitAll()
+                        // Handshake do WebSocket: a autenticação acontece no CONNECT do STOMP (AutenticacaoStomp)
+                        .requestMatchers("/ws", "/ws/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(conversorDePerfil()))

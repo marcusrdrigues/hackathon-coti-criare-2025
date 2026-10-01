@@ -8,6 +8,7 @@ import com.gestao.enums.StatusCotacao;
 import com.gestao.enums.StatusNegociacao;
 import com.gestao.enums.StatusProposta;
 import com.gestao.enums.TipoRemetente;
+import com.gestao.eventos.NegociacaoAlteradaEvento;
 import com.gestao.exceptions.AcessoNegadoException;
 import com.gestao.exceptions.BusinessException;
 import com.gestao.exceptions.ResourceNotFoundException;
@@ -16,6 +17,7 @@ import com.gestao.repositories.NegociacaoRepository;
 import com.gestao.repositories.PropostaRepository;
 import com.gestao.security.UsuarioAutenticado;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +35,7 @@ public class NegociacaoService {
     private final PropostaRepository propostaRepository;
     private final MensagemNegociacaoRepository mensagemRepository;
     private final PropostaService propostaService;
+    private final ApplicationEventPublisher eventos;
 
     /**
      * Abre a negociação com o fornecedor da proposta escolhida.
@@ -74,6 +77,7 @@ public class NegociacaoService {
         inicial.setDataEnvio(proposta.getDataEnvio() != null ? proposta.getDataEnvio() : negociacao.getDataInicio());
         negociacao.getMensagens().add(mensagemRepository.save(inicial));
 
+        eventos.publishEvent(new NegociacaoAlteradaEvento(negociacao.getId(), NegociacaoAlteradaEvento.Tipo.INICIADA));
         return negociacao;
     }
 
@@ -106,9 +110,6 @@ public class NegociacaoService {
                 : negociacaoRepository.findByFornecedorId(usuario.id());
     }
 
-
-
-
     /**
      * Fecha o negócio: grava o valor final, fecha a cotação e recusa as demais
      * propostas que ainda estavam pendentes.
@@ -137,6 +138,7 @@ public class NegociacaoService {
             }
         }
 
+        eventos.publishEvent(new NegociacaoAlteradaEvento(negociacao.getId(), NegociacaoAlteradaEvento.Tipo.FINALIZADA));
         return negociacaoRepository.save(negociacao);
     }
 
@@ -160,6 +162,7 @@ public class NegociacaoService {
         proposta.setStatus(StatusProposta.RECUSADA);
         proposta.getCotacao().setStatus(StatusCotacao.ABERTA);
 
+        eventos.publishEvent(new NegociacaoAlteradaEvento(negociacao.getId(), NegociacaoAlteradaEvento.Tipo.CANCELADA));
         return negociacaoRepository.save(negociacao);
     }
 

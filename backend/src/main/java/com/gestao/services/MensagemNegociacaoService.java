@@ -2,12 +2,14 @@ package com.gestao.services;
 
 import com.gestao.entities.MensagemNegociacao;
 import com.gestao.entities.Negociacao;
+import com.gestao.eventos.MensagemEnviadaEvento;
 import com.gestao.enums.StatusNegociacao;
 import com.gestao.exceptions.BusinessException;
 import com.gestao.exceptions.ResourceNotFoundException;
 import com.gestao.repositories.MensagemNegociacaoRepository;
 import com.gestao.security.UsuarioAutenticado;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,7 @@ public class MensagemNegociacaoService {
 
     private final MensagemNegociacaoRepository mensagemRepository;
     private final NegociacaoService negociacaoService;
+    private final ApplicationEventPublisher eventos;
 
     /**
      * Envia uma mensagem e/ou uma nova oferta de valor dentro da negociação.
@@ -52,6 +55,8 @@ public class MensagemNegociacaoService {
 
         nova = mensagemRepository.save(nova);
         negociacao.getMensagens().add(nova);
+
+        eventos.publishEvent(new MensagemEnviadaEvento(nova.getId()));
         return nova;
     }
 

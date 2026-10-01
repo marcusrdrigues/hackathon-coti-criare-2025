@@ -17,5 +17,6 @@ Uma decisão registrada não se edita. Se ela mudar, um ADR novo a substitui, e 
 | [0009](0009-demo-publica-com-dados-restaurados.md) | Demo pública com contas prontas e dados restaurados todo dia | Aceita |
 | [0010](0010-design-tokens-e-tema-do-sistema.md) | Design tokens e tema que segue o sistema | Aceita |
 | [0011](0011-componentes-proprios-no-lugar-do-bootstrap.md) | Componentes próprios no lugar do Bootstrap | Aceita |
+| [0012](0012-tempo-real-com-websocket-e-stomp.md) | Tempo real com WebSocket e STOMP | Aceita |
 
 Modelo para um ADR novo: [template.md](template.md).
