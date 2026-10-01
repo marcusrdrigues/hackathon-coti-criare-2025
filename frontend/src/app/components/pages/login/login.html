@@ -1,81 +1,107 @@
-<div class="login-container">
-  <div class="glass-card login-card fade-in">
+<main class="login-page">
 
-    <div class="mb-4">
-      <h2 class="text-primary fw-bold tracking-wide mb-0">CRIARE</h2>
-      <p class="text-muted small">CONSULTING</p>
+  <!-- Painel da marca (telas largas): explica o produto e mostra a negociação como assinatura visual -->
+  <section class="painel-marca" aria-label="Sobre o Portal Criare">
+    <div class="marca">
+      <span class="marca-nome">Criare</span>
+      <span class="marca-produto">Portal de cotações</span>
     </div>
 
-    <h4 class="mb-1 text-dark fw-bold">Bem-vindo</h4>
-    <p class="text-muted mb-4 small">Acesse o portal de cotações</p>
+    <div class="manifesto">
+      <h2 class="manifesto-titulo">Do pedido de compra ao negócio fechado, numa conversa só.</h2>
+      <p class="manifesto-texto">
+        Empresas publicam cotações, fornecedores enviam propostas e as duas partes negociam o valor
+        final com todo o histórico registrado.
+      </p>
 
-    @if (erro(); as mensagem) {
-      <div class="alert alert-danger py-2 small text-start" role="alert">
-        <i class="bi bi-exclamation-circle me-1"></i>{{ mensagem }}
+      <ol class="negociacao" aria-label="Exemplo de negociação">
+        <li class="negociacao-passo">
+          <span class="passo-rotulo">Proposta inicial<span class="passo-autor">Tech Soluções</span></span>
+          <span class="passo-valor">R$ 58.000</span>
+        </li>
+        <li class="negociacao-passo">
+          <span class="passo-rotulo">Contraproposta<span class="passo-autor">Criare Consulting</span></span>
+          <span class="passo-valor">R$ 55.000</span>
+        </li>
+        <li class="negociacao-passo fechado">
+          <span class="passo-rotulo">Negócio fechado<span class="passo-autor">As duas partes</span></span>
+          <span class="passo-valor">R$ 56.500</span>
+        </li>
+      </ol>
+    </div>
+
+    <p class="credito">Hackathon Coti × Criare 2025 · 1º lugar</p>
+  </section>
+
+  <!-- Acesso -->
+  <section class="painel-acesso">
+    <div class="acesso">
+      <div class="marca marca-compacta" aria-hidden="true">
+        <span class="marca-nome">Criare</span>
+        <span class="marca-produto">Portal de cotações</span>
       </div>
-    }
 
-    @if (servidorLento()) {
-      <div class="alert alert-info py-2 small text-start" role="status">
-        <i class="bi bi-hourglass-split me-1"></i>
-        O servidor estava em repouso e está iniciando. Isso pode levar até 1 minuto na primeira vez.
-      </div>
-    }
+      <h1 class="titulo">Entrar no portal</h1>
+      <p class="subtitulo">Use o e-mail cadastrado ou explore uma conta de demonstração.</p>
 
-    @if (contasDemo().length > 0) {
-      <div class="demo-box text-start mb-4">
-        <p class="small fw-bold text-dark mb-1"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Experimente sem cadastro</p>
-        <p class="small text-muted mb-3">Entre em uma conta de demonstração com um clique.</p>
-        <div class="d-grid gap-2">
-          @for (conta of contasDemo(); track conta.perfil) {
-            <button type="button" class="btn btn-demo text-start" [disabled]="carregando()" (click)="entrarDemo(conta.perfil)">
-              <span class="d-flex align-items-center gap-2">
+      @if (erro(); as mensagem) {
+        <p class="aviso aviso-erro" role="alert">{{ mensagem }}</p>
+      }
+
+      @if (servidorLento()) {
+        <p class="aviso aviso-info" role="status">
+          O servidor estava em repouso e está iniciando. Na primeira vez, isso pode levar até 1 minuto.
+        </p>
+      }
+
+      @if (contasDemo().length > 0) {
+        <div class="demo" role="group" aria-labelledby="demo-titulo">
+          <p id="demo-titulo" class="rotulo">Explorar sem cadastro</p>
+          <div class="demo-opcoes">
+            @for (conta of contasDemo(); track conta.perfil) {
+              <button type="button" class="botao-demo" [disabled]="carregando()" (click)="entrarDemo(conta.perfil)"
+                      [attr.aria-label]="'Entrar como ' + rotuloPerfil(conta.perfil) + ': ' + conta.nome">
                 @if (entrandoComo() === conta.perfil) {
                   <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
                 } @else {
-                  <i class="bi" [class.bi-building]="conta.perfil === 'EMPRESA'" [class.bi-truck]="conta.perfil === 'FORNECEDOR'"></i>
+                  <span class="demo-perfil">Como {{ rotuloPerfil(conta.perfil) }}</span>
+                  <span class="demo-nome">{{ conta.nome }}</span>
                 }
-                <span>
-                  <span class="d-block fw-semibold">Entrar como {{ conta.perfil === 'EMPRESA' ? 'empresa' : 'fornecedor' }}</span>
-                  <span class="d-block small opacity-75">{{ conta.nome }} · {{ conta.descricao }}</span>
-                </span>
-              </span>
-            </button>
-          }
+              </button>
+            }
+          </div>
+          <p class="legenda">Dados de exemplo, restaurados todo dia.</p>
         </div>
-        <p class="small text-muted mt-2 mb-0">
-          <i class="bi bi-arrow-repeat me-1"></i>Os dados de demonstração voltam ao estado inicial todo dia.
-        </p>
-      </div>
 
-      <div class="divisor small text-muted mb-3"><span>ou entre com sua conta</span></div>
-    }
+        <div class="divisor" aria-hidden="true"><span>ou</span></div>
+      }
 
-    <form (ngSubmit)="fazerLogin()">
-      <div class="text-start mb-3">
-        <label for="email" class="form-label small fw-bold text-secondary ps-1">E-mail corporativo</label>
-        <input id="email" type="email" class="form-control" [(ngModel)]="credenciais.email" name="email"
-               placeholder="seu@email.com" autocomplete="username" required>
-      </div>
+      <form class="formulario" (ngSubmit)="fazerLogin()" novalidate>
+        <div class="campo">
+          <label for="email" class="rotulo">E-mail</label>
+          <input id="email" type="email" class="entrada" [(ngModel)]="credenciais.email" name="email"
+                 placeholder="nome@empresa.com.br" autocomplete="username" inputmode="email" required>
+        </div>
 
-      <div class="text-start mb-4">
-        <label for="senha" class="form-label small fw-bold text-secondary ps-1">Senha</label>
-        <input id="senha" type="password" class="form-control" [(ngModel)]="credenciais.senha" name="senha"
-               placeholder="••••••••" autocomplete="current-password" required>
-      </div>
+        <div class="campo">
+          <label for="senha" class="rotulo">Senha</label>
+          <input id="senha" type="password" class="entrada" [(ngModel)]="credenciais.senha" name="senha"
+                 autocomplete="current-password" required>
+        </div>
 
-      <button type="submit" class="btn btn-criare shadow-sm mb-3" [disabled]="carregando()">
-        @if (carregando() && !entrandoComo()) {
-          <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>ENTRANDO...
-        } @else {
-          ENTRAR
-        }
-      </button>
-    </form>
+        <button type="submit" class="botao-principal" [disabled]="carregando()">
+          @if (carregando() && !entrandoComo()) {
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            <span>Entrando…</span>
+          } @else {
+            Entrar
+          }
+        </button>
+      </form>
 
-    <div class="mt-4 border-top pt-3">
-      <small class="text-muted">Ainda não tem conta?</small>
-      <a routerLink="/pages/cadastro" class="login-link ms-1">Cadastre-se aqui</a>
+      <p class="rodape">
+        Ainda não tem conta? <a routerLink="/pages/cadastro" class="link">Criar conta</a>
+      </p>
     </div>
-  </div>
-</div>
+  </section>
+</main>

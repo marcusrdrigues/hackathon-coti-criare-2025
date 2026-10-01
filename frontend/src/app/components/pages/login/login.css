@@ -1,49 +1,426 @@
-.login-card {
-  max-width: 420px;
-  padding: 2.5rem 2rem;
+/*
+ * Tela de login
+ * Tokens (contraste calculado contra a superfície onde cada cor é usada):
+ *   --tx        #1d1d1f  texto principal ............ 16,8:1 no branco
+ *   --tx-2      #6e6e73  texto secundário ........... 5,1:1 no branco
+ *   --borda     #8e8e93  borda dos campos ........... 3,3:1 no branco (mínimo 3:1 para componentes)
+ *   --vinho     #7a0020  painel da marca; branco nele 11,4:1; #f3c9d3 nele 7,6:1
+ *   --criare-red #b2002d ação principal e links; branco nele 7,2:1
+ * A cor da marca fica no painel de conteúdo e na ação principal; o resto é neutro.
+ */
+:host {
+  --tx: #1d1d1f;
+  --tx-2: #6e6e73;
+  --borda: #8e8e93;
+  --divisoria: #e5e5ea;
+  --vinho: #7a0020;
+  --vinho-texto-2: #f3c9d3;
+  --raio: 10px;
+  display: block;
 }
 
-.form-control {
-  padding: 12px;
-  border-radius: 10px;
-}
-
-.tracking-wide {
-  letter-spacing: 3px;
-}
-
-.demo-box {
-  background: var(--criare-light);
-  border: 1px dashed rgba(178, 0, 45, 0.35);
-  border-radius: 14px;
-  padding: 1rem;
-}
-
-.btn-demo {
+/* ---------- Estrutura: duas colunas que cabem na tela, sem rolagem ---------- */
+.login-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  min-height: 100dvh;
   background: #fff;
-  border: 1px solid #f1c4cf;
-  border-radius: 10px;
-  color: var(--criare-dark);
-  padding: 0.6rem 0.85rem;
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  color: var(--tx);
 }
 
-.btn-demo:hover:not(:disabled) {
+/* ---------- Painel da marca ---------- */
+.painel-marca {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: clamp(2rem, 5vh, 3.5rem) clamp(2rem, 5vw, 4.5rem);
+  background:
+    radial-gradient(120% 80% at 0% 0%, rgba(178, 0, 45, 0.55) 0%, transparent 60%),
+    var(--vinho);
+  color: #fff;
+}
+
+.marca {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.marca-nome {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.marca-produto {
+  font-size: 0.875rem;
+  color: var(--vinho-texto-2);
+}
+
+.manifesto {
+  max-width: 30rem;
+}
+
+.manifesto-titulo {
+  font-size: clamp(1.75rem, 2.6vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 0 0 1rem;
+}
+
+.manifesto-texto {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--vinho-texto-2);
+  margin: 0 0 2rem;
+}
+
+/* Assinatura: o valor convergindo ao longo da negociação */
+.negociacao {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.negociacao-passo {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.6rem 0 0.6rem 1.25rem;
+}
+
+.negociacao-passo::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 1.05rem;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--vinho-texto-2);
+}
+
+.passo-rotulo {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.passo-autor {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--vinho-texto-2);
+}
+
+.passo-valor {
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--vinho-texto-2);
+}
+
+.negociacao-passo.fechado .passo-valor {
+  color: #fff;
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+
+.negociacao-passo.fechado::before {
+  width: 11px;
+  height: 11px;
+  left: -6px;
+  top: 0.95rem;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.18);
+}
+
+.credito {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--vinho-texto-2);
+}
+
+/* ---------- Painel de acesso ---------- */
+.painel-acesso {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.5rem, 4vh, 3rem) 1.5rem;
+}
+
+.acesso {
+  width: 100%;
+  max-width: 22.5rem;
+}
+
+.marca-compacta {
+  display: none;
+  margin-bottom: 1.5rem;
+}
+
+.marca-compacta .marca-nome {
+  color: var(--criare-red);
+}
+
+.marca-compacta .marca-produto {
+  color: var(--tx-2);
+}
+
+.titulo {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 0 0 0.375rem;
+}
+
+.subtitulo {
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--tx-2);
+  margin: 0 0 1.5rem;
+}
+
+.rotulo {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 0.375rem;
+}
+
+.legenda {
+  font-size: 0.8125rem;
+  color: var(--tx-2);
+  margin: 0.5rem 0 0;
+}
+
+/* Avisos dentro da interface, perto de onde a pessoa está olhando */
+.aviso {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  border-radius: var(--raio);
+  padding: 0.625rem 0.75rem;
+  margin: 0 0 1rem;
+}
+
+.aviso-erro {
+  background: #fdecee;
+  color: #8a0022;
+}
+
+.aviso-info {
+  background: #f2f2f7;
+  color: var(--tx);
+}
+
+/* ---------- Demonstração ---------- */
+.demo-opcoes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.botao-demo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.125rem;
+  min-height: 3.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  background: #fff;
+  color: var(--tx);
+  text-align: left;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.botao-demo:hover:not(:disabled) {
   border-color: var(--criare-red);
-  box-shadow: 0 0 0 0.2rem var(--criare-focus);
-  transform: translateY(-1px);
-  color: var(--criare-dark);
+  background: var(--criare-light);
+}
+
+.botao-demo:active:not(:disabled) {
+  background: #fbdde4;
+}
+
+.botao-demo:disabled {
+  opacity: 0.6;
+}
+
+.demo-perfil {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.demo-nome {
+  font-size: 0.8125rem;
+  color: var(--tx-2);
 }
 
 .divisor {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  margin: 1.25rem 0;
+  font-size: 0.8125rem;
+  color: var(--tx-2);
 }
 
 .divisor::before,
 .divisor::after {
   content: '';
   flex: 1;
-  border-top: 1px solid #dee2e6;
+  border-top: 1px solid var(--divisoria);
+}
+
+/* ---------- Formulário ---------- */
+.campo {
+  margin-bottom: 1rem;
+}
+
+.entrada {
+  display: block;
+  width: 100%;
+  height: 2.75rem;
+  padding: 0 0.875rem;
+  font-size: 1rem;
+  color: var(--tx);
+  background: #fff;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.entrada::placeholder {
+  color: var(--tx-2);
+}
+
+.entrada:focus {
+  outline: none;
+  border-color: var(--criare-red);
+  box-shadow: 0 0 0 3px var(--criare-focus);
+}
+
+.botao-principal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  height: 2.75rem;
+  margin-top: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--criare-red);
+  border: none;
+  border-radius: var(--raio);
+  transition: background-color 0.15s;
+}
+
+.botao-principal:hover:not(:disabled) {
+  background: var(--criare-hover);
+}
+
+.botao-principal:active:not(:disabled) {
+  background: var(--criare-dark);
+}
+
+.botao-principal:disabled {
+  opacity: 0.7;
+}
+
+.rodape {
+  margin: 1.5rem 0 0;
+  font-size: 0.9375rem;
+  color: var(--tx-2);
+  text-align: center;
+}
+
+.link {
+  color: var(--criare-red);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+/* Foco visível para quem navega pelo teclado */
+.botao-demo:focus-visible,
+.botao-principal:focus-visible,
+.link:focus-visible {
+  outline: 2px solid var(--criare-red);
+  outline-offset: 2px;
+}
+
+/* ---------- Telas estreitas: só o acesso, com a marca compacta no topo ---------- */
+@media (max-width: 959.98px) {
+  .login-page {
+    grid-template-columns: 1fr;
+  }
+
+  .painel-marca {
+    display: none;
+  }
+
+  .marca-compacta {
+    display: flex;
+  }
+}
+
+/* ---------- Telas baixas: aperta os espaços para continuar cabendo sem rolagem ---------- */
+@media (max-height: 720px) {
+  .painel-marca {
+    padding-top: 1.75rem;
+    padding-bottom: 1.75rem;
+  }
+
+  .manifesto-texto {
+    margin-bottom: 1.25rem;
+  }
+
+  .negociacao-passo {
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+  }
+
+  .subtitulo {
+    margin-bottom: 1rem;
+  }
+
+  .marca-compacta {
+    margin-bottom: 1rem;
+  }
+
+  .campo {
+    margin-bottom: 0.75rem;
+  }
+
+  .divisor {
+    margin: 0.875rem 0;
+  }
+
+  .rodape {
+    margin-top: 1rem;
+  }
+}
+
+@media (max-height: 600px) {
+  .subtitulo,
+  .legenda,
+  .credito {
+    display: none;
+  }
+
+  .titulo {
+    margin-bottom: 1rem;
+  }
 }

@@ -39,6 +39,10 @@ export class Login implements OnInit {
     this.entrar(this.auth.login(this.credenciais));
   }
 
+  rotuloPerfil(perfil: TipoUsuario): string {
+    return perfil === 'EMPRESA' ? 'empresa' : 'fornecedor';
+  }
+
   entrarDemo(perfil: TipoUsuario): void {
     this.entrandoComo.set(perfil);
     this.entrar(this.auth.entrarDemo(perfil));
