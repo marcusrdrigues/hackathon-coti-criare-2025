@@ -12,8 +12,8 @@ fieldset {
   grid-template-columns: 1fr 1fr;
   gap: 2px;
   padding: 2px;
-  background: #ececf0;
-  border-radius: 10px;
+  background: var(--cor-trilho);
+  border-radius: var(--raio);
 }
 
 .segmento-entrada {
@@ -30,23 +30,23 @@ fieldset {
   margin: 0;
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #1d1d1f;
-  border-radius: 8px;
+  color: var(--cor-texto);
+  border-radius: var(--raio-pequeno);
   cursor: pointer;
   transition: background-color 0.15s, box-shadow 0.15s;
 }
 
 .segmento-entrada:checked + .segmento {
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+  background: var(--cor-segmento-ativo);
+  box-shadow: var(--sombra-leve);
 }
 
 .segmento-entrada:not(:checked) + .segmento:hover {
-  background: rgba(255, 255, 255, 0.55);
+  background: color-mix(in srgb, var(--cor-segmento-ativo) 55%, transparent);
 }
 
 .segmento-entrada:focus-visible + .segmento {
-  outline: 2px solid var(--criare-red);
+  outline: 2px solid var(--cor-marca-texto);
   outline-offset: 2px;
 }
 
@@ -59,7 +59,7 @@ fieldset {
   margin: 0.5rem 0 0;
   padding: 0;
   font-size: 0.8125rem;
-  color: #6e6e73;
+  color: var(--cor-texto-2);
 }
 
 .requisitos li {
@@ -71,19 +71,19 @@ fieldset {
 .marcador {
   width: 0.75rem;
   height: 0.75rem;
-  border: 1.5px solid #8e8e93;
+  border: 1.5px solid var(--cor-borda-campo);
   border-radius: 50%;
   flex-shrink: 0;
 }
 
 .requisitos li.cumprido {
-  color: #1d1d1f;
+  color: var(--cor-texto);
 }
 
 .requisitos li.cumprido .marcador {
-  border-color: #1b7f3b;
+  border-color: var(--cor-sucesso);
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 6.2 5 8.2 9 4' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
     center / 100% no-repeat,
-    #1b7f3b;
+    var(--cor-sucesso);
 }

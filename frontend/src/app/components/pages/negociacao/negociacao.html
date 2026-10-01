@@ -18,7 +18,7 @@
         <div class="card shadow-sm resumo">
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-start">
-              <h5 class="fw-bold text-dark mb-0">Resumo da Negociação</h5>
+              <h5 class="fw-bold text-body-emphasis mb-0">Resumo da Negociação</h5>
               <span class="badge" [class]="status[n.status].classe">{{ status[n.status].texto }}</span>
             </div>
             <hr>
@@ -68,7 +68,7 @@
 
         <!-- Histórico -->
         <div class="card shadow-sm mb-4">
-          <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+          <div class="card-header bg-body py-3 d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-bold">Histórico da Negociação</h5>
             @if (emAndamento()) {
               <small class="text-muted"><i class="bi bi-arrow-repeat me-1"></i>Atualiza automaticamente</small>

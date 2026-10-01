@@ -1,12 +1,12 @@
 .nav-link {
-  color: #555;
+  color: var(--cor-texto-2);
   font-size: 0.95rem;
   transition: color 0.2s;
 }
 
 .nav-link:hover,
 .nav-link.active {
-  color: var(--criare-red) !important;
+  color: var(--cor-marca-texto) !important;
 }
 
 .line-height-sm {
@@ -26,26 +26,26 @@
   height: 40px;
   transition: all 0.2s ease;
   cursor: pointer;
-  background-color: var(--criare-light);
-  color: var(--criare-red);
-  border: 1px solid #dee2e6;
+  background-color: var(--cor-marca-suave);
+  color: var(--cor-marca-texto);
+  border: 1px solid var(--cor-divisoria);
 }
 
 .avatar-container:hover {
-  background-color: var(--criare-red);
-  color: #fff;
-  border-color: var(--criare-red);
+  background-color: var(--cor-marca);
+  color: var(--cor-sobre-marca);
+  border-color: var(--cor-marca);
 }
 
 .navbar {
-  border-bottom: 1px solid #eef2f6;
+  border-bottom: 1px solid var(--cor-divisoria);
   padding-top: 0.75rem;
   padding-bottom: 0.75rem;
 }
 
 .dropdown-item:active {
-  background-color: var(--criare-red);
-  color: #fff;
+  background-color: var(--cor-marca);
+  color: var(--cor-sobre-marca);
 }
 
 .marca {
@@ -53,9 +53,9 @@
   align-items: center;
   gap: 0.5rem;
   font-weight: 700;
-  color: #1d1d1f;
+  color: var(--cor-texto);
 }
 
 .marca:hover {
-  color: #1d1d1f;
+  color: var(--cor-texto);
 }

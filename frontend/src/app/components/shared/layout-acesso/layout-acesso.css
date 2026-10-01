@@ -1,11 +1,9 @@
 /*
- * Moldura das telas de acesso.
- *   --vinho  #5e070c  fundo do painel da marca; branco nele 13,9:1
- *   #f2c8c8           texto secundário no painel; 9,2:1 sobre o vinho
+ * Moldura das telas de acesso. Cores em styles/tokens.css:
+ *   --cor-painel          fundo do painel da marca (vinho)
+ *   --cor-painel-texto-2  texto secundário sobre ele
  */
 :host {
-  --vinho: #5e070c;
-  --vinho-texto-2: #f2c8c8;
   display: block;
 }
 
@@ -13,7 +11,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
   min-height: 100dvh;
-  background: #fff;
+  background: var(--cor-superficie);
 }
 
 /* ---------- Painel da marca ---------- */
@@ -24,9 +22,9 @@
   gap: 2rem;
   padding: clamp(2rem, 5vh, 3.5rem) clamp(2rem, 5vw, 4.5rem);
   background:
-    radial-gradient(120% 80% at 0% 0%, rgba(143, 11, 17, 0.7) 0%, transparent 60%),
-    var(--vinho);
-  color: #fff;
+    radial-gradient(120% 80% at 0% 0%, var(--cor-painel-brilho) 0%, transparent 60%),
+    var(--cor-painel);
+  color: var(--cor-sobre-marca);
 }
 
 .marca {
@@ -49,7 +47,7 @@
 
 .marca-produto {
   font-size: 0.875rem;
-  color: var(--vinho-texto-2);
+  color: var(--cor-painel-texto-2);
 }
 
 .manifesto {
@@ -67,7 +65,7 @@
 .manifesto-texto {
   font-size: 1rem;
   line-height: 1.5;
-  color: var(--vinho-texto-2);
+  color: var(--cor-painel-texto-2);
   margin: 0 0 2rem;
 }
 
@@ -96,7 +94,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--vinho-texto-2);
+  background: var(--cor-painel-texto-2);
 }
 
 .passo-rotulo {
@@ -109,17 +107,17 @@
 .passo-autor {
   font-size: 0.8125rem;
   font-weight: 400;
-  color: var(--vinho-texto-2);
+  color: var(--cor-painel-texto-2);
 }
 
 .passo-valor {
   font-size: 1rem;
   font-variant-numeric: tabular-nums;
-  color: var(--vinho-texto-2);
+  color: var(--cor-painel-texto-2);
 }
 
 .negociacao-passo.fechado .passo-valor {
-  color: #fff;
+  color: var(--cor-sobre-marca);
   font-size: 1.375rem;
   font-weight: 700;
 }
@@ -129,22 +127,29 @@
   height: 11px;
   left: -6px;
   top: 0.95rem;
-  background: #fff;
+  background: var(--cor-sobre-marca);
   box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.18);
 }
 
 .credito {
   margin: 0;
   font-size: 0.8125rem;
-  color: var(--vinho-texto-2);
+  color: var(--cor-painel-texto-2);
 }
 
 /* ---------- Painel do conteúdo ---------- */
 .painel-acesso {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: clamp(1.5rem, 4vh, 3rem) 1.5rem;
+}
+
+.tema {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
 }
 
 .acesso {
@@ -158,11 +163,11 @@
 }
 
 .marca-compacta .marca-nome {
-  color: var(--tx, #1d1d1f);
+  color: var(--cor-texto);
 }
 
 .marca-compacta .marca-produto {
-  color: #6e6e73;
+  color: var(--cor-texto-2);
 }
 
 @media (max-width: 959.98px) {
@@ -179,7 +184,19 @@
   }
 }
 
+/* Celular estreito: o nome do produto sai para a marca e o seletor de tema caberem lado a lado */
+@media (max-width: 419.98px) {
+  .marca-compacta .marca-produto {
+    display: none;
+  }
+}
+
 @media (max-height: 760px) {
+  .tema {
+    top: 0.75rem;
+    right: 0.75rem;
+  }
+
   .painel-marca {
     padding-top: 1.75rem;
     padding-bottom: 1.75rem;

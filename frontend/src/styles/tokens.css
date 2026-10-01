@@ -1,0 +1,171 @@
+/* =========================================================
+   Design tokens do Portal Criare
+   ---------------------------------------------------------
+   Fonte única das cores do sistema. Componentes e páginas
+   usam só estas variáveis (nunca um hexadecimal solto), e o
+   Bootstrap é ligado a elas no fim do arquivo, então classes
+   como .card, .bg-body, .text-body-secondary e .btn-primary
+   acompanham o tema sozinhas.
+
+   Tema: o atributo data-bs-theme do <html> ("light" ou
+   "dark") é definido antes do Angular carregar (script no
+   index.html) e depois pelo TemaService. Padrão: segue o
+   sistema operacional; a pessoa pode fixar claro ou escuro.
+
+   Contrastes (WCAG 2.x) estão anotados em cada valor e
+   documentados em docs/design-system.md.
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   Claro (padrão)
+   --------------------------------------------------------- */
+:root {
+  color-scheme: light;
+
+  /* Marca: vermelho-sangue, mais escuro que o do logo original */
+  --cor-marca: #8f0b11;                 /* preenchimento; branco sobre ele 9,4:1 */
+  --cor-marca-rgb: 143, 11, 17;
+  --cor-marca-hover: #7a090e;
+  --cor-marca-pressionada: #5e070c;
+  --cor-sobre-marca: #ffffff;           /* texto e ícones sobre a marca */
+  --cor-marca-texto: #8f0b11;           /* marca como texto, link ou contorno; 9,4:1 na superfície */
+  --cor-marca-texto-rgb: 143, 11, 17;
+  --cor-marca-texto-hover: #5e070c;
+  --cor-marca-texto-hover-rgb: 94, 7, 12;
+  --cor-marca-enfase: #5e070c;          /* texto forte sobre --cor-marca-suave */
+  --cor-marca-suave: #fbeceb;           /* fundo de destaque leve; marca sobre ele 8,2:1 */
+  --cor-marca-suave-ativa: #f6d9d8;
+  --cor-marca-suave-borda: #f0cfcd;
+  --cor-marca-foco: rgba(143, 11, 17, 0.25);
+
+  /* Superfícies (do fundo para a frente) */
+  --cor-fundo: #f5f5f7;                 /* fundo da página */
+  --cor-superficie: #ffffff;            /* cards, barra de navegação, campos */
+  --cor-superficie-rgb: 255, 255, 255;
+  --cor-superficie-2: #f2f2f7;          /* blocos dentro de um card, cabeçalho de tabela */
+  --cor-trilho: #ececf0;                /* trilho de controle segmentado, barras de progresso */
+  --cor-segmento-ativo: #ffffff;
+
+  /* Texto */
+  --cor-texto: #1d1d1f;                 /* 16,8:1 na superfície · 15,5:1 no fundo */
+  --cor-texto-rgb: 29, 29, 31;
+  --cor-texto-2: #6e6e73;               /* secundário; 5,1:1 na superfície · 4,5:1 na superfície-2 */
+  --cor-texto-2-rgb: 110, 110, 115;
+
+  /* Linhas */
+  --cor-borda-campo: #8e8e93;           /* borda de campos e controles; 3,3:1 (mínimo 3:1) */
+  --cor-divisoria: #e5e5ea;             /* separadores, bordas de card e tabela (decorativas) */
+
+  /* Estados. O erro é mais alaranjado que a marca para não se confundir com ela,
+     e sempre vem acompanhado de texto, nunca só de cor */
+  --cor-erro: #c4320a;                  /* borda de campo inválido; 5,5:1 */
+  --cor-erro-texto: #b0300b;            /* mensagem abaixo do campo; 6,4:1 */
+  --cor-erro-fundo: #fdf0eb;
+  --cor-erro-fundo-texto: #8a2a08;      /* 7,8:1 sobre o fundo de erro */
+  --cor-sucesso: #1b7f3b;               /* 5,1:1 */
+  --cor-info-fundo: #f2f2f7;
+
+  /* Painel da marca nas telas de acesso */
+  --cor-painel: #5e070c;                /* branco sobre ele 13,9:1 */
+  --cor-painel-brilho: rgba(143, 11, 17, 0.7);
+  --cor-painel-texto-2: #f2c8c8;        /* 9,2:1 */
+
+  /* Sombras */
+  --sombra-leve: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+  --sombra-elevada: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+
+  /* Forma e medidas */
+  --raio: 10px;
+  --raio-pequeno: 8px;
+  --altura-controle: 2.75rem;           /* 44px: alvo de toque mínimo */
+}
+
+/* ---------------------------------------------------------
+   Escuro
+   Fundo preto com superfícies em cinza, como no iOS/macOS.
+   A marca continua #8f0b11 como preenchimento (branco 9,4:1);
+   como texto ela clareia para #ff8a8f, porque o vermelho escuro
+   some sobre o cinza.
+   --------------------------------------------------------- */
+:root[data-bs-theme='dark'] {
+  color-scheme: dark;
+
+  --cor-marca: #8f0b11;
+  --cor-marca-rgb: 143, 11, 17;
+  --cor-marca-hover: #a3121a;           /* no escuro o hover clareia; branco 7,9:1 */
+  --cor-marca-pressionada: #7a090e;
+  --cor-sobre-marca: #ffffff;
+  --cor-marca-texto: #ff8a8f;           /* 7,5:1 na superfície · 9,3:1 no fundo */
+  --cor-marca-texto-rgb: 255, 138, 143;
+  --cor-marca-texto-hover: #ffb3b6;
+  --cor-marca-texto-hover-rgb: 255, 179, 182;
+  --cor-marca-enfase: #ffb3b6;
+  --cor-marca-suave: #3b1013;           /* marca-texto sobre ele 7,3:1 */
+  --cor-marca-suave-ativa: #4a1418;
+  --cor-marca-suave-borda: #6b1a1f;
+  --cor-marca-foco: rgba(255, 138, 143, 0.35);
+
+  --cor-fundo: #000000;
+  --cor-superficie: #1c1c1e;
+  --cor-superficie-rgb: 28, 28, 30;
+  --cor-superficie-2: #2c2c2e;
+  --cor-trilho: #3a3a3c;
+  --cor-segmento-ativo: #636366;        /* texto sobre ele 5,5:1 */
+
+  --cor-texto: #f5f5f7;                 /* 15,6:1 na superfície · 19,3:1 no fundo */
+  --cor-texto-rgb: 245, 245, 247;
+  --cor-texto-2: #98989d;               /* 5,9:1 na superfície · 4,9:1 na superfície-2 */
+  --cor-texto-2-rgb: 152, 152, 157;
+
+  --cor-borda-campo: #8e8e93;           /* 5,2:1 */
+  --cor-divisoria: #38383a;
+
+  --cor-erro: #ff8a65;                  /* 7,4:1 */
+  --cor-erro-texto: #ff8a65;
+  --cor-erro-fundo: #3a1a10;
+  --cor-erro-fundo-texto: #ffb59a;      /* 9,2:1 */
+  --cor-sucesso: #30d158;               /* 8,4:1 */
+  --cor-info-fundo: #2c2c2e;
+
+  --cor-painel: #4a060a;                /* branco 15,9:1 */
+  --cor-painel-brilho: rgba(143, 11, 17, 0.55);
+  --cor-painel-texto-2: #f2c8c8;        /* 10,5:1 */
+
+  --sombra-leve: 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  --sombra-elevada: 0 0.5rem 1rem rgba(0, 0, 0, 0.6);
+}
+
+/* ---------------------------------------------------------
+   Ligação com o Bootstrap 5.3
+   Os mesmos nomes servem para os dois temas, porque apontam
+   para os tokens acima. A especificidade (:root[data-bs-theme])
+   garante que estes valores vençam os do bootstrap.min.css.
+   --------------------------------------------------------- */
+:root,
+:root[data-bs-theme='light'],
+:root[data-bs-theme='dark'] {
+  --bs-body-color: var(--cor-texto);
+  --bs-body-color-rgb: var(--cor-texto-rgb);
+  --bs-body-bg: var(--cor-superficie);
+  --bs-body-bg-rgb: var(--cor-superficie-rgb);
+  --bs-emphasis-color: var(--cor-texto);
+  --bs-emphasis-color-rgb: var(--cor-texto-rgb);
+  --bs-secondary-color: var(--cor-texto-2);
+  --bs-secondary-color-rgb: var(--cor-texto-2-rgb);
+  --bs-secondary-bg: var(--cor-trilho);
+  --bs-tertiary-bg: var(--cor-superficie-2);
+  --bs-border-color: var(--cor-divisoria);
+  --bs-border-color-translucent: var(--cor-divisoria);
+
+  --bs-primary: var(--cor-marca);
+  --bs-primary-rgb: var(--cor-marca-rgb);
+  --bs-primary-text-emphasis: var(--cor-marca-enfase);
+  --bs-primary-bg-subtle: var(--cor-marca-suave);
+  --bs-primary-border-subtle: var(--cor-marca-suave-borda);
+
+  --bs-link-color: var(--cor-marca-texto);
+  --bs-link-color-rgb: var(--cor-marca-texto-rgb);
+  --bs-link-hover-color: var(--cor-marca-texto-hover);
+  --bs-link-hover-color-rgb: var(--cor-marca-texto-hover-rgb);
+  --bs-focus-ring-color: var(--cor-marca-foco);
+}

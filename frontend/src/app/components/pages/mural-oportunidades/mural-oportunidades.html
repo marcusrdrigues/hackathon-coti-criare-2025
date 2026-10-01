@@ -4,7 +4,7 @@
 
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
-      <h2 class="fw-bold text-dark mb-0">Mural de Oportunidades</h2>
+      <h2 class="fw-bold text-body-emphasis mb-0">Mural de Oportunidades</h2>
       <p class="text-muted small mb-0">Encontre novos clientes e envie suas propostas.</p>
     </div>
     <div class="d-flex flex-wrap gap-2 filtros">
@@ -16,7 +16,7 @@
         }
       </select>
       <div class="input-group">
-        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+        <span class="input-group-text bg-body"><i class="bi bi-search"></i></span>
         <input type="search" class="form-control" placeholder="Buscar serviços..." aria-label="Buscar"
                [ngModel]="busca()" (ngModelChange)="busca.set($event)">
       </div>
@@ -45,11 +45,11 @@
               <div class="col-md-8">
                 <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
                   @if (ehNova(item)) {
-                    <span class="badge bg-light text-primary border border-danger">NOVO</span>
+                    <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">NOVO</span>
                   }
                   <h5 class="card-title mb-0 fw-bold">{{ item.nomeServico }}</h5>
                   @if (item.categoriaDescricao) {
-                    <span class="badge rounded-pill bg-light text-dark border">{{ item.categoriaDescricao }}</span>
+                    <span class="badge rounded-pill bg-body-tertiary text-body border">{{ item.categoriaDescricao }}</span>
                   }
                 </div>
                 <p class="mb-1 text-muted"><i class="bi bi-building me-1"></i>{{ item.empresaNome }}</p>
@@ -93,19 +93,19 @@
             </div>
 
             @if (expandida() === item.id) {
-              <form class="mt-4 pt-3 border-top bg-light rounded p-3 fade-in" (ngSubmit)="confirmarEnvio(item)">
+              <form class="mt-4 pt-3 border-top bg-body-tertiary rounded p-3 fade-in" (ngSubmit)="confirmarEnvio(item)">
                 <div class="row align-items-end">
                   <div class="col-12 mb-3">
-                    <label [for]="'descricao-' + item.id" class="form-label fw-bold text-dark small">CONDIÇÕES DA PROPOSTA</label>
+                    <label [for]="'descricao-' + item.id" class="form-label fw-bold text-body-emphasis small">CONDIÇÕES DA PROPOSTA</label>
                     <textarea [id]="'descricao-' + item.id" class="form-control" rows="2" maxlength="1000" name="descricao"
                               placeholder="Ex: Incluso frete, garantia de 1 ano, pagamento em 30 dias..."
                               [(ngModel)]="rascunho.descricao"></textarea>
                   </div>
 
                   <div class="col-md-8">
-                    <label [for]="'valor-' + item.id" class="form-label fw-bold text-dark small">VALOR TOTAL (R$)</label>
+                    <label [for]="'valor-' + item.id" class="form-label fw-bold text-body-emphasis small">VALOR TOTAL (R$)</label>
                     <div class="input-group">
-                      <span class="input-group-text bg-white text-muted">R$</span>
+                      <span class="input-group-text bg-body text-muted">R$</span>
                       <input [id]="'valor-' + item.id" type="number" min="0" step="0.01" name="valor"
                              class="form-control form-control-lg fw-bold" placeholder="0,00" [(ngModel)]="rascunho.valor">
                     </div>

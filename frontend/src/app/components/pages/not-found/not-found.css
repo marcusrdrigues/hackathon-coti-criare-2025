@@ -1,3 +1,50 @@
-.not-found-card {
-  max-width: 420px;
+.pagina {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 1.5rem;
+  background: var(--cor-fundo);
+}
+
+.conteudo {
+  width: 100%;
+  max-width: 24rem;
+  text-align: center;
+}
+
+.logo {
+  margin-bottom: 1.5rem;
+}
+
+.codigo {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cor-marca-texto);
+}
+
+.titulo {
+  margin: 0 0 0.5rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--cor-texto);
+}
+
+.texto {
+  margin: 0 0 1.75rem;
+  color: var(--cor-texto-2);
+}
+
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--altura-controle);
+  padding-inline: 1.5rem;
+  border-radius: var(--raio);
+  font-weight: 600;
 }

@@ -17,7 +17,7 @@
         <div class="d-flex flex-wrap align-items-center gap-2 small">
           <span class="badge" [class]="statusCotacao[c.status].classe">{{ statusCotacao[c.status].texto }}</span>
           @if (c.categoriaDescricao) {
-            <span class="badge bg-light text-dark border">{{ c.categoriaDescricao }}</span>
+            <span class="badge bg-body-tertiary text-body border">{{ c.categoriaDescricao }}</span>
           }
           <span class="text-muted">Criada em {{ c.dataCriacao | date: 'dd/MM/yyyy' }}</span>
           @if (c.dataLimite) {
@@ -65,11 +65,11 @@
     }
 
     <div class="card shadow-sm">
-      <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-        <h5 class="mb-0 fw-bold text-dark">
+      <div class="card-header bg-body py-3 border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold text-body-emphasis">
           <i class="bi bi-people-fill me-2 text-secondary"></i>Propostas Recebidas
         </h5>
-        <span class="badge bg-light text-dark border">
+        <span class="badge bg-body-tertiary text-body border">
           {{ propostas().length }} {{ propostas().length === 1 ? 'fornecedor' : 'fornecedores' }}
         </span>
       </div>
@@ -89,7 +89,7 @@
             @for (p of propostas(); track p.id) {
               <tr [class.text-muted]="p.status === 'RECUSADA'">
                 <td class="ps-4 py-3">
-                  <div class="fw-bold text-dark">{{ p.fornecedorNome }}</div>
+                  <div class="fw-bold text-body-emphasis">{{ p.fornecedorNome }}</div>
                   <small class="text-muted">CNPJ: {{ p.fornecedorCnpj | cnpj }}</small>
                 </td>
                 <td>

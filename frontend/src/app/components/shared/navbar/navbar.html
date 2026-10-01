@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg bg-white shadow-sm sticky-top">
+<nav class="navbar navbar-expand-lg bg-body shadow-sm sticky-top">
   <div class="container-fluid px-4">
 
     <a class="navbar-brand marca" [routerLink]="rotaDashboard()">
@@ -55,13 +55,13 @@
       @if (usuario(); as u) {
         <div class="d-flex align-items-center ms-auto">
           <div class="d-none d-lg-block text-end me-3 line-height-sm">
-            <div class="fw-bold text-dark small mb-0">{{ u.nome }}</div>
+            <div class="fw-bold text-body-emphasis small mb-0">{{ u.nome }}</div>
             <small class="text-muted d-block perfil-texto">{{ tipoPerfilTexto() }}</small>
             <small class="text-secondary fw-light cnpj-texto">{{ u.cnpj | cnpj }}</small>
           </div>
 
           <div class="dropdown">
-            <a href="#" class="d-flex align-items-center text-decoration-none" data-bs-toggle="dropdown"
+            <a href="#" class="d-flex align-items-center text-decoration-none" data-bs-toggle="dropdown" data-bs-auto-close="outside"
                aria-expanded="false" aria-label="Menu do usuário" (click)="$event.preventDefault()">
               <div class="avatar-container rounded-circle d-flex justify-content-center align-items-center">
                 <i class="bi bi-person-fill fs-5"></i>
@@ -74,6 +74,11 @@
               </li>
               <li class="d-none d-lg-block px-3 py-2">
                 <small class="text-muted">{{ u.email }}</small>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li class="px-3 py-1 d-flex align-items-center justify-content-between gap-3">
+                <span class="small text-body-secondary">Aparência</span>
+                <app-seletor-tema />
               </li>
               <li><hr class="dropdown-divider"></li>
               <li>

@@ -42,14 +42,14 @@ export class PropostasEnviadas implements OnInit {
 
   situacao(p: Proposta): InfoStatus {
     if (p.negociacaoStatus === 'EM_ANDAMENTO') {
-      return { texto: 'Em negociação', classe: 'bg-warning text-dark' };
+      return { texto: 'Em negociação', classe: 'text-bg-warning' };
     }
     if (p.cotacaoStatus === 'EM_NEGOCIACAO') {
-      return { texto: 'Empresa negociando com outro fornecedor', classe: 'bg-light text-dark border' };
+      return { texto: 'Empresa negociando com outro fornecedor', classe: 'bg-body-tertiary text-body border' };
     }
     return p.status === 'EM_ANALISE'
-      ? { texto: 'Em análise', classe: 'bg-info text-dark' }
-      : { texto: 'Aguardando análise', classe: 'bg-info text-dark' };
+      ? { texto: 'Em análise', classe: 'text-bg-info' }
+      : { texto: 'Aguardando análise', classe: 'text-bg-info' };
   }
 
   retirar(p: Proposta): void {

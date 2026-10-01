@@ -2,7 +2,7 @@
 
 <div class="container mt-4 mb-5">
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-    <h2 class="fw-bold text-dark mb-0">Minhas Cotações</h2>
+    <h2 class="fw-bold text-body-emphasis mb-0">Minhas Cotações</h2>
     <a class="btn btn-primary" routerLink="/pages/cadastro-cotacao">
       <i class="bi bi-plus-circle me-2"></i>Nova Cotação
     </a>
@@ -16,7 +16,7 @@
     @for (f of filtros; track f.valor) {
       <li class="nav-item">
         <button type="button" class="nav-link" [class.active]="filtro() === f.valor" (click)="filtro.set(f.valor)">
-          {{ f.texto }} <span class="badge rounded-pill bg-light text-dark ms-1">{{ contar(f.valor) }}</span>
+          {{ f.texto }} <span class="badge rounded-pill bg-body-tertiary text-body ms-1">{{ contar(f.valor) }}</span>
         </button>
       </li>
     }
@@ -40,7 +40,7 @@
                   <h5 class="card-title mb-0 fw-bold">{{ item.nomeServico }}</h5>
                   <span class="badge rounded-pill" [class]="status[item.status].classe">{{ status[item.status].texto }}</span>
                   @if (item.categoriaDescricao) {
-                    <span class="badge rounded-pill bg-light text-dark border">{{ item.categoriaDescricao }}</span>
+                    <span class="badge rounded-pill bg-body-tertiary text-body border">{{ item.categoriaDescricao }}</span>
                   }
                 </div>
                 <p class="card-text text-muted mb-2 requisitos">{{ item.requisitos }}</p>

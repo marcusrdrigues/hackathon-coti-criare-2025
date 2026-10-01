@@ -2,10 +2,11 @@ import { Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { CnpjPipe } from '../../../core/utils/cnpj.pipe';
+import { SeletorTema } from '../seletor-tema/seletor-tema';
 
 @Component({
   selector: 'app-navbar',
-  imports: [RouterLink, RouterLinkActive, CnpjPipe],
+  imports: [RouterLink, RouterLinkActive, CnpjPipe, SeletorTema],
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
 })

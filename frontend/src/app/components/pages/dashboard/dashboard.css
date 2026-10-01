@@ -5,13 +5,13 @@
 }
 
 .list-group-item:hover {
-  background-color: #f8f9fa;
+  background-color: var(--cor-superficie-2);
 }
 
 .progress {
   height: 10px;
   border-radius: 10px;
-  background-color: #e9ecef;
+  background-color: var(--cor-trilho);
 }
 
 .progress-bar {

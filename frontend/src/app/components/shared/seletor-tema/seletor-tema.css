@@ -1,0 +1,59 @@
+:host {
+  display: inline-block;
+}
+
+.seletor {
+  display: inline-grid;
+  grid-auto-flow: column;
+  gap: 2px;
+  margin: 0;
+  padding: 2px;
+  min-width: 0;
+  border: 0;
+  border-radius: var(--raio);
+  background: var(--cor-trilho);
+}
+
+/* O rádio continua no fluxo de foco e do leitor de tela; só a aparência é do segmento */
+.seletor-entrada {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.seletor-opcao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2rem;
+  margin: 0;
+  border-radius: var(--raio-pequeno);
+  color: var(--cor-texto-2);
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.seletor-entrada:checked + .seletor-opcao {
+  background: var(--cor-segmento-ativo);
+  color: var(--cor-texto);
+  box-shadow: var(--sombra-leve);
+}
+
+.seletor-entrada:not(:checked) + .seletor-opcao:hover {
+  color: var(--cor-texto);
+}
+
+.seletor-entrada:focus-visible + .seletor-opcao {
+  outline: 2px solid var(--cor-marca-texto);
+  outline-offset: 2px;
+}
+
+/* Dedo precisa de alvo maior que o cursor */
+@media (pointer: coarse) {
+  .seletor-opcao {
+    width: 2.75rem;
+    height: 2.5rem;
+  }
+}

@@ -14,21 +14,21 @@
   gap: 0.125rem;
   min-height: 3.5rem;
   padding: 0.5rem 0.75rem;
-  border: 1px solid #8e8e93;
-  border-radius: 10px;
-  background: #fff;
-  color: #1d1d1f;
+  border: 1px solid var(--cor-borda-campo);
+  border-radius: var(--raio);
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
   text-align: left;
   transition: border-color 0.15s, background-color 0.15s;
 }
 
 .botao-demo:hover:not(:disabled) {
-  border-color: var(--criare-red);
-  background: var(--criare-light);
+  border-color: var(--cor-marca-texto);
+  background: var(--cor-marca-suave);
 }
 
 .botao-demo:active:not(:disabled) {
-  background: #f6d9d8;
+  background: var(--cor-marca-suave-ativa);
 }
 
 .botao-demo:disabled {
@@ -36,7 +36,7 @@
 }
 
 .botao-demo:focus-visible {
-  outline: 2px solid var(--criare-red);
+  outline: 2px solid var(--cor-marca-texto);
   outline-offset: 2px;
 }
 
@@ -47,5 +47,5 @@
 
 .demo-nome {
   font-size: 0.8125rem;
-  color: #6e6e73;
+  color: var(--cor-texto-2);
 }

@@ -1,105 +1,92 @@
 /* =========================================================
-   Identidade visual Criare — tema global
-   Carregado DEPOIS do Bootstrap (ver angular.json), então
-   sobrescreve as cores padrão sem precisar de !important em
-   cada componente.
+   Estilos globais do Portal Criare
+   Carregado depois do Bootstrap e de styles/tokens.css (ver
+   angular.json). Aqui só se usa var(--cor-*): as cores em si
+   moram nos tokens, então tudo funciona no claro e no escuro.
    ========================================================= */
-:root {
-  /* Vermelho-sangue: mais escuro que o vermelho do logo original, para o sistema
-     ficar sóbrio. Branco sobre ele: 9,4:1. Ele sobre o branco: 9,4:1. */
-  --criare-red: #8f0b11;
-  --criare-hover: #7a090e;
-  --criare-dark: #5e070c;
-  --criare-light: #fbeceb;
-  --criare-focus: rgba(143, 11, 17, 0.25);
-
-  --bs-primary: var(--criare-red);
-  --bs-primary-rgb: 143, 11, 17;
-  --bs-link-color: var(--criare-red);
-  --bs-link-color-rgb: 143, 11, 17;
-  --bs-link-hover-color: var(--criare-dark);
-  --bs-link-hover-color-rgb: 94, 7, 12;
-  --bs-primary-bg-subtle: var(--criare-light);
-  --bs-primary-text-emphasis: var(--criare-dark);
-}
 
 body {
-  background-color: #f5f6f8;
+  background-color: var(--cor-fundo);
+  color: var(--cor-texto);
 }
 
 /* ---------- Botões ---------- */
 .btn-primary {
-  --bs-btn-bg: var(--criare-red);
-  --bs-btn-border-color: var(--criare-red);
-  --bs-btn-hover-bg: var(--criare-hover);
-  --bs-btn-hover-border-color: var(--criare-hover);
-  --bs-btn-active-bg: var(--criare-dark);
-  --bs-btn-active-border-color: var(--criare-dark);
-  --bs-btn-disabled-bg: var(--criare-red);
-  --bs-btn-disabled-border-color: var(--criare-red);
-  --bs-btn-focus-shadow-rgb: 143, 11, 17;
+  --bs-btn-color: var(--cor-sobre-marca);
+  --bs-btn-bg: var(--cor-marca);
+  --bs-btn-border-color: var(--cor-marca);
+  --bs-btn-hover-color: var(--cor-sobre-marca);
+  --bs-btn-hover-bg: var(--cor-marca-hover);
+  --bs-btn-hover-border-color: var(--cor-marca-hover);
+  --bs-btn-active-color: var(--cor-sobre-marca);
+  --bs-btn-active-bg: var(--cor-marca-pressionada);
+  --bs-btn-active-border-color: var(--cor-marca-pressionada);
+  --bs-btn-disabled-color: var(--cor-sobre-marca);
+  --bs-btn-disabled-bg: var(--cor-marca);
+  --bs-btn-disabled-border-color: var(--cor-marca);
+  --bs-btn-focus-shadow-rgb: var(--cor-marca-texto-rgb);
 }
 
 .btn-outline-primary {
-  --bs-btn-color: var(--criare-red);
-  --bs-btn-border-color: var(--criare-red);
-  --bs-btn-hover-bg: var(--criare-red);
-  --bs-btn-hover-border-color: var(--criare-red);
-  --bs-btn-active-bg: var(--criare-dark);
-  --bs-btn-active-border-color: var(--criare-dark);
-  --bs-btn-disabled-color: var(--criare-red);
-  --bs-btn-disabled-border-color: var(--criare-red);
-  --bs-btn-focus-shadow-rgb: 143, 11, 17;
-}
-
-.btn-criare {
-  background-color: var(--criare-red);
-  color: #fff;
-  font-weight: 700;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  width: 100%;
-  transition: transform 0.2s, background-color 0.2s;
-  letter-spacing: 1px;
-}
-
-.btn-criare:hover:not(:disabled) {
-  background-color: var(--criare-hover);
-  color: #fff;
-  transform: scale(1.02);
-}
-
-.btn-criare:disabled {
-  background-color: var(--criare-red);
-  color: #fff;
-  opacity: 0.7;
+  --bs-btn-color: var(--cor-marca-texto);
+  --bs-btn-border-color: var(--cor-marca-texto);
+  --bs-btn-hover-color: var(--cor-sobre-marca);
+  --bs-btn-hover-bg: var(--cor-marca);
+  --bs-btn-hover-border-color: var(--cor-marca);
+  --bs-btn-active-color: var(--cor-sobre-marca);
+  --bs-btn-active-bg: var(--cor-marca-pressionada);
+  --bs-btn-active-border-color: var(--cor-marca-pressionada);
+  --bs-btn-disabled-color: var(--cor-marca-texto);
+  --bs-btn-disabled-border-color: var(--cor-marca-texto);
+  --bs-btn-focus-shadow-rgb: var(--cor-marca-texto-rgb);
 }
 
 /* ---------- Cores utilitárias ---------- */
+/* .text-primary é texto: usa a versão da marca que tem contraste no tema atual */
 .text-primary {
-  color: var(--criare-red) !important;
+  color: var(--cor-marca-texto) !important;
 }
 
 .bg-primary {
-  background-color: var(--criare-red) !important;
+  background-color: var(--cor-marca) !important;
+}
+
+/* As cores de estado do Bootstrap não têm contraste suficiente no escuro;
+   estas versões passam de 4,5:1 nos dois temas */
+.text-success {
+  color: var(--cor-sucesso) !important;
+}
+
+.text-danger {
+  color: var(--cor-erro-texto) !important;
+}
+
+.text-secondary {
+  color: var(--cor-texto-2) !important;
+}
+
+/* Campos: borda com 3:1 contra o fundo, como pede a WCAG para componentes */
+.form-control,
+.form-select {
+  border-color: var(--cor-borda-campo);
 }
 
 .form-control:focus,
 .form-select:focus {
-  border-color: var(--criare-red);
-  box-shadow: 0 0 0 0.25rem var(--criare-focus);
+  border-color: var(--cor-marca-texto);
+  box-shadow: 0 0 0 0.25rem var(--cor-marca-foco);
 }
 
 .form-check-input:checked {
-  background-color: var(--criare-red);
-  border-color: var(--criare-red);
+  background-color: var(--cor-marca);
+  border-color: var(--cor-marca);
 }
 
 .nav-pills {
-  --bs-nav-pills-link-active-bg: var(--criare-red);
-  --bs-nav-link-color: #555;
-  --bs-nav-link-hover-color: var(--criare-red);
+  --bs-nav-pills-link-active-bg: var(--cor-marca);
+  --bs-nav-pills-link-active-color: var(--cor-sobre-marca);
+  --bs-nav-link-color: var(--cor-texto-2);
+  --bs-nav-link-hover-color: var(--cor-marca-texto);
 }
 
 /* ---------- Cards ---------- */
@@ -108,12 +95,17 @@ body {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.card-hover:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+/* No escuro a sombra quase não aparece; uma borda fina separa o card do fundo preto */
+[data-bs-theme='dark'] .card {
+  box-shadow: 0 0 0 1px var(--cor-divisoria);
 }
 
-.border-start-primary { border-left: 5px solid var(--criare-red) !important; }
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--sombra-elevada) !important;
+}
+
+.border-start-primary { border-left: 5px solid var(--cor-marca) !important; }
 .border-start-warning { border-left: 5px solid #f0bf0d !important; }
 .border-start-success { border-left: 5px solid #198754 !important; }
 .border-start-secondary { border-left: 5px solid #6c757d !important; }
@@ -132,12 +124,12 @@ body {
 .avatar-circle {
   width: 40px;
   height: 40px;
-  background-color: var(--criare-light);
+  background-color: var(--cor-marca-suave);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--criare-red);
+  color: var(--cor-marca-texto);
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -148,9 +140,9 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 600;
-  color: #6c757d;
-  background-color: #f8f9fa;
-  border-bottom: 2px solid #e9ecef;
+  color: var(--cor-texto-2);
+  background-color: var(--cor-superficie-2);
+  border-bottom: 2px solid var(--cor-divisoria);
   white-space: nowrap;
 }
 
@@ -160,20 +152,20 @@ body {
 
 /* ---------- Navegação ---------- */
 .link-voltar {
-  color: #6c757d;
+  color: var(--cor-texto-2);
   text-decoration: none;
   transition: color 0.2s;
 }
 
 .link-voltar:hover {
-  color: var(--criare-red);
+  color: var(--cor-marca-texto);
 }
 
 /* ---------- Estados vazios / carregando ---------- */
 .estado-vazio {
   padding: 3rem 1rem;
   text-align: center;
-  color: #6c757d;
+  color: var(--cor-texto-2);
 }
 
 .estado-vazio i {
@@ -186,38 +178,6 @@ body {
   white-space: pre-line;
 }
 
-/* ---------- Telas de login e cadastro ---------- */
-.login-container {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--criare-red) 0%, #3d0408 100%);
-  padding: 20px;
-}
-
-.glass-card {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 20px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-  width: 100%;
-  padding: 2.5rem 2rem;
-  text-align: center;
-}
-
-.login-link {
-  color: var(--criare-red);
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.login-link:hover {
-  text-decoration: underline;
-}
-
 .fade-in {
   animation: fadeIn 0.4s ease-out;
 }
@@ -227,20 +187,25 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .fade-in {
+    animation: none;
+  }
+
+  .card,
+  .card-hover:hover {
+    transition: none;
+    transform: none;
+  }
+}
+
 /* =========================================================
    Telas de acesso (login e cadastro)
    Ficam aqui porque o conteúdo é projetado dentro do
    <app-layout-acesso> por cada página.
-   Contraste no branco: texto 16,8:1 · secundário 5,1:1 ·
-   borda dos campos 3,3:1 · vermelho da marca 9,4:1
    ========================================================= */
 .acesso {
-  --tx: #1d1d1f;
-  --tx-2: #6e6e73;
-  --borda: #8e8e93;
-  --divisoria: #e5e5ea;
-  --raio: 10px;
-  color: var(--tx);
+  color: var(--cor-texto);
 }
 
 .acesso .titulo {
@@ -253,7 +218,7 @@ body {
 .acesso .subtitulo {
   font-size: 0.9375rem;
   line-height: 1.45;
-  color: var(--tx-2);
+  color: var(--cor-texto-2);
   margin: 0 0 1.5rem;
 }
 
@@ -266,7 +231,7 @@ body {
 
 .acesso .legenda {
   font-size: 0.8125rem;
-  color: var(--tx-2);
+  color: var(--cor-texto-2);
   margin: 0.5rem 0 0;
 }
 
@@ -280,13 +245,13 @@ body {
 }
 
 .acesso .aviso-erro {
-  background: #fdf0eb;
-  color: #8a2a08;
+  background: var(--cor-erro-fundo);
+  color: var(--cor-erro-fundo-texto);
 }
 
 .acesso .aviso-info {
-  background: #f2f2f7;
-  color: var(--tx);
+  background: var(--cor-info-fundo);
+  color: var(--cor-texto);
 }
 
 .acesso .divisor {
@@ -295,14 +260,14 @@ body {
   gap: 0.75rem;
   margin: 1.25rem 0;
   font-size: 0.8125rem;
-  color: var(--tx-2);
+  color: var(--cor-texto-2);
 }
 
 .acesso .divisor::before,
 .acesso .divisor::after {
   content: '';
   flex: 1;
-  border-top: 1px solid var(--divisoria);
+  border-top: 1px solid var(--cor-divisoria);
 }
 
 /* ---------- Campos ---------- */
@@ -313,35 +278,35 @@ body {
 .acesso .entrada {
   display: block;
   width: 100%;
-  height: 2.75rem;
+  height: var(--altura-controle);
   padding: 0 0.875rem;
   font-size: 1rem;
-  color: var(--tx);
-  background: #fff;
-  border: 1px solid var(--borda);
+  color: var(--cor-texto);
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda-campo);
   border-radius: var(--raio);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .acesso .entrada::placeholder {
-  color: var(--tx-2);
+  color: var(--cor-texto-2);
 }
 
 .acesso .entrada:focus {
   outline: none;
-  border-color: var(--criare-red);
-  box-shadow: 0 0 0 3px var(--criare-focus);
+  border-color: var(--cor-marca-texto);
+  box-shadow: 0 0 0 3px var(--cor-marca-foco);
 }
 
 /* Erro usa um vermelho mais alaranjado que o da marca, e sempre vem com texto */
 .acesso .entrada[aria-invalid='true'] {
-  border-color: #c4320a;
+  border-color: var(--cor-erro);
 }
 
 /* Mensagem de erro logo abaixo do campo (texto, não só cor) */
 .acesso .erro-campo {
   font-size: 0.8125rem;
-  color: #b0300b;
+  color: var(--cor-erro-texto);
   margin: 0.375rem 0 0;
 }
 
@@ -352,23 +317,23 @@ body {
   justify-content: center;
   gap: 0.5rem;
   width: 100%;
-  height: 2.75rem;
+  height: var(--altura-controle);
   margin-top: 0.5rem;
   font-size: 1rem;
   font-weight: 600;
-  color: #fff;
-  background: var(--criare-red);
+  color: var(--cor-sobre-marca);
+  background: var(--cor-marca);
   border: none;
   border-radius: var(--raio);
   transition: background-color 0.15s;
 }
 
 .acesso .botao-principal:hover:not(:disabled) {
-  background: var(--criare-hover);
+  background: var(--cor-marca-hover);
 }
 
 .acesso .botao-principal:active:not(:disabled) {
-  background: var(--criare-dark);
+  background: var(--cor-marca-pressionada);
 }
 
 .acesso .botao-principal:disabled {
@@ -378,12 +343,12 @@ body {
 .acesso .rodape {
   margin: 1.5rem 0 0;
   font-size: 0.9375rem;
-  color: var(--tx-2);
+  color: var(--cor-texto-2);
   text-align: center;
 }
 
 .acesso .link {
-  color: var(--criare-red);
+  color: var(--cor-marca-texto);
   font-weight: 600;
   text-decoration: none;
 }
@@ -394,7 +359,7 @@ body {
 
 .acesso .botao-principal:focus-visible,
 .acesso .link:focus-visible {
-  outline: 2px solid var(--criare-red);
+  outline: 2px solid var(--cor-marca-texto);
   outline-offset: 2px;
 }
 
@@ -430,4 +395,3 @@ body {
     margin-top: 1rem;
   }
 }
-

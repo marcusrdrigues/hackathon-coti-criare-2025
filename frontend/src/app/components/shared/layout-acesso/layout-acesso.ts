@@ -1,4 +1,5 @@
 import { Component, input } from '@angular/core';
+import { SeletorTema } from '../seletor-tema/seletor-tema';
 
 /**
  * Moldura das telas de acesso (login e cadastro): painel da marca à esquerda
@@ -8,6 +9,7 @@ import { Component, input } from '@angular/core';
  */
 @Component({
   selector: 'app-layout-acesso',
+  imports: [SeletorTema],
   templateUrl: './layout-acesso.html',
   styleUrl: './layout-acesso.css',
 })
