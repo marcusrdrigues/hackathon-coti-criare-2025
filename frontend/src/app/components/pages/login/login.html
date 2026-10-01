@@ -15,6 +15,42 @@
       </div>
     }
 
+    @if (servidorLento()) {
+      <div class="alert alert-info py-2 small text-start" role="status">
+        <i class="bi bi-hourglass-split me-1"></i>
+        O servidor estava em repouso e está iniciando. Isso pode levar até 1 minuto na primeira vez.
+      </div>
+    }
+
+    @if (contasDemo().length > 0) {
+      <div class="demo-box text-start mb-4">
+        <p class="small fw-bold text-dark mb-1"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Experimente sem cadastro</p>
+        <p class="small text-muted mb-3">Entre em uma conta de demonstração com um clique.</p>
+        <div class="d-grid gap-2">
+          @for (conta of contasDemo(); track conta.perfil) {
+            <button type="button" class="btn btn-demo text-start" [disabled]="carregando()" (click)="entrarDemo(conta.perfil)">
+              <span class="d-flex align-items-center gap-2">
+                @if (entrandoComo() === conta.perfil) {
+                  <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                } @else {
+                  <i class="bi" [class.bi-building]="conta.perfil === 'EMPRESA'" [class.bi-truck]="conta.perfil === 'FORNECEDOR'"></i>
+                }
+                <span>
+                  <span class="d-block fw-semibold">Entrar como {{ conta.perfil === 'EMPRESA' ? 'empresa' : 'fornecedor' }}</span>
+                  <span class="d-block small opacity-75">{{ conta.nome }} · {{ conta.descricao }}</span>
+                </span>
+              </span>
+            </button>
+          }
+        </div>
+        <p class="small text-muted mt-2 mb-0">
+          <i class="bi bi-arrow-repeat me-1"></i>Os dados de demonstração voltam ao estado inicial todo dia.
+        </p>
+      </div>
+
+      <div class="divisor small text-muted mb-3"><span>ou entre com sua conta</span></div>
+    }
+
     <form (ngSubmit)="fazerLogin()">
       <div class="text-start mb-3">
         <label for="email" class="form-label small fw-bold text-secondary ps-1">E-mail corporativo</label>
@@ -29,7 +65,7 @@
       </div>
 
       <button type="submit" class="btn btn-criare shadow-sm mb-3" [disabled]="carregando()">
-        @if (carregando()) {
+        @if (carregando() && !entrandoComo()) {
           <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>ENTRANDO...
         } @else {
           ENTRAR

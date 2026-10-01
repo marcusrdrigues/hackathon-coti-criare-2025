@@ -3,7 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, catchError, finalize, map, of, shareReplay } from 'rxjs';
 import { API_URL } from '../api.config';
-import { LoginRequest, TokenResponse, Usuario } from '../models';
+import { ContaDemo, LoginRequest, TipoUsuario, TokenResponse, Usuario } from '../models';
 import { NotificacaoService } from './notificacao.service';
 
 /**
@@ -42,6 +42,18 @@ export class AuthService {
   login(credenciais: LoginRequest): Observable<Usuario> {
     return this.http
       .post<TokenResponse>(`${API_URL}/auth/login`, credenciais, { withCredentials: true })
+      .pipe(map((resposta) => this.iniciarSessao(resposta)));
+  }
+
+  /** Contas de demonstração; lista vazia quando a API não está no modo demo. */
+  contasDemo(): Observable<ContaDemo[]> {
+    return this.http.get<ContaDemo[]>(`${API_URL}/auth/demo`).pipe(catchError(() => of([])));
+  }
+
+  /** Login de um clique numa conta de demonstração. */
+  entrarDemo(perfil: TipoUsuario): Observable<Usuario> {
+    return this.http
+      .post<TokenResponse>(`${API_URL}/auth/demo/${perfil}`, {}, { withCredentials: true })
       .pipe(map((resposta) => this.iniciarSessao(resposta)));
   }
 

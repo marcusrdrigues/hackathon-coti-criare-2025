@@ -5,14 +5,14 @@ import { API_URL } from './api.config';
 import { AuthService } from './services/auth.service';
 
 /** Rotas de autenticação cuidam do próprio cookie e não levam o access token. */
-const ROTAS_DE_SESSAO = ['/auth/login', '/auth/refresh', '/auth/logout'].map((r) => `${API_URL}${r}`);
+const ROTAS_DE_SESSAO = ['/auth/login', '/auth/refresh', '/auth/logout', '/auth/demo'].map((r) => `${API_URL}${r}`);
 
 /**
  * Coloca o access token em toda chamada à API. Se a API responder 401
  * (token vencido), renova a sessão pelo cookie uma vez e repete a chamada.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  if (!req.url.startsWith(API_URL) || ROTAS_DE_SESSAO.includes(req.url)) {
+  if (!req.url.startsWith(API_URL) || ROTAS_DE_SESSAO.some((rota) => req.url.startsWith(rota))) {
     return next(req);
   }
 

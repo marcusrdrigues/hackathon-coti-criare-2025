@@ -30,6 +30,13 @@ export interface TokenResponse {
   usuario: Usuario;
 }
 
+/** Conta de demonstração (só existe quando a API roda com o profile "demo"). */
+export interface ContaDemo {
+  perfil: TipoUsuario;
+  nome: string;
+  descricao: string;
+}
+
 export interface LoginRequest {
   email: string;
   senha: string;
