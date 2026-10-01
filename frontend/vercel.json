@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "angular",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/frontHackaton/browser",
+  "rewrites": [
+    {
+      "source": "/api/:caminho*",
+      "destination": "https://SEU-BACKEND.onrender.com/api/:caminho*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

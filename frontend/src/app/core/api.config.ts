@@ -1,5 +1,8 @@
+import { environment } from '../../environments/environment';
+
 /**
- * Endereço base da API Spring Boot.
- * A porta padrão do back-end é 8085 (ver backend/src/main/resources/application.properties).
+ * Endereço base da API.
+ * - desenvolvimento: http://localhost:8085/api/v1 (src/environments/environment.development.ts)
+ * - produção: /api/v1, repassado ao back-end pelo vercel.json (src/environments/environment.ts)
  */
-export const API_URL = 'http://localhost:8085/api/v1';
+export const API_URL = environment.apiUrl;
