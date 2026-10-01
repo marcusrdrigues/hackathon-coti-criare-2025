@@ -25,6 +25,7 @@
 - [A solução](#-a-solução)
 - [Funcionalidades](#-funcionalidades)
 - [Regras de negócio](#-regras-de-negócio)
+- [Segurança](#-segurança)
 - [Arquitetura](#️-arquitetura)
 - [Como rodar](#️-como-rodar)
 - [Dados de demonstração](#-dados-de-demonstração)
@@ -101,7 +102,7 @@ sequenceDiagram
 
 ### 🔧 Em todas as telas
 
-- Sessão salva no navegador (sobrevive ao F5) e *guards* de rota por perfil
+- Login com JWT: a sessão sobrevive ao F5 e é renovada sozinha quando o token vence; *guards* de rota por perfil
 - Avisos visuais (*toasts*) de sucesso e erro, com as mensagens que vêm da API
 - Moeda e datas no formato brasileiro (`R$ 1.234,56`, `31/12/2025`)
 - Máscara de CNPJ no cadastro
@@ -149,6 +150,47 @@ stateDiagram-v2
 
 ---
 
+## 🔐 Segurança
+
+A API é **stateless** e protegida com **Spring Security + JWT**. Toda rota exige um token, exceto login, renovação de sessão, cadastro, a lista de categorias e a documentação.
+
+```mermaid
+sequenceDiagram
+    participant N as Navegador (Angular)
+    participant A as API
+
+    N->>A: POST /auth/login (e-mail + senha)
+    A-->>N: accessToken (JWT, 15 min) no corpo<br/>refresh_token (7 dias) em cookie HttpOnly
+    N->>A: GET /cotacoes/minhas<br/>Authorization: Bearer <accessToken>
+    A-->>N: 200 OK
+    Note over N,A: 15 minutos depois…
+    N->>A: GET /dashboard/empresa (token vencido)
+    A-->>N: 401
+    N->>A: POST /auth/refresh (o navegador envia o cookie sozinho)
+    A-->>N: novo accessToken + novo refresh_token (o antigo é revogado)
+    N->>A: repete GET /dashboard/empresa
+    A-->>N: 200 OK
+```
+
+| Camada | Como foi feito | Por quê |
+|---|---|---|
+| **Access token** | JWT assinado com HMAC-SHA256, válido por 15 minutos, contendo só o ID e o perfil (`EMPRESA`/`FORNECEDOR`) | Vida curta limita o estrago se vazar; sem dado pessoal no token |
+| **Onde o front guarda** | Access token **só em memória**; nada de token no `localStorage` | Um script malicioso (XSS) não encontra o token salvo no navegador |
+| **Refresh token** | Valor aleatório de 256 bits num cookie `HttpOnly`, `SameSite=Strict`, restrito a `/api/v1/auth` | O JavaScript não lê o cookie, e ele não é enviado a partir de outros sites (CSRF) |
+| **No banco** | Só o **hash SHA-256** do refresh token | Quem acessar o banco não consegue usar as sessões gravadas |
+| **Rotação** | Cada renovação gera um refresh token novo e revoga o anterior | Um token roubado só serve uma vez |
+| **Detecção de reuso** | Se um refresh token já usado aparecer de novo, **todas** as sessões daquele usuário são encerradas | Reuso indica que alguém copiou o token |
+| **Força bruta** | 5 senhas erradas para o mesmo e-mail em 15 minutos bloqueiam o login (HTTP 429 com `Retry-After`) | Dificulta adivinhar senhas |
+| **Senhas** | BCrypt; cadastro exige 8+ caracteres com letras e números | Hash lento e com *salt*, resistente a vazamentos |
+| **Autorização por perfil** | `@PreAuthorize("hasRole('EMPRESA')")` nos endpoints | Fornecedor não cria cotação, empresa não envia proposta |
+| **Autorização por posse** | Os services conferem o dono de cada recurso | Empresa só vê e altera as próprias cotações; fornecedor não vê o lance do concorrente; negociação só para os dois participantes |
+| **Identidade** | Quem é o usuário vem **sempre do token**, nunca de um ID enviado no corpo | Ninguém consegue agir em nome de outra empresa trocando um ID |
+| **Chave de assinatura** | Lida da variável `JWT_SECRET`; sem ela, a API gera uma chave aleatória e avisa no log | Nenhum segredo fica no código |
+
+O Swagger já vem com o botão **Authorize**: faça o login em `/api/v1/auth/login` e cole o `accessToken`.
+
+---
+
 ## 🏗️ Arquitetura
 
 ```text
@@ -168,6 +210,7 @@ hackathon-coti-criare-2025/
 │       ├── exceptions/          Exceções de negócio + GlobalExceptionHandler
 │       ├── mappers/             Entidade ⇄ DTO
 │       ├── repositories/        Spring Data JPA (+ projeções para o dashboard)
+│       ├── security/            Spring Security, JWT, refresh token e limite de tentativas
 │       ├── services/            Regras de negócio, com @Transactional
 │       └── utils/               Validação de CNPJ e normalização de e-mail
 │
@@ -176,6 +219,7 @@ hackathon-coti-criare-2025/
         ├── core/
         │   ├── api.config.ts    URL da API
         │   ├── auth.guards.ts   Guards por perfil
+        │   ├── auth.interceptor.ts  Envia o token e renova a sessão quando ele vence
         │   ├── models.ts        Tipos espelhando os DTOs da API
         │   ├── services/        Um service por recurso da API + sessão + avisos
         │   └── utils/           Máscara de CNPJ, status, mensagens de erro
@@ -195,6 +239,8 @@ erDiagram
     FORNECEDOR ||--o{ PROPOSTA : envia
     PROPOSTA ||--o| NEGOCIACAO : origina
     NEGOCIACAO ||--o{ MENSAGEM_NEGOCIACAO : contem
+    EMPRESA ||--o{ REFRESH_TOKEN : "sessões"
+    FORNECEDOR ||--o{ REFRESH_TOKEN : "sessões"
 
     COTACAO {
         uuid id
@@ -224,6 +270,14 @@ erDiagram
         decimal valor_ofertado
         enum tipo_remetente
         datetime data_hora_envio
+    }
+    REFRESH_TOKEN {
+        uuid id
+        string token_hash
+        uuid usuario_id
+        enum tipo_usuario
+        datetime expira_em
+        datetime revogado_em
     }
 ```
 
@@ -275,7 +329,7 @@ npm install
 npm start                          # ng serve
 ```
 
-Acesse **http://localhost:4200**.
+Acesse **http://localhost:4200** (use `localhost`, e não `127.0.0.1`: o cookie da sessão é `SameSite=Strict` e o navegador trata os dois como sites diferentes).
 
 ### Alternativa: API + banco com Docker
 
@@ -299,10 +353,12 @@ Depois é só rodar o front-end como no passo 3.
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:4200,http://127.0.0.1:4200` | Endereços do front-end liberados (separados por vírgula) |
 | `SHOW_SQL` | `false` | `true` mostra o SQL gerado pelo Hibernate no console |
 | `SPRING_PROFILES_ACTIVE` | — | `demo` carrega os dados de exemplo |
+| `JWT_SECRET` | — (gera uma aleatória) | Chave de assinatura dos tokens, em Base64, com pelo menos 256 bits. Gere com `openssl rand -base64 32`. Sem ela, os tokens deixam de valer quando a API reinicia |
+| `JWT_EXPIRACAO_ACESSO` | `15m` | Validade do access token |
+| `JWT_EXPIRACAO_REFRESH` | `7d` | Validade do refresh token |
+| `JWT_COOKIE_SECURE` | `false` | `true` em produção (HTTPS): o cookie só trafega por conexão segura |
 
 Se a API rodar em outra porta ou servidor, ajuste a URL em `frontend/src/app/core/api.config.ts`.
-
-> ⚠️ **Já tinha o banco da versão do hackathon?** O esquema mudou (novas colunas e a data das mensagens passou a guardar a hora). Recrie o banco antes de subir esta versão: `docker compose down -v && docker compose up -d postgres`.
 
 ---
 
@@ -312,16 +368,16 @@ Com o profile `demo`, a API cria (só se o banco estiver vazio):
 
 | Perfil | E-mail | Senha |
 |---|---|---|
-| Empresa — Criare Consulting | `empresa@demo.com` | `demo123` |
-| Fornecedor — Tech Soluções Ltda | `fornecedor@demo.com` | `demo123` |
-| Fornecedor — InfoWorld Distribuidora | `infoworld@demo.com` | `demo123` |
-| Fornecedor — Limpa Bem Serviços | `limpabem@demo.com` | `demo123` |
+| Empresa — Criare Consulting | `empresa@demo.com` | `demo1234` |
+| Fornecedor — Tech Soluções Ltda | `fornecedor@demo.com` | `demo1234` |
+| Fornecedor — InfoWorld Distribuidora | `infoworld@demo.com` | `demo1234` |
+| Fornecedor — Limpa Bem Serviços | `limpabem@demo.com` | `demo1234` |
 
 Também cria três cotações (notebooks, limpeza pós-obra e cadeiras), três propostas e uma **negociação em andamento** entre a Criare e a Tech Soluções.
 
 **Roteiro sugerido:** abra duas janelas (uma anônima), entre como `empresa@demo.com` numa e `fornecedor@demo.com` na outra, e negociem os notebooks. A sala de negociação se atualiza sozinha.
 
-Para cadastrar contas novas, use CNPJs válidos, por exemplo `33.445.566/0001-86`.
+Para cadastrar contas novas, use um CNPJ válido (por exemplo `33.445.566/0001-86`) e uma senha com 8+ caracteres, letras e números.
 
 ---
 
@@ -329,85 +385,79 @@ Para cadastrar contas novas, use CNPJs válidos, por exemplo `33.445.566/0001-86
 
 Todos os endpoints ficam sob `/api/v1`. A documentação completa, com exemplos, está no Swagger.
 
+Legenda: 🌐 público · 🔑 qualquer usuário logado · 🏢 só empresa · 🚚 só fornecedor. As rotas marcadas como "dono" ou "participante" também conferem se o recurso é do usuário do token.
+
 <details>
 <summary><b>Autenticação e dashboard</b></summary>
 
-| Método | Endpoint | Descrição |
-|---|---|---|
-| `POST` | `/auth/login` | Login; retorna `id`, `nome`, `email`, `cnpj` e `tipo` (`EMPRESA` ou `FORNECEDOR`) |
-| `GET` | `/dashboard/empresa/{empresaId}` | Indicadores da empresa, demandas por categoria e top fornecedores |
-| `GET` | `/dashboard/fornecedor/{fornecedorId}` | Indicadores do fornecedor e valor total fechado |
+| Método | Endpoint | Acesso | Descrição |
+|---|---|---|---|
+| `POST` | `/auth/login` | 🌐 | Devolve `accessToken`, `expiresIn` e o usuário; grava o cookie `refresh_token` |
+| `POST` | `/auth/refresh` | 🌐 (cookie) | Troca o refresh token do cookie por um access token novo |
+| `POST` | `/auth/logout` | 🌐 (cookie) | Revoga o refresh token e apaga o cookie |
+| `GET` | `/auth/me` | 🔑 | Dados do usuário do token |
+| `GET` | `/dashboard/empresa` | 🏢 | Indicadores, demandas por categoria e top fornecedores |
+| `GET` | `/dashboard/fornecedor` | 🚚 | Indicadores e valor total fechado |
 
 </details>
 
 <details>
 <summary><b>Empresas, fornecedores e perfis</b></summary>
 
-| Método | Endpoint | Descrição |
-|---|---|---|
-| `POST` | `/empresas` | Cadastra empresa |
-| `GET` | `/empresas` · `/empresas/{id}` · `/empresas/email/{email}` | Consultas |
-| `PUT` | `/empresas/{id}` | Atualiza a razão social |
-| `DELETE` | `/empresas/{id}` | Remove |
-| `POST` | `/fornecedores` | Cadastra fornecedor |
-| `GET` | `/fornecedores` · `/fornecedores/{id}` · `/fornecedores/email/{email}` | Consultas |
-| `PUT` | `/fornecedores/{id}` | Atualiza o nome |
-| `DELETE` | `/fornecedores/{id}` | Remove |
-| `GET` | `/perfis` · `/perfis/{id}` · `/perfis/nome/{nome}` | Perfis (`EMPRESA` e `FORNECEDOR`) |
+| Método | Endpoint | Acesso | Descrição |
+|---|---|---|---|
+| `POST` | `/empresas` · `/fornecedores` | 🌐 | Cadastro |
+| `GET` | `/empresas/{id}` · `/fornecedores/{id}` | 🔑 | Consulta |
+| `PUT` | `/empresas/{id}` · `/fornecedores/{id}` | 🔑 o próprio | Atualiza o nome |
+| `DELETE` | `/empresas/{id}` · `/fornecedores/{id}` | 🔑 o próprio | Remove a conta |
+| `GET` | `/perfis` · `/perfis/{id}` · `/perfis/nome/{nome}` | 🔑 | Perfis (`EMPRESA` e `FORNECEDOR`) |
 
 </details>
 
 <details>
 <summary><b>Cotações</b></summary>
 
-| Método | Endpoint | Descrição |
-|---|---|---|
-| `POST` | `/cotacoes` | Cria cotação |
-| `GET` | `/cotacoes` | Lista todas |
-| `GET` | `/cotacoes/abertas` | Abertas e dentro do prazo (mural) |
-| `GET` | `/cotacoes/categorias` | Categorias disponíveis |
-| `GET` | `/cotacoes/{id}` | Detalhe, com quantidade de propostas e melhor oferta |
-| `GET` | `/cotacoes/empresa/{empresaId}` | Cotações de uma empresa |
-| `PUT` | `/cotacoes/{id}` | Edita (somente abertas) |
-| `PATCH` | `/cotacoes/{id}/cancelar` | Cancela |
-| `DELETE` | `/cotacoes/{id}` | Exclui (somente sem propostas) |
+| Método | Endpoint | Acesso | Descrição |
+|---|---|---|---|
+| `POST` | `/cotacoes` | 🏢 | Cria cotação em nome da empresa do token |
+| `GET` | `/cotacoes/minhas` | 🏢 | Cotações da empresa logada |
+| `GET` | `/cotacoes/abertas` | 🔑 | Abertas e dentro do prazo (mural) |
+| `GET` | `/cotacoes/categorias` | 🌐 | Categorias disponíveis |
+| `GET` | `/cotacoes/{id}` | 🔑 | Detalhe; empresas só veem as próprias |
+| `PUT` | `/cotacoes/{id}` | 🏢 dona | Edita (somente abertas) |
+| `PATCH` | `/cotacoes/{id}/cancelar` | 🏢 dona | Cancela |
+| `DELETE` | `/cotacoes/{id}` | 🏢 dona | Exclui (somente sem propostas) |
 
 </details>
 
 <details>
 <summary><b>Propostas</b></summary>
 
-| Método | Endpoint | Descrição |
-|---|---|---|
-| `POST` | `/propostas` | Envia proposta |
-| `GET` | `/propostas/{id}` | Detalhe |
-| `GET` | `/propostas/cotacao/{cotacaoId}` | Propostas de uma cotação (menor valor primeiro) |
-| `GET` | `/propostas/cotacao/{cotacaoId}/count` | Quantidade de propostas |
-| `GET` | `/propostas/fornecedor/{fornecedorId}` | Propostas de um fornecedor |
-| `GET` | `/propostas/status/{status}` | Por status |
-| `PUT` | `/propostas/{id}` | Edita (somente o dono, enquanto não analisada) |
-| `PATCH` | `/propostas/{id}/aceitar` | Aceita |
-| `PATCH` | `/propostas/{id}/recusar` | Recusa |
-| `PATCH` | `/propostas/{id}/status` | Marca como `EM_ANALISE` |
-| `DELETE` | `/propostas/{id}` | Retira (enquanto não aceita) |
+| Método | Endpoint | Acesso | Descrição |
+|---|---|---|---|
+| `POST` | `/propostas` | 🚚 | Envia proposta em nome do fornecedor do token |
+| `GET` | `/propostas/minhas` | 🚚 | Propostas do fornecedor logado |
+| `GET` | `/propostas/{id}` | 🔑 autor ou empresa da cotação | Detalhe |
+| `GET` | `/propostas/cotacao/{cotacaoId}` | 🏢 dona | Propostas de uma cotação (menor valor primeiro) |
+| `GET` | `/propostas/cotacao/{cotacaoId}/count` | 🔑 | Quantidade de propostas |
+| `PUT` | `/propostas/{id}` | 🚚 autor | Edita, enquanto não analisada |
+| `PATCH` | `/propostas/{id}/recusar` | 🏢 dona da cotação | Recusa |
+| `DELETE` | `/propostas/{id}` | 🚚 autor | Retira, enquanto não aceita |
 
 </details>
 
 <details>
 <summary><b>Negociações e mensagens</b></summary>
 
-| Método | Endpoint | Descrição |
-|---|---|---|
-| `POST` | `/negociacoes` | Abre negociação a partir de uma proposta (`{ "propostaId": "..." }`) |
-| `GET` | `/negociacoes` · `/negociacoes/{id}` | Consultas (inclui `ultimaOferta`) |
-| `GET` | `/negociacoes/proposta/{propostaId}` | Negociação de uma proposta |
-| `GET` | `/negociacoes/empresa/{empresaId}` · `/negociacoes/fornecedor/{fornecedorId}` | Por participante |
-| `GET` | `/negociacoes/status/{status}` | Por status |
-| `PATCH` | `/negociacoes/{id}/finalizar` | Fecha o negócio (`{ "valorFinal": 1350.00 }`) |
-| `PATCH` | `/negociacoes/{id}/cancelar` | Encerra sem acordo |
-| `POST` | `/mensagens` | Envia mensagem e/ou contraproposta |
-| `GET` | `/mensagens/negociacao/{negociacaoId}` | Histórico em ordem cronológica |
-| `GET` | `/mensagens/{id}` · `DELETE /mensagens/{id}` | Consulta e remoção |
+| Método | Endpoint | Acesso | Descrição |
+|---|---|---|---|
+| `POST` | `/negociacoes` | 🏢 dona da cotação | Aceita a proposta e abre a negociação (`{ "propostaId": "..." }`) |
+| `GET` | `/negociacoes/minhas` | 🔑 | Negociações do usuário logado |
+| `GET` | `/negociacoes/{id}` · `/negociacoes/proposta/{propostaId}` | 🔑 participante | Detalhe (inclui `ultimaOferta`) |
+| `PATCH` | `/negociacoes/{id}/finalizar` | 🏢 participante | Fecha o negócio (`{ "valorFinal": 1350.00 }`) |
+| `PATCH` | `/negociacoes/{id}/cancelar` | 🏢 participante | Encerra sem acordo |
+| `POST` | `/mensagens` | 🔑 participante | Mensagem e/ou contraproposta; o remetente vem do token |
+| `GET` | `/mensagens/negociacao/{negociacaoId}` · `/mensagens/{id}` | 🔑 participante | Histórico em ordem cronológica |
 
 </details>
 
@@ -424,16 +474,18 @@ Erros de validação trazem também o campo de cada problema:
   "status": 400,
   "message": "Erro de validação nos campos",
   "timestamp": "2025-12-20T14:30:00",
-  "errors": { "email": "Email inválido", "senha": "Senha deve ter entre 6 e 72 caracteres" }
+  "errors": { "email": "Email inválido", "senha": "Senha deve ter letras e números" }
 }
 ```
 
 | Status | Quando |
 |---|---|
 | `400` | Dados inválidos ou regra de negócio violada |
-| `401` | E-mail ou senha inválidos |
+| `401` | Sem token, token inválido/vencido, sessão expirada ou e-mail/senha errados |
+| `403` | Perfil sem permissão ou recurso de outro usuário |
 | `404` | Registro ou endpoint inexistente |
 | `409` | E-mail ou CNPJ já cadastrado |
+| `429` | Login bloqueado por excesso de tentativas (veja o header `Retry-After`) |
 | `500` | Erro inesperado (detalhes só no log do servidor) |
 
 ---
@@ -453,10 +505,12 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 
 | Suíte | O que cobre |
 |---|---|
-| `FluxoCotacaoIntegrationTest` | Cadastro, login, CNPJ inválido, e-mail duplicado, proposta duplicada, negociação, contrapropostas, remetente intruso, fechamento, cancelamento, prazo vencido e dashboards |
+| `FluxoCotacaoIntegrationTest` | Cadastro, login, CNPJ inválido, e-mail duplicado, proposta duplicada, negociação, contrapropostas, fechamento, cancelamento, prazo vencido, dashboards e regras de posse (empresa concorrente, fornecedor concorrente, intruso na negociação) |
+| `AutenticacaoIntegrationTest` | Conteúdo do JWT, token adulterado, refresh gravado como hash, rotação, detecção de reuso, logout e bloqueio de força bruta |
+| `SegurancaApiTest` | Pela camada HTTP: 401 sem token e com token inválido, rotas públicas, cookie `HttpOnly`/`SameSite`, 403 por perfil e por posse, identidade vinda do token, refresh pelo cookie, logout e CORS |
 | `DocumentosTest` | Validação de CNPJ e normalização de dados |
-| `smoke-test-api.sh` | Login, CORS, validações, cotação → proposta → negociação → mensagens → fechamento e dashboards, tudo via HTTP contra o PostgreSQL |
-| Front-end | Guards por perfil, máscara de CNPJ e componente raiz |
+| `smoke-test-api.sh` | Contra a API real com PostgreSQL: login, proteção das rotas, CORS, validações, regras de perfil e de posse, cotação → proposta → negociação → mensagens → fechamento, dashboards, refresh com rotação e reuso, logout e força bruta |
+| Front-end | Interceptor (token, renovação automática e expiração), guards por perfil, máscara de CNPJ e componente raiz |
 
 O **GitHub Actions** (`.github/workflows/ci.yml`) roda a cada push: compila e testa o back-end, sobe a API com PostgreSQL e executa o teste de fumaça, e faz o build de produção e os testes do front-end.
 
@@ -470,7 +524,10 @@ O **GitHub Actions** (`.github/workflows/ci.yml`) roda a cada push: compila e te
 - **Status por `enum`** no lugar de texto livre, para que transições inválidas sejam barradas no código.
 - **Validação em duas camadas**: Bean Validation nos DTOs para formato, e services para regras que dependem do banco (duplicidade, prazo, status).
 - **Tratamento global de erros** (`@RestControllerAdvice`), devolvendo sempre o mesmo formato JSON que o front-end exibe.
-- **BCrypt sem a cadeia completa do Spring Security**: só o módulo de criptografia, o suficiente para o escopo atual.
+- **JWT com o resource server do próprio Spring Security** (Nimbus), em vez de uma biblioteca de JWT à parte: validação de assinatura, expiração e emissor ficam a cargo do framework.
+- **Access token curto + refresh token rotativo em cookie** em vez de um token longo no `localStorage`: equilibra segurança (XSS e roubo de token) e conforto (o usuário não precisa logar de novo a cada 15 minutos).
+- **Refresh token opaco e não JWT**: como fica no banco, dá para revogar no logout e detectar reuso, algo que um JWT puro não permite.
+- **Autorização em duas camadas**: perfil no controller (`@PreAuthorize`) e posse no service, perto da regra de negócio.
 - **Front-end com signals e componentes standalone**, controle de fluxo `@if`/`@for` e um service por recurso da API.
 - **Tema visual centralizado** sobrescrevendo as variáveis do Bootstrap, em vez de repetir as cores da marca em cada componente.
 
@@ -480,7 +537,7 @@ O **GitHub Actions** (`.github/workflows/ci.yml`) roda a cada push: compila e te
 
 Este projeto nasceu num hackathon de 24 horas. Alguns pontos ficaram fora do escopo e são os próximos passos naturais:
 
-- **Autenticação com token (JWT + Spring Security).** Hoje o login valida as credenciais e o front-end guarda o usuário, mas a API não exige token nos endpoints: quem conhecer os IDs consegue chamar a API diretamente. Para produção, cada requisição precisa ser autenticada e o perfil checado no back-end.
+- **Limite de tentativas distribuído**: o contador de força bruta fica em memória e vale para uma instância; com várias, iria para um Redis.
 - **Notificações em tempo real** (WebSocket/SSE) no lugar da atualização periódica da sala de negociação.
 - **Migrações de banco com Flyway**, no lugar do `ddl-auto=update`.
 - **Paginação** nas listagens.
