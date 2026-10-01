@@ -1,0 +1,226 @@
+/* =========================================================
+   Identidade visual Criare — tema global
+   Carregado DEPOIS do Bootstrap (ver angular.json), então
+   sobrescreve as cores padrão sem precisar de !important em
+   cada componente.
+   ========================================================= */
+:root {
+  --criare-red: #b2002d;
+  --criare-dark: #800020;
+  --criare-hover: #900024;
+  --criare-light: #fff0f3;
+  --criare-focus: rgba(178, 0, 45, 0.25);
+
+  --bs-primary: var(--criare-red);
+  --bs-primary-rgb: 178, 0, 45;
+  --bs-link-color: var(--criare-red);
+  --bs-link-color-rgb: 178, 0, 45;
+  --bs-link-hover-color: var(--criare-dark);
+  --bs-link-hover-color-rgb: 128, 0, 32;
+  --bs-primary-bg-subtle: var(--criare-light);
+  --bs-primary-text-emphasis: var(--criare-dark);
+}
+
+body {
+  background-color: #f5f6f8;
+}
+
+/* ---------- Botões ---------- */
+.btn-primary {
+  --bs-btn-bg: var(--criare-red);
+  --bs-btn-border-color: var(--criare-red);
+  --bs-btn-hover-bg: var(--criare-hover);
+  --bs-btn-hover-border-color: var(--criare-hover);
+  --bs-btn-active-bg: var(--criare-dark);
+  --bs-btn-active-border-color: var(--criare-dark);
+  --bs-btn-disabled-bg: var(--criare-red);
+  --bs-btn-disabled-border-color: var(--criare-red);
+  --bs-btn-focus-shadow-rgb: 178, 0, 45;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--criare-red);
+  --bs-btn-border-color: var(--criare-red);
+  --bs-btn-hover-bg: var(--criare-red);
+  --bs-btn-hover-border-color: var(--criare-red);
+  --bs-btn-active-bg: var(--criare-dark);
+  --bs-btn-active-border-color: var(--criare-dark);
+  --bs-btn-disabled-color: var(--criare-red);
+  --bs-btn-disabled-border-color: var(--criare-red);
+  --bs-btn-focus-shadow-rgb: 178, 0, 45;
+}
+
+.btn-criare {
+  background-color: var(--criare-red);
+  color: #fff;
+  font-weight: 700;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  width: 100%;
+  transition: transform 0.2s, background-color 0.2s;
+  letter-spacing: 1px;
+}
+
+.btn-criare:hover:not(:disabled) {
+  background-color: var(--criare-hover);
+  color: #fff;
+  transform: scale(1.02);
+}
+
+.btn-criare:disabled {
+  background-color: var(--criare-red);
+  color: #fff;
+  opacity: 0.7;
+}
+
+/* ---------- Cores utilitárias ---------- */
+.text-primary {
+  color: var(--criare-red) !important;
+}
+
+.bg-primary {
+  background-color: var(--criare-red) !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--criare-red);
+  box-shadow: 0 0 0 0.25rem var(--criare-focus);
+}
+
+.form-check-input:checked {
+  background-color: var(--criare-red);
+  border-color: var(--criare-red);
+}
+
+.nav-pills {
+  --bs-nav-pills-link-active-bg: var(--criare-red);
+  --bs-nav-link-color: #555;
+  --bs-nav-link-hover-color: var(--criare-red);
+}
+
+/* ---------- Cards ---------- */
+.card {
+  border: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+}
+
+.border-start-primary { border-left: 5px solid var(--criare-red) !important; }
+.border-start-warning { border-left: 5px solid #f0bf0d !important; }
+.border-start-success { border-left: 5px solid #198754 !important; }
+.border-start-secondary { border-left: 5px solid #6c757d !important; }
+.border-start-info { border-left: 5px solid #0dcaf0 !important; }
+
+.icon-shape {
+  width: 3.25rem;
+  height: 3.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.avatar-circle {
+  width: 40px;
+  height: 40px;
+  background-color: var(--criare-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--criare-red);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ---------- Tabelas ---------- */
+.table-criare th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  color: #6c757d;
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #e9ecef;
+  white-space: nowrap;
+}
+
+.table-criare td {
+  vertical-align: middle;
+}
+
+/* ---------- Navegação ---------- */
+.link-voltar {
+  color: #6c757d;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.link-voltar:hover {
+  color: var(--criare-red);
+}
+
+/* ---------- Estados vazios / carregando ---------- */
+.estado-vazio {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: #6c757d;
+}
+
+.estado-vazio i {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.texto-quebrado {
+  white-space: pre-line;
+}
+
+/* ---------- Telas de login e cadastro ---------- */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #b2002d 0%, #4a0012 100%);
+  padding: 20px;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  width: 100%;
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+
+.login-link {
+  color: var(--criare-red);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.login-link:hover {
+  text-decoration: underline;
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
