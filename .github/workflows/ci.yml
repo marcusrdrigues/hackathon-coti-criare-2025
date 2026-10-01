@@ -2,6 +2,7 @@ name: CI
 
 on:
   push:
+    branches-ignore: ['dependabot/**']   # as PRs do Dependabot já rodam pelo pull_request
   pull_request:
 
 jobs:
