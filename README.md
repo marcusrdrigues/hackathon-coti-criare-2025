@@ -9,7 +9,6 @@
   <img src="https://img.shields.io/badge/Spring_Boot_4-0A0A0A?style=for-the-badge&logo=springboot&logoColor=A78BFA" />
   <img src="https://img.shields.io/badge/PostgreSQL-0A0A0A?style=for-the-badge&logo=postgresql&logoColor=A78BFA" />
   <img src="https://img.shields.io/badge/Angular_21-0A0A0A?style=for-the-badge&logo=angular&logoColor=A78BFA" />
-  <img src="https://img.shields.io/badge/Bootstrap_5-0A0A0A?style=for-the-badge&logo=bootstrap&logoColor=A78BFA" />
   <img src="https://img.shields.io/badge/Docker-0A0A0A?style=for-the-badge&logo=docker&logoColor=A78BFA" />
 </p>
 
@@ -93,26 +92,29 @@ sequenceDiagram
 
 | Tela | O que faz |
 |---|---|
-| **Visão geral** | Cotações abertas, propostas recebidas, negociações em andamento e negócios fechados; gráfico de demandas por categoria e ranking dos fornecedores que mais enviaram propostas |
-| **Nova cotação / Editar** | Título, categoria, requisitos, data limite e orçamento estimado (opcional). Só cotações abertas podem ser editadas |
-| **Minhas cotações** | Lista com filtro por status (abertas, em negociação, fechadas, canceladas), quantidade de propostas e melhor oferta |
-| **Detalhe da cotação** | Requisitos, todas as propostas recebidas com CNPJ e condições, e as ações: **negociar**, **recusar** proposta e **cancelar** cotação |
-| **Negociação** | Linha do tempo com a proposta inicial e cada contraproposta; botões para **fechar o negócio** pelo último valor ou **encerrar sem acordo** |
+| **Início** | Números do momento (cotações abertas, propostas recebidas, em negociação, negócios fechados) e a lista **"Precisa da sua atenção"**: negociações em andamento, propostas esperando análise e prazos terminando; demandas por categoria e fornecedores mais ativos |
+| **Nova cotação / Editar** | Título, categoria, requisitos, prazo e orçamento estimado (opcional). Só cotações abertas podem ser editadas |
+| **Cotações** | Lista com filtro por situação (com contagem), busca, quantidade de propostas e menor oferta |
+| **Detalhe da cotação** | Requisitos e as propostas **da menor para a maior**, com destaque para o menor valor; ações de **negociar**, **recusar** e **cancelar** a cotação, sempre com confirmação |
+| **Negociações** | Todas as conversas com fornecedores, em andamento primeiro |
+| **Sala de negociação** | Conversa no estilo de mensagens, com cada oferta destacada; a evolução do valor no topo (proposta inicial → última oferta); **fechar o negócio** pela última oferta ou **encerrar sem acordo** |
 
 ### 🚚 Fornecedor
 
 | Tela | O que faz |
 |---|---|
-| **Painel** | Oportunidades abertas, propostas aguardando análise, negociações ativas, cotações ganhas e valor total fechado; últimas cotações publicadas |
-| **Mural de cotações** | Cotações abertas e dentro do prazo, com busca por texto, filtro por categoria, selo "NOVO" e alerta de prazo curto; envio da proposta direto no card |
-| **Propostas em andamento** | Propostas aguardando análise e negociações ativas (com atalho para responder). Propostas ainda não analisadas podem ser retiradas |
-| **Histórico** | Propostas vencidas e perdidas, com o motivo (fechou com outro fornecedor, cotação cancelada, negociação sem acordo…) e total em negócios fechados |
-| **Negociação** | Mesma sala da empresa: envia mensagens, contrapropostas e pode **aceitar** a última oferta da empresa |
+| **Início** | Cotações no mural, propostas aguardando, negociações ativas e total em negócios fechados; negociações que pedem resposta e as cotações mais recentes |
+| **Mural** | Cotações abertas e dentro do prazo, com busca, filtro por categoria, marcação de "Novo" e aviso de prazo curto; a proposta é enviada num painel lateral |
+| **Propostas · Em andamento** | Propostas aguardando análise e negociações ativas (com atalho para responder). Propostas ainda não analisadas podem ser retiradas |
+| **Propostas · Histórico** | Propostas vencidas e perdidas, com o motivo (fechou com outro fornecedor, cotação cancelada, negociação sem acordo…) e total em negócios fechados |
+| **Negociações** | Mesma sala da empresa: envia mensagens, contrapropostas e pode **aceitar** a última oferta da empresa |
 
 ### 🔧 Em todas as telas
 
 - Login com JWT: a sessão sobrevive ao F5 e é renovada sozinha quando o token vence; *guards* de rota por perfil
-- Avisos visuais (*toasts*) de sucesso e erro, com as mensagens que vêm da API
+- Visual no padrão das interfaces da Apple: tipografia do sistema, listas agrupadas, barra lateral no computador e barra de abas no celular, ícones só onde ajudam
+- Componentes próprios (seletor, menu, controle segmentado, painel lateral, diálogo de confirmação), acessíveis pelo teclado e pelo leitor de tela
+- Avisos rápidos de sucesso e erro, com as mensagens que vêm da API
 - Moeda e datas no formato brasileiro (`R$ 1.234,56`, `31/12/2025`)
 - Máscara de CNPJ no cadastro
 - Sala de negociação atualiza sozinha a cada 10 segundos
@@ -232,10 +234,11 @@ hackathon-coti-criare-2025/
 │       ├── services/            Regras de negócio, com @Transactional
 │       └── utils/               Validação de CNPJ e normalização de e-mail
 │
-└── frontend/                    SPA · Angular 21 · Bootstrap 5
+└── frontend/                    SPA · Angular 21 · CSS próprio
     ├── vercel.json              Deploy na Vercel; repassa /api/* para a API
+    ├── e2e/                     Testes ponta a ponta (Playwright)
     ├── src/environments/        URL da API em desenvolvimento e em produção
-    ├── src/styles/tokens.css    Design tokens: cores do tema claro e do escuro
+    ├── src/styles/              Tokens (cores, tipografia, espaços), base e peças globais em CSS
     └── src/app/
         ├── core/
         │   ├── api.config.ts    URL da API
@@ -244,9 +247,10 @@ hackathon-coti-criare-2025/
         │   ├── models.ts        Tipos espelhando os DTOs da API
         │   ├── services/        Um service por recurso da API + sessão + avisos
         │   └── utils/           Máscara de CNPJ, status, mensagens de erro
-        └── components/
-            ├── pages/           Uma pasta por tela
-            └── shared/          Navbar, avisos, moldura das telas de acesso, seletor de tema
+        ├── components/
+        │   ├── pages/           Uma pasta por tela
+        │   └── shared/          Estrutura (barra lateral e abas), avisos, telas de acesso, seletor de tema
+        └── ui/                  Componentes globais: ícones, seletor, menu, segmentado, painel, confirmação, status
 ```
 
 ### Modelo de dados
@@ -560,8 +564,8 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | `DemonstracaoApiTest` | Login de demonstração em um clique, health check e reset diário dos dados de exemplo |
 | `DocumentosTest` | Validação de CNPJ e normalização de dados |
 | `smoke-test-api.sh` | Contra a API real com PostgreSQL: login, proteção das rotas, CORS, validações, regras de perfil e de posse, cotação → proposta → negociação → mensagens → fechamento, dashboards, refresh com rotação e reuso, logout e força bruta |
-| Playwright (`frontend/e2e`) | No navegador, com API e banco reais: empresa e fornecedor negociam do começo ao fim (publicar, propor pelo mural, contraproposta, aceitar, fechar), rota protegida, login com erro, cadastro com validação de CNPJ, sessão após F5, sair e tema claro/escuro. As telas de acesso rodam também num celular emulado |
-| Front-end | Interceptor (token, renovação automática e expiração), guards por perfil, tema claro/escuro, máscara de CNPJ e componente raiz |
+| Playwright (`frontend/e2e`) | No navegador, com API e banco reais: empresa e fornecedor negociam do começo ao fim (publicar, propor pelo painel do mural, contraproposta, aceitar, fechar com confirmação), rota protegida, login com erro, cadastro com validação de CNPJ, sessão após F5, sair e tema claro/escuro. As telas de acesso rodam também num celular emulado |
+| Front-end | Interceptor (token, renovação automática e expiração), guards por perfil, tema claro/escuro, seletor (teclado e busca por letra), controle segmentado, confirmação, máscara de CNPJ e componente raiz |
 
 O **GitHub Actions** (`.github/workflows/ci.yml`) roda a cada push: compila e testa o back-end (inclusive contra PostgreSQL com Testcontainers), sobe a API com PostgreSQL e executa o teste de fumaça, faz o build de produção e os testes do front-end, e roda os testes ponta a ponta com Playwright. O **CodeQL** procura vulnerabilidades no código Java e TypeScript, e o **Dependabot** abre PRs semanais com as atualizações de dependências.
 
@@ -583,7 +587,8 @@ As decisões maiores têm um registro próprio, com contexto, alternativas e con
 - **Autorização em duas camadas**: perfil no controller (`@PreAuthorize`) e posse no service, perto da regra de negócio.
 - **Front-end com signals e componentes standalone**, controle de fluxo `@if`/`@for` e um service por recurso da API.
 - **Esquema do banco versionado com Flyway**: cada mudança vira uma migração revisável, e o Hibernate só confere (`ddl-auto=validate`) se as entidades batem com o banco.
-- **Design tokens** ([`tokens.css`](frontend/src/styles/tokens.css)): as cores existem num lugar só, com uma versão para o claro e outra para o escuro, e o Bootstrap é ligado a elas. Nenhum componente usa hexadecimal solto, e todos os pares de texto e fundo passam no contraste da WCAG. Detalhes em [docs/design-system.md](docs/design-system.md).
+- **Design tokens** ([`tokens.css`](frontend/src/styles/tokens.css)): cores, tipografia, espaços e movimento existem num lugar só, com uma versão para o claro e outra para o escuro. Nenhum componente usa valor solto, e todos os pares de texto e fundo passam no contraste da WCAG. Detalhes em [docs/design-system.md](docs/design-system.md).
+- **Componentes próprios no lugar do Bootstrap**: a hierarquia vem da tipografia e do espaço, não de cards e cores. Seletor, menu, painel e confirmação seguem os padrões de acessibilidade da WAI-ARIA, e o bundle inicial caiu quase pela metade ([ADR 0011](docs/adr/0011-componentes-proprios-no-lugar-do-bootstrap.md)).
 
 ---
 
@@ -601,6 +606,7 @@ Permitir que qualquer pessoa experimente o sistema sem instalar nada.
 - [x] Publicar a demo: [portal-criare.vercel.app](https://portal-criare.vercel.app)
 - [ ] GIF de uma negociação ponta a ponta no topo do README ([roteiro](docs/gravar-demo.md))
 - [x] Design system com tokens de cor, modo claro e escuro ([documentação](docs/design-system.md))
+- [x] Front-end redesenhado no padrão Apple, com componentes próprios e sem Bootstrap
 
 ### Fase 2 · Engenharia &nbsp;`concluída`
 

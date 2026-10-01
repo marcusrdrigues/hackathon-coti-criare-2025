@@ -16,5 +16,6 @@ Uma decisão registrada não se edita. Se ela mudar, um ADR novo a substitui, e 
 | [0008](0008-testes-no-h2-e-no-postgresql.md) | Testes no H2 e também no PostgreSQL com Testcontainers | Aceita |
 | [0009](0009-demo-publica-com-dados-restaurados.md) | Demo pública com contas prontas e dados restaurados todo dia | Aceita |
 | [0010](0010-design-tokens-e-tema-do-sistema.md) | Design tokens e tema que segue o sistema | Aceita |
+| [0011](0011-componentes-proprios-no-lugar-do-bootstrap.md) | Componentes próprios no lugar do Bootstrap | Aceita |
 
 Modelo para um ADR novo: [template.md](template.md).

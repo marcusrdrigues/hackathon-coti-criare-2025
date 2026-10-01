@@ -1,98 +1,140 @@
 # Design system
 
-Guia visual do Portal Criare. As cores ficam todas em [`frontend/src/styles/tokens.css`](../frontend/src/styles/tokens.css), e esta página explica como usá-las.
+Guia visual do Portal Criare. O front-end não usa biblioteca de componentes: os valores ficam em [`frontend/src/styles/tokens.css`](../frontend/src/styles/tokens.css), as peças em CSS em [`controles.css`](../frontend/src/styles/controles.css) e as peças com comportamento em [`frontend/src/app/ui/`](../frontend/src/app/ui). Esta página explica como usar cada uma.
 
 ## Princípios
 
-- **Uma fonte de verdade.** Cor nova entra primeiro nos tokens, com o valor do claro e o do escuro. Componentes usam `var(--cor-*)` e nunca um hexadecimal solto.
-- **Claro e escuro desde o início.** Toda tela precisa funcionar nos dois temas. O padrão é seguir o sistema operacional, e a pessoa pode fixar um tema no menu do usuário ou no canto das telas de acesso.
-- **Contraste medido, não estimado.** Texto comum tem pelo menos 4,5:1, e bordas de campos e controles pelo menos 3:1 (WCAG 2.x AA). Os valores estão na tabela abaixo.
-- **Cor nunca sozinha.** Erro, sucesso e status sempre vêm com texto ou símbolo.
-- **Sem emoji na interface.** Ícones vêm do Bootstrap Icons.
+- **Hierarquia pela tipografia e pelo espaço, não por caixas.** Sem card dentro de card, sem borda colorida e sem sombra em tudo. O conteúdo fica direto no fundo, e o que é lista vira lista agrupada, como nos Ajustes do iPhone.
+- **Um ponto de cor.** A interface é em tons de cinza. O vermelho-sangue aparece na ação principal, no item ativo e no que é urgente. Status é um ponto colorido com texto, não uma pílula.
+- **Ícones só onde ajudam.** Na navegação, em botões sem texto (sempre com `aria-label`) e em avisos. Nunca como enfeite ao lado de um título.
+- **Texto direto.** Botões dizem o que fazem ("Publicar cotação", "Fechar negócio"). Frases normais, sem CAIXA ALTA.
+- **Claro e escuro desde o início.** Toda tela funciona nos dois temas. O padrão é seguir o sistema, e a pessoa pode fixar um tema no menu da conta ou no canto das telas de acesso.
+- **Contraste medido.** Texto com pelo menos 4,5:1 e bordas de controles com pelo menos 3:1 (WCAG 2.x AA).
+- **Teclado e leitor de tela.** Todo controle funciona sem mouse, com foco visível e o papel ARIA certo.
+- **Sem emoji na interface.**
 
 ## Como o tema funciona
 
-1. Um script curto no `index.html` lê a preferência salva (`localStorage.tema`) ou, se não houver, a do sistema (`prefers-color-scheme`). Ele marca `<html data-bs-theme="light|dark">` antes da página aparecer, então a tela não pisca em branco no modo escuro.
-2. O `TemaService` (`core/services/tema.service.ts`) faz a mesma conta com *signals*. Ele acompanha mudanças do sistema e grava a escolha feita no seletor (`app-seletor-tema`).
-3. O `tokens.css` define os valores do claro em `:root` e os do escuro em `:root[data-bs-theme='dark']`. No fim do arquivo, as variáveis do Bootstrap 5.3 são ligadas aos tokens. Assim, `.card`, `.dropdown-menu`, `.table`, `.form-control`, `.btn-primary` e as demais classes trocam de tema sozinhas.
+1. Um script curto no `index.html` lê a preferência salva (`localStorage.tema`) ou, se não houver, a do sistema (`prefers-color-scheme`). Ele marca `<html data-theme="light|dark">` antes de a página aparecer, então a tela não pisca em branco no modo escuro.
+2. O `TemaService` (`core/services/tema.service.ts`) faz a mesma conta com *signals*, acompanha mudanças do sistema e grava a escolha feita no seletor (`app-seletor-tema`).
+3. O `tokens.css` define os valores do claro em `:root` e os do escuro em `:root[data-theme='dark']`.
 
-## Tokens de cor
+## Tokens
+
+### Cores
 
 Contraste calculado sobre a superfície (`--cor-superficie`), salvo indicação.
 
-### Marca
-
 | Token | Claro | Escuro | Uso |
 |---|---|---|---|
-| `--cor-marca` | `#8f0b11` | `#8f0b11` | Preenchimento de botões e destaques. Branco sobre ele: 9,4:1 |
-| `--cor-marca-hover` | `#7a090e` | `#a3121a` | Hover do botão (no escuro, clareia) |
-| `--cor-marca-pressionada` | `#5e070c` | `#7a090e` | Estado pressionado |
-| `--cor-sobre-marca` | `#ffffff` | `#ffffff` | Texto e ícone sobre a marca |
-| `--cor-marca-texto` | `#8f0b11` · 9,4:1 | `#ff8a8f` · 7,5:1 | Marca usada como texto, link, contorno ou anel de foco |
-| `--cor-marca-enfase` | `#5e070c` | `#ffb3b6` | Texto forte sobre `--cor-marca-suave` |
-| `--cor-marca-suave` | `#fbeceb` | `#3b1013` | Fundo de destaque leve (avatar, mensagem própria) |
-| `--cor-marca-foco` | marca a 25% | marca-texto a 35% | Sombra de foco dos campos |
-
-O vermelho-sangue continua o mesmo nos dois temas quando é preenchimento. Quando é texto, ele clareia no escuro, porque `#8f0b11` sobre cinza-escuro não tem contraste.
-
-### Superfícies, texto e linhas
-
-| Token | Claro | Escuro | Uso |
-|---|---|---|---|
-| `--cor-fundo` | `#f5f5f7` | `#000000` | Fundo da página |
-| `--cor-superficie` | `#ffffff` | `#1c1c1e` | Cards, barra de navegação, campos, menus |
-| `--cor-superficie-2` | `#f2f2f7` | `#2c2c2e` | Bloco dentro de um card, cabeçalho de tabela |
-| `--cor-trilho` | `#ececf0` | `#3a3a3c` | Trilho do controle segmentado e das barras de progresso |
-| `--cor-segmento-ativo` | `#ffffff` | `#636366` | Segmento selecionado. Texto sobre ele no escuro: 5,5:1 |
+| `--cor-marca` | `#8f0b11` | `#8f0b11` | Preenchimento da ação principal. Branco sobre ele: 9,4:1 |
+| `--cor-marca-texto` | `#8f0b11` · 9,4:1 | `#ff8a8f` · 7,5:1 | Marca como texto, link, ícone ativo ou anel de foco |
+| `--cor-marca-suave` | `#fbeceb` | `#3b1013` | Fundo de destaque leve |
+| `--cor-fundo` | `#f5f5f7` | `#000000` | Fundo da área de conteúdo |
+| `--cor-superficie` | `#ffffff` | `#1c1c1e` | Listas, barra lateral, campos |
+| `--cor-superficie-2` | `#f2f2f7` | `#2c2c2e` | Bloco dentro de uma superfície |
+| `--cor-flutuante` | `#ffffff` | `#2c2c2e` | Menus, listas de opções, painéis, avisos (no escuro, elevado = mais claro) |
+| `--cor-trilho` | `#e9e9ee` | `#3a3a3c` | Trilho do controle segmentado e das barras |
+| `--cor-preenchimento` | cinza 12% | cinza 24% | Botão secundário e campo de busca |
+| `--cor-hover` / `--cor-selecao` | preto 4% / 6% | branco 6% / 10% | Linha sob o cursor / item selecionado |
 | `--cor-texto` | `#1d1d1f` · 16,8:1 | `#f5f5f7` · 15,6:1 | Texto principal |
 | `--cor-texto-2` | `#6e6e73` · 5,1:1 | `#98989d` · 5,9:1 | Texto secundário, legendas, placeholders |
-| `--cor-borda-campo` | `#8e8e93` · 3,3:1 | `#8e8e93` · 5,2:1 | Borda de campos e controles |
-| `--cor-divisoria` | `#e5e5ea` | `#38383a` | Separadores e bordas decorativas |
+| `--cor-borda-campo` | `#86868b` · 3,6:1 | `#8e8e93` · 5,2:1 | Borda de campos |
+| `--cor-divisoria` | `#e5e5ea` | `#38383a` | Separadores (decorativos) |
+| `--cor-erro-texto` | `#b0300b` · 6,4:1 | `#ff8a65` · 7,4:1 | Erro em texto. É mais alaranjado que a marca, para não se confundir com ela |
+| `--cor-perigo` | `#c4320a` | `#c4320a` | Botão de ação destrutiva no diálogo; branco 5,5:1 |
+| `--cor-sucesso` | `#1b7f3b` · 5,1:1 | `#30d158` · 8,4:1 | Negócio fechado, menor valor, requisito cumprido |
+| `--cor-atencao` | `#a15c00` · 5,2:1 | `#ff9f0a` · 8,3:1 | Em negociação, prazo curto |
+| `--cor-balao-outro` | `#e9e9eb` | `#2c2c2e` | Mensagem da outra parte na negociação |
 
-### Estados
+O vermelho-sangue é o mesmo nos dois temas quando é preenchimento. Como texto, ele clareia no escuro, porque `#8f0b11` sobre cinza-escuro não tem contraste.
 
-| Token | Claro | Escuro | Uso |
-|---|---|---|---|
-| `--cor-erro` | `#c4320a` · 5,5:1 | `#ff8a65` · 7,4:1 | Borda de campo inválido |
-| `--cor-erro-texto` | `#b0300b` · 6,4:1 | `#ff8a65` · 7,4:1 | Mensagem de erro do campo e `.text-danger` |
-| `--cor-erro-fundo` / `--cor-erro-fundo-texto` | `#fdf0eb` / `#8a2a08` · 7,8:1 | `#3a1a10` / `#ffb59a` · 9,2:1 | Aviso de erro em bloco |
-| `--cor-sucesso` | `#1b7f3b` · 5,1:1 | `#30d158` · 8,4:1 | Requisito cumprido, valores fechados e `.text-success` |
+### Tipografia
 
-O erro é mais alaranjado que a marca de propósito, para não ser confundido com ela.
+A fonte é a do sistema: San Francisco no Mac e no iPhone, Segoe no Windows. Números de valores e contagens usam algarismos de largura fixa (`.numeros`), para alinharem em coluna.
 
-### Painel da marca (telas de acesso)
-
-| Token | Claro | Escuro |
+| Token | Tamanho | Uso |
 |---|---|---|
-| `--cor-painel` | `#5e070c` (branco 13,9:1) | `#4a060a` (branco 15,9:1) |
-| `--cor-painel-texto-2` | `#f2c8c8` · 9,2:1 | `#f2c8c8` · 10,5:1 |
+| `--texto-titulo-1` | 32px | Título da página (`.titulo-pagina`) |
+| `--texto-numero` | 28px | Números de destaque (`.metrica-valor`) |
+| `--texto-titulo-3` | 20px | Título de painel |
+| `--texto-destaque` | 17px | Título de seção, nome na conversa |
+| `--texto-corpo` | 15px | Texto comum |
+| `--texto-pequeno` | 13px | Detalhes, rótulos, botões pequenos |
+| `--texto-legenda` | 12px | Datas, rótulos de valores |
 
-### Forma
+Campos usam 16px: abaixo disso o iPhone dá zoom ao focar.
 
-| Token | Valor | Uso |
-|---|---|---|
-| `--raio` | `10px` | Campos, botões, avisos |
-| `--raio-pequeno` | `8px` | Segmentos dentro de um trilho |
-| `--altura-controle` | `2.75rem` (44px) | Altura mínima de botões e campos, que é o alvo de toque recomendado |
+### Espaço, forma e movimento
 
-## Regras para templates
+- Espaços em múltiplos de 4px: `--esp-1` (4px) até `--esp-8` (48px).
+- Raios: `--raio-pequeno` 8px, `--raio` 10px, `--raio-grande` 14px.
+- Controles com `--altura-controle` de 40px no computador e 44px em telas de toque (`pointer: coarse`), o mínimo recomendado pela Apple.
+- Movimento curto (`--duracao` 200ms) e discreto. Com `prefers-reduced-motion`, as animações somem.
 
-Em HTML, use as classes do Bootstrap que acompanham o tema:
+## Estrutura das telas
 
-| Em vez de | Use |
+- **Computador (a partir de 1024px):** barra lateral com a marca, a navegação e o menu da conta (nome, aparência e sair).
+- **Celular e tablet:** barra de topo translúcida com a marca e a conta, e barra de abas embaixo com 3 ou 4 destinos.
+- **Sala de negociação:** conversa no centro; detalhes à direita a partir de 1280px (abaixo disso, num painel); lista de negociações à esquerda a partir de 1536px.
+
+Destinos: a empresa tem Início, Cotações e Negociações. O fornecedor tem Início, Mural, Negociações e Propostas.
+
+## Peças em CSS
+
+| Classe | Uso |
 |---|---|
-| `bg-white` | `bg-body` |
-| `bg-light` | `bg-body-tertiary` |
-| `text-dark` | `text-body-emphasis` (ou `text-body`) |
-| `bg-warning text-dark`, `bg-info text-dark` | `text-bg-warning`, `text-bg-info` |
-| `text-warning` sobre `bg-warning-subtle` | `text-warning-emphasis` |
+| `.pagina` (+ `.pagina-estreita`) | Conteúdo centralizado, com espaçamento que se ajusta ao celular |
+| `.cabecalho`, `.titulo-pagina`, `.subtitulo-pagina`, `.cabecalho-acoes` | Topo da página |
+| `.voltar` | Link de volta, com o ícone `voltar` |
+| `.secao`, `.secao-cabecalho`, `.secao-titulo`, `.secao-acao` | Blocos da página |
+| `.colunas` | Duas colunas no computador, uma no celular |
+| `.lista` + `.linha` | Lista agrupada. A linha pode ser `<a>`/`<button>` (clicável) ou `<li>`. Partes: `.linha-principal`, `.linha-titulo`, `.linha-detalhe`, `.linha-texto` (2 linhas), `.linha-lateral`, `.linha-valor`, `.linha-acoes`, `.linha-seta` |
+| `.metricas` (`<dl>`) + `.metrica` | Números de destaque numa linha, separados por divisórias finas |
+| `.botao` + `.botao-primario` / `-secundario` / `-simples` / `-destrutivo` | Botões. Modificadores: `.botao-pequeno`, `.botao-icone`, `.botao-largo` |
+| `.campo`, `.rotulo`, `.entrada`, `.grupo-entrada` + `.prefixo`, `.ajuda`, `.erro-campo` | Campos de formulário |
+| `.busca` | Campo de busca, com a lupa dentro |
+| `.formulario`, `.formulario-linha`, `.formulario-acoes` | Formulário em coluna, com campos lado a lado no computador |
+| `.nota` (+ `.nota-erro`) | Aviso dentro da página |
+| `.etiqueta` (+ `.etiqueta-sucesso`) | Rótulo curto só em texto ("Novo", "Menor valor") |
+| `.inicial` | Iniciais do nome num círculo neutro |
+| `.vazio`, `.vazio-titulo` | Estado vazio |
+| `.carregando-pagina`, `.girando` | Carregando |
+| `.urgente` | Prazo curto (o texto já diz "encerra amanhã"; a cor reforça) |
+| `.visually-hidden` | Some da tela, continua para o leitor de tela |
 
-Em CSS de componente, use só `var(--cor-*)`. Se faltar uma cor, crie o token com os dois valores e meça o contraste antes.
+## Componentes (`app/ui`)
 
-## Responsividade
+| Componente | Uso | Acessibilidade |
+|---|---|---|
+| `<ui-icone nome="..." />` | Conjunto próprio de ícones em SVG, traço de 1,75 | Decorativo (`aria-hidden`); o nome vai no controle |
+| `<ui-seletor [opcoes] [(valor)] idRotulo="..." />` | Escolha numa lista (o "select") | Padrão listbox: setas, Home/End, Enter, Esc, busca pela primeira letra |
+| `<ui-menu rotulo="...">` + `[uiMenuItem]` | Menu de ações num botão. `tipo="painel"` para conteúdo livre (ex.: conta) | Padrão menu: setas e Esc; fecha ao clicar fora |
+| `<ui-segmentado rotulo [opcoes] [(valor)] />` | Escolha entre poucas opções (filtros, tipo de conta, aparência) | Rádios nativos com legenda |
+| `<ui-painel titulo [(aberto)]>` + `[rodape]` | Painel lateral; vira folha de baixo para cima no celular | `<dialog>` modal: foco preso, Esc fecha |
+| `ConfirmacaoService.confirmar({...})` | Confirmação antes de ações importantes (no lugar do `confirm()`) | `alertdialog`; foco em "Cancelar" nas ações destrutivas |
+| `<ui-status [tom]>` | Status como ponto + texto. Tons: `neutro`, `sucesso`, `atencao`, `marca`, `erro` | A cor nunca vai sozinha |
 
-- **Até 959px de largura**, as telas de acesso escondem o painel da marca e mostram a marca compacta no topo.
-- **Até 419px**, a marca compacta perde o subtítulo para caber ao lado do seletor de tema.
-- **Até 760px de altura**, login e cadastro apertam espaçamentos e escondem textos de apoio, para caberem na tela sem rolagem. Isso foi conferido em 1440×900, 1280×640, 390×844 e 360×640.
-- Em telas de toque (`pointer: coarse`), os segmentos do seletor de tema crescem para 44×40px.
-- Animações respeitam `prefers-reduced-motion`.
+Exemplo de seletor com rótulo visível:
+
+```html
+<span class="rotulo" id="rotulo-categoria">Categoria</span>
+<ui-seletor idRotulo="rotulo-categoria" [opcoes]="categorias()" [(valor)]="categoria" />
+```
+
+Exemplo de confirmação:
+
+```ts
+const confirmou = await this.confirmacao.confirmar({
+  titulo: 'Recusar a proposta?',
+  mensagem: 'O fornecedor verá a proposta como recusada.',
+  confirmar: 'Recusar',
+  destrutivo: true,
+});
+```
+
+## Regras
+
+- Componente novo usa só `var(--cor-*)` e os demais tokens. Se faltar um valor, ele entra primeiro no `tokens.css`, com os dois temas e o contraste medido.
+- Antes de criar uma peça, procure nesta página: lista, botão, campo, seletor e painel cobrem quase tudo.
+- Toda tela é conferida em 1440×900, 1280×640, 390×844 e 360×640, no claro e no escuro.
