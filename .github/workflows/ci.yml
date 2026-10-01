@@ -125,13 +125,15 @@ jobs:
 
       - name: Issues abertas no SonarCloud
         if: always() && steps.sonar.outputs.ativo == 'true'
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           # Lista as issues como anotações no GitHub, com arquivo e linha, para corrigir sem sair do PR
-          curl -sf -u "$SONAR_TOKEN:" \
-            "https://sonarcloud.io/api/issues/search?componentKeys=marcusrdrigues_hackathon-coti-criare-2025&resolved=false&ps=100" \
-            -o issues.json || exit 0
+          # O projeto é público: a consulta não precisa de token
+          url="https://sonarcloud.io/api/issues/search?componentKeys=marcusrdrigues_hackathon-coti-criare-2025&resolved=false&ps=100"
+          status=$(curl -s -o issues.json -w "%{http_code}" "$url")
+          if [ "$status" != "200" ]; then
+            echo "::warning title=SonarCloud::Não consegui listar as issues (HTTP $status): $(head -c 300 issues.json)"
+            exit 0
+          fi
           python3 - <<'PY'
           import json
           dados = json.load(open('issues.json'))
