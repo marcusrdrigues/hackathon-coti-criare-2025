@@ -1,21 +1,5 @@
 services:
 
-  gestaohackaton:
-    container_name: spring_gestao_hackaton
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8085:8085"
-    networks:
-      - gestaohackaton_network
-    depends_on:
-      - postgres
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bdgestao
-      SPRING_DATASOURCE_USERNAME: user
-      SPRING_DATASOURCE_PASSWORD: coti
-
   postgres:
     image: postgres:16
     container_name: postgres_gestaohackaton
@@ -25,8 +9,37 @@ services:
       POSTGRES_PASSWORD: coti
     ports:
       - "5435:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d bdgestao"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     networks:
       - gestaohackaton_network
+
+  gestaohackaton:
+    container_name: spring_gestao_hackaton
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8085:8085"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bdgestao
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: coti
+      # Troque para "demo" para subir com dados de exemplo
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
+    networks:
+      - gestaohackaton_network
+
+volumes:
+  postgres_data:
 
 networks:
   gestaohackaton_network:
