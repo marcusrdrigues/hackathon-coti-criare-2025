@@ -1,74 +1,13 @@
-/* Variável de cor da marca */
-:root {
-  --criare-red: #B2002D;
-  --criare-dark: #800020;
-}
-
-/* 1. O Fundo da Tela (Gradiente Criare) */
-.login-container {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* Gradiente diagonal do Vermelho para um tom mais escuro */
-  background: linear-gradient(135deg, #B2002D 0%, #4a0012 100%);
-  padding: 20px;
-}
-
-/* 2. O Cartão de Vidro (Glassmorphism) */
-.glass-card {
-  background: rgba(255, 255, 255, 0.85); /* Branco com transparência */
-  backdrop-filter: blur(12px);           /* O desfoque atrás do vidro */
-  -webkit-backdrop-filter: blur(12px);   /* Suporte para Safari/Mac */
-  border: 1px solid rgba(255, 255, 255, 0.4); /* Borda sutil */
-  border-radius: 20px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); /* Sombra para dar profundidade */
-  
+.login-card {
   max-width: 400px;
-  width: 100%;
   padding: 3rem 2rem;
-  text-align: center;
 }
 
-/* Inputs estilizados */
 .form-control {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid #e0e0e0;
   padding: 12px;
   border-radius: 10px;
-  margin-bottom: 1rem;
 }
 
-.form-control:focus {
-  border-color: #B2002D;
-  box-shadow: 0 0 0 0.25rem rgba(178, 0, 45, 0.25);
-}
-
-/* Botão de Login */
-.btn-criare {
-  background-color: #B2002D;
-  color: white;
-  font-weight: bold;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  width: 100%;
-  transition: transform 0.2s;
-}
-
-.btn-criare:hover {
-  background-color: #900024;
-  transform: scale(1.02); /* Leve efeito de "zoom" */
-}
-
-/* Links (Esqueci senha, etc) */
-.login-link {
-  color: #B2002D;
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.login-link:hover {
-  text-decoration: underline;
+.tracking-wide {
+  letter-spacing: 3px;
 }

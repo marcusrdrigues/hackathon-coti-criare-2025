@@ -1,65 +1,53 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common'; 
-import { RouterLink } from '@angular/router'; // Adicionei para o botão funcionar
+import { CurrencyPipe, DatePipe } from '@angular/common';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { Cotacao, StatusCotacao } from '../../../core/models';
+import { AuthService } from '../../../core/services/auth.service';
+import { CotacaoService } from '../../../core/services/cotacao.service';
+import { mensagemDeErro } from '../../../core/utils/erros';
+import { STATUS_COTACAO } from '../../../core/utils/formatos';
 import { Navbar } from '../../shared/navbar/navbar';
 
-interface Cotacao {
-  id: number;
-  titulo: string;
-  descricao: string;
-  dataCriacao: Date;
-  status: 'ABERTO' | 'ENCERRADO';
-  qtdPropostas: number;
-}
+type Filtro = 'TODAS' | StatusCotacao;
 
 @Component({
   selector: 'app-consultar-cotacao',
-  standalone: true,
-  imports: [
-    Navbar,
-    CommonModule,
-    RouterLink // Necessário para o botão "Nova Solicitação"
-  ],
+  imports: [Navbar, RouterLink, DatePipe, CurrencyPipe],
   templateUrl: './consultar-cotacao.html',
   styleUrl: './consultar-cotacao.css',
 })
-export class ConsultarCotacao {
+export class ConsultarCotacao implements OnInit {
+  private readonly cotacaoService = inject(CotacaoService);
+  private readonly auth = inject(AuthService);
 
-  solicitacoes: Cotacao[] = [
-    {
-      id: 1,
-      titulo: 'Aquisição de Notebooks',
-      descricao: 'Precisamos de 10 unidades do modelo Latitude 5420 para o setor de TI.',
-      dataCriacao: new Date(),
-      status: 'ABERTO',
-      qtdPropostas: 3
-    },
-    {
-      id: 2,
-      titulo: 'Serviço de Limpeza Pós-Obra',
-      descricao: 'Limpeza completa do galpão B após reforma estrutural.',
-      dataCriacao: new Date('2025-11-15'),
-      status: 'ABERTO',
-      qtdPropostas: 5
-    },
-    {
-      id: 3,
-      titulo: 'Montagem de Escritório Corporativo',
-      descricao: 'Precisamos mobiliar o novo escritório com mesas, cadeiras e armários.',
-      dataCriacao: new Date('2025-10-10'),
-      status: 'ENCERRADO',
-      qtdPropostas: 12
-    }
+  protected readonly status = STATUS_COTACAO;
+  protected readonly filtros: { valor: Filtro; texto: string }[] = [
+    { valor: 'TODAS', texto: 'Todas' },
+    { valor: 'ABERTA', texto: 'Abertas' },
+    { valor: 'EM_NEGOCIACAO', texto: 'Em negociação' },
+    { valor: 'FECHADA', texto: 'Fechadas' },
+    { valor: 'CANCELADA', texto: 'Canceladas' },
   ];
 
-  getStatusClass(status: string): string {
-    switch (status) {
-      case 'ABERTO': 
-        return 'bg-success'; // Verde (Mantive verde pois "Aberto" é sinal positivo)
-      case 'ENCERRADO': 
-        return 'bg-secondary'; // Cinza
-      default: 
-        return 'bg-light text-dark';
-    }
+  protected readonly solicitacoes = signal<Cotacao[] | null>(null);
+  protected readonly filtro = signal<Filtro>('TODAS');
+  protected readonly erro = signal<string | null>(null);
+
+  protected readonly filtradas = computed(() => {
+    const lista = this.solicitacoes() ?? [];
+    const f = this.filtro();
+    return f === 'TODAS' ? lista : lista.filter((c) => c.status === f);
+  });
+
+  ngOnInit(): void {
+    this.cotacaoService.listarPorEmpresa(this.auth.usuarioLogado.id).subscribe({
+      next: (lista) => this.solicitacoes.set(lista),
+      error: (e) => this.erro.set(mensagemDeErro(e)),
+    });
+  }
+
+  contar(f: Filtro): number {
+    const lista = this.solicitacoes() ?? [];
+    return f === 'TODAS' ? lista.length : lista.filter((c) => c.status === f).length;
   }
 }

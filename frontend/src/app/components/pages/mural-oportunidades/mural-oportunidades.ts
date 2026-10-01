@@ -1,103 +1,117 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms'; // <--- IMPORTANTE: Adicione o FormsModule
+import { AsyncPipe, CurrencyPipe, DatePipe } from '@angular/common';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
+import { CategoriaCotacao, Cotacao, Proposta } from '../../../core/models';
+import { AuthService } from '../../../core/services/auth.service';
+import { CotacaoService } from '../../../core/services/cotacao.service';
+import { NotificacaoService } from '../../../core/services/notificacao.service';
+import { PropostaService } from '../../../core/services/proposta.service';
+import { mensagemDeErro } from '../../../core/utils/erros';
+import { diasRestantes } from '../../../core/utils/formatos';
 import { Navbar } from '../../shared/navbar/navbar';
-import { Router } from '@angular/router';
+
+interface RascunhoProposta {
+  valor: number | null;
+  descricao: string;
+}
 
 @Component({
-  selector: 'app-mural-cotacoes',
-  standalone: true,
-  imports: [Navbar, CommonModule, FormsModule], // <--- Adicione FormsModule aqui também
+  selector: 'app-mural-oportunidades',
+  imports: [Navbar, FormsModule, RouterLink, AsyncPipe, CurrencyPipe, DatePipe],
   templateUrl: './mural-oportunidades.html',
-  styleUrl: './mural-oportunidades.css'
+  styleUrl: './mural-oportunidades.css',
 })
-export class MuralOportunidades {
+export class MuralOportunidades implements OnInit {
+  private readonly cotacaoService = inject(CotacaoService);
+  private readonly propostaService = inject(PropostaService);
+  private readonly notificacao = inject(NotificacaoService);
+  private readonly auth = inject(AuthService);
 
-  oportunidades = [
-    {
-      id: 1,
-      titulo: 'Manutenção de Ar Condicionado (15 unidades)',
-      empresa: 'Hospital Santa Vida',
-      descricao: 'Busco empresa especializada...',
-      local: 'Rio de Janeiro, RJ',
-      dataLimite: '25/12/2025',
-      orcamentoEstimado: 'Até R$ 5.000,00',
-      
-      // NOVOS CAMPOS DE CONTROLE (MOCK)
-      expandido: false,
-      valorProposta: '',
-      descricaoPropostaTexto: ''
-    },
-    {
-      id: 2,
-      titulo: 'Fornecimento de Café e Descartáveis',
-      empresa: 'Criare Consulting',
-      descricao: 'Contrato mensal para fornecimento...',
-      local: 'São Paulo, SP',
-      dataLimite: '30/12/2025',
-      orcamentoEstimado: 'Sob Consulta',
-      
-      expandido: false,
-      valorProposta: '',
-      descricaoPropostaTexto: ''
-    },
-    {
-      id: 3,
-      titulo: 'Desenvolvimento de Landing Page',
-      empresa: 'Tech Startups',
-      descricao: 'Criação de página institucional...',
-      local: 'Remoto',
-      dataLimite: '22/12/2025',
-      orcamentoEstimado: 'R$ 2.000,00',
-      
-      expandido: false,
-      valorProposta: '',
-      descricaoPropostaTexto: ''
-    }
-  ];
+  protected readonly categorias$ = this.cotacaoService.categorias();
+  protected readonly diasRestantes = diasRestantes;
 
-  constructor(private router: Router) {}
+  protected readonly oportunidades = signal<Cotacao[] | null>(null);
+  /** cotacaoId -> proposta que este fornecedor já enviou */
+  protected readonly minhasPropostas = signal<Map<string, Proposta>>(new Map());
+  protected readonly erro = signal<string | null>(null);
+  protected readonly busca = signal('');
+  protected readonly categoria = signal<CategoriaCotacao | ''>('');
+  protected readonly expandida = signal<string | null>(null);
+  protected readonly enviando = signal(false);
 
-  diasRestantes(dataStr: string): number {
-    return 5; 
+  rascunho: RascunhoProposta = { valor: null, descricao: '' };
+
+  protected readonly filtradas = computed(() => {
+    const termo = this.busca().trim().toLowerCase();
+    const categoria = this.categoria();
+    return (this.oportunidades() ?? []).filter(
+      (c) =>
+        (!categoria || c.categoria === categoria) &&
+        (!termo ||
+          c.nomeServico.toLowerCase().includes(termo) ||
+          c.requisitos.toLowerCase().includes(termo) ||
+          c.empresaNome.toLowerCase().includes(termo)),
+    );
+  });
+
+  ngOnInit(): void {
+    this.carregar();
   }
 
-  // 1. Função que apenas ABRE o painelzinho
-  toggleProposta(item: any) {
-    // Fecha os outros para não ficar bagunçado (opcional)
-    this.oportunidades.forEach(op => {
-      if (op !== item) op.expandido = false;
+  carregar(): void {
+    forkJoin({
+      abertas: this.cotacaoService.listarAbertas(),
+      minhas: this.propostaService.listarPorFornecedor(this.auth.usuarioLogado.id),
+    }).subscribe({
+      next: ({ abertas, minhas }) => {
+        this.oportunidades.set(abertas);
+        this.minhasPropostas.set(new Map(minhas.map((p) => [p.cotacaoId, p])));
+      },
+      error: (e) => this.erro.set(mensagemDeErro(e)),
     });
-
-    item.expandido = !item.expandido;
   }
 
-  // 2. Função que ENVIA de verdade
- confirmarEnvio(item: any) {
-  // 1. Validação básica
-  if (!item.valorProposta) {
-    alert('Digite o valor!');
-    return;
+  /** Publicada nas últimas 48 horas. */
+  ehNova(c: Cotacao): boolean {
+    return Date.now() - new Date(c.dataCriacao).getTime() < 48 * 60 * 60 * 1000;
   }
 
-  // 2. Pega o ID do Fornecedor Logado (do localStorage/AuthService)
-  // Supondo que você tem o objeto usuario salvo
-  const usuarioLogado = JSON.parse(localStorage.getItem('sessao_usuario') || '{}');
+  toggleProposta(c: Cotacao): void {
+    if (this.expandida() === c.id) {
+      this.expandida.set(null);
+      return;
+    }
+    this.rascunho = { valor: null, descricao: '' };
+    this.expandida.set(c.id);
+  }
 
-  // 3. MONTA O JSON EXATO QUE O JAVA ESPERA
-  const propostaDTO = {
-    descricao: item.descricaoPropostaTexto || 'Sem descrição adicional', // Campo novo
-    valor: item.valorProposta,
-    fornecedor: { id: usuarioLogado.id }, // O Java espera um objeto ou ID
-    cotacao: { id: item.id }              // ID da cotação que você clicou
-  };
+  confirmarEnvio(c: Cotacao): void {
+    if (!this.rascunho.valor || this.rascunho.valor <= 0) {
+      this.notificacao.erro('Informe o valor da proposta.');
+      return;
+    }
 
-  console.log('Enviando pro Java:', propostaDTO);
-
-  // 4. AQUI ENTRA A CHAMADA PRO SERVICE (Quando tiver a API)
-  // this.propostaService.criar(propostaDTO).subscribe(...)
-
-  alert('Proposta enviada com sucesso!');
-  item.expandido = false;
-}
+    this.enviando.set(true);
+    this.propostaService
+      .enviar({
+        valor: this.rascunho.valor,
+        descricao: this.rascunho.descricao.trim() || 'Sem condições adicionais.',
+        fornecedorId: this.auth.usuarioLogado.id,
+        cotacaoId: c.id,
+      })
+      .subscribe({
+        next: (proposta) => {
+          this.notificacao.sucesso(`Proposta enviada para ${c.empresaNome}!`);
+          this.minhasPropostas.update((mapa) => new Map(mapa).set(c.id, proposta));
+          this.expandida.set(null);
+          this.enviando.set(false);
+        },
+        error: (e) => {
+          this.notificacao.erro(mensagemDeErro(e));
+          this.enviando.set(false);
+        },
+      });
+  }
 }

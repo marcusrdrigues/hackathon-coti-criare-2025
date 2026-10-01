@@ -1,123 +1,151 @@
-<app-navbar/>
+<app-navbar />
 
 <div class="container mt-4 mb-5">
-  
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="text-dark fw-bold mb-0">Visão Geral</h2>
-    <span class="text-muted small">Última atualização: Hoje, 14:30</span>
+
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+      <h2 class="text-dark fw-bold mb-0">Visão Geral</h2>
+      <p class="text-muted small mb-0">Olá, {{ auth.usuario()?.nome }}</p>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      @if (atualizadoEm(); as data) {
+        <span class="text-muted small">Atualizado às {{ data | date: 'HH:mm' }}</span>
+      }
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="carregar()" title="Atualizar">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
+      <a class="btn btn-primary" routerLink="/pages/cadastro-cotacao">
+        <i class="bi bi-plus-circle me-2"></i>Nova Cotação
+      </a>
+    </div>
   </div>
 
-  <div class="row mb-4">
-    
-    <div class="col-xl-4 col-md-6 mb-4">
-      <div class="card shadow-sm border-start-primary h-100">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center">
+  @if (erro(); as mensagem) {
+    <div class="alert alert-danger">{{ mensagem }}</div>
+  }
+
+  @if (dados(); as d) {
+    <div class="row mb-2">
+      <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card shadow-sm border-start-primary h-100 card-hover">
+          <div class="card-body d-flex justify-content-between align-items-center">
             <div>
-              <h6 class="text-muted text-uppercase mb-1">Cotações em Aberto</h6>
-              <h2 class="mb-0 fw-bold text-dark">{{ kpis.cotacoesAbertas }}</h2>
+              <h6 class="text-muted text-uppercase small mb-1">Cotações em aberto</h6>
+              <h2 class="mb-0 fw-bold text-dark">{{ d.cotacoesAbertas }}</h2>
             </div>
-            <div class="icon-shape bg-primary text-white rounded-circle">
-              <i class="bi bi-megaphone-fill fs-4"></i>
-            </div>
+            <div class="icon-shape bg-primary text-white"><i class="bi bi-megaphone-fill fs-4"></i></div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="col-xl-4 col-md-6 mb-4">
-      <div class="card shadow-sm border-start-warning h-100">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center">
+      <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card shadow-sm border-start-warning h-100 card-hover">
+          <div class="card-body d-flex justify-content-between align-items-center">
             <div>
-              <h6 class="text-muted text-uppercase mb-1">Propostas Recebidas</h6>
-              <h2 class="mb-0 fw-bold text-dark">{{ kpis.propostasRecebidas }}</h2>
+              <h6 class="text-muted text-uppercase small mb-1">Propostas recebidas</h6>
+              <h2 class="mb-0 fw-bold text-dark">{{ d.propostasRecebidas }}</h2>
             </div>
-            <div class="icon-shape bg-warning text-white rounded-circle">
-              <i class="bi bi-file-earmark-text-fill fs-4"></i>
-            </div>
+            <div class="icon-shape bg-warning text-white"><i class="bi bi-file-earmark-text-fill fs-4"></i></div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="col-xl-4 col-md-6 mb-4">
-      <div class="card shadow-sm border-start-secondary h-100">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center">
+      <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card shadow-sm border-start-secondary h-100 card-hover">
+          <div class="card-body d-flex justify-content-between align-items-center">
             <div>
-              <h6 class="text-muted text-uppercase mb-1">Cotações em Negociação</h6>
-              <h2 class="mb-0 fw-bold text-dark">{{ kpis.cotacoesNegociacao }}</h2>
+              <h6 class="text-muted text-uppercase small mb-1">Em negociação</h6>
+              <h2 class="mb-0 fw-bold text-dark">{{ d.cotacoesEmNegociacao }}</h2>
             </div>
-            <div class="icon-shape bg-secondary text-white rounded-circle">
-              <i class="bi bi-file-earmark-text-fill fs-4"></i>
+            <div class="icon-shape bg-secondary text-white"><i class="bi bi-chat-dots-fill fs-4"></i></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card shadow-sm border-start-success h-100 card-hover">
+          <div class="card-body d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="text-muted text-uppercase small mb-1">Negócios fechados</h6>
+              <h2 class="mb-0 fw-bold text-success">{{ d.cotacoesFechadas }}</h2>
             </div>
+            <div class="icon-shape bg-success text-white"><i class="bi bi-trophy-fill fs-4"></i></div>
           </div>
         </div>
       </div>
     </div>
 
-  </div>
-
-  <div class="row">
-    
-    <div class="col-lg-7 mb-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-header bg-white py-3 border-0">
-          <h5 class="mb-0 fw-bold text-dark">Demandas por Categoria</h5>
-        </div>
-        <div class="card-body pt-0">
-          
-          <div *ngFor="let cat of categoriasStats" class="mb-4">
-            <div class="d-flex justify-content-between mb-1">
-              <span class="fw-semibold">{{ cat.label }}</span>
-              <small class="text-muted">{{ cat.porcentagem }}%</small>
-            </div>
-            <div class="progress" style="height: 10px;">
-              <div class="progress-bar" 
-                   [ngClass]="cat.cor" 
-                   role="progressbar" 
-                   [style.width.%]="cat.porcentagem">
-              </div>
-            </div>
+    <div class="row">
+      <div class="col-lg-7 mb-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-white py-3 border-0">
+            <h5 class="mb-0 fw-bold text-dark">Demandas por Categoria</h5>
           </div>
-
-          <div class="text-center mt-4 pt-3 border-top">
-            <small class="text-muted">Dados baseados nas cotações dos últimos 30 dias.</small>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-lg-5 mb-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-0">
-          <h5 class="mb-0 fw-bold text-dark">Top Fornecedores</h5>
-          <button class="btn btn-sm btn-outline-primary rounded-pill px-3">Ver todos</button>
-        </div>
-        <div class="card-body p-0">
-          <ul class="list-group list-group-flush">
-            
-            <li *ngFor="let fornecedor of topFornecedores" class="list-group-item d-flex justify-content-between align-items-center px-4">
-              <div class="d-flex align-items-center">
-                <div class="avatar-circle me-3">
-                  {{ fornecedor.nome.charAt(0) }}
+          <div class="card-body pt-0">
+            @for (cat of d.categorias; track cat.categoria; let i = $index) {
+              <div class="mb-4">
+                <div class="d-flex justify-content-between mb-1">
+                  <span class="fw-semibold">{{ cat.descricao }}</span>
+                  <small class="text-muted">{{ cat.total }} ({{ cat.percentual }}%)</small>
                 </div>
-                <div>
-                  <h6 class="mb-0 fw-semibold text-dark">{{ fornecedor.nome }}</h6>
-                  <small class="text-muted">{{ fornecedor.categoria }}</small>
+                <div class="progress" role="progressbar" [attr.aria-valuenow]="cat.percentual"
+                     aria-valuemin="0" aria-valuemax="100" [attr.aria-label]="cat.descricao">
+                  <div class="progress-bar" [class]="cores[i % cores.length]" [style.width.%]="cat.percentual"></div>
                 </div>
               </div>
-              
-              <div class="text-warning d-flex align-items-center bg-light rounded px-2 py-1">
-                <i class="bi bi-star-fill small"></i>
+            } @empty {
+              <div class="estado-vazio">
+                <i class="bi bi-bar-chart"></i>
+                Publique sua primeira cotação para ver as demandas por categoria.
               </div>
-            </li>
+            }
+            @if (d.categorias.length > 0) {
+              <div class="text-center mt-2 pt-3 border-top">
+                <small class="text-muted">Distribuição de todas as cotações publicadas pela sua empresa.</small>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
 
-          </ul>
+      <div class="col-lg-5 mb-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-white py-3 border-0">
+            <h5 class="mb-0 fw-bold text-dark">Top Fornecedores</h5>
+            <small class="text-muted">Quem mais enviou propostas para você</small>
+          </div>
+          <div class="card-body p-0">
+            <ul class="list-group list-group-flush">
+              @for (f of d.topFornecedores; track f.id; let i = $index) {
+                <li class="list-group-item d-flex justify-content-between align-items-center px-4">
+                  <div class="d-flex align-items-center">
+                    <div class="avatar-circle me-3">{{ f.nome.charAt(0) }}</div>
+                    <div>
+                      <h6 class="mb-0 fw-semibold text-dark">{{ f.nome }}</h6>
+                      <small class="text-muted">{{ f.email }}</small>
+                    </div>
+                  </div>
+                  <span class="badge rounded-pill bg-light text-dark border">
+                    {{ f.totalPropostas }} {{ f.totalPropostas === 1 ? 'proposta' : 'propostas' }}
+                    @if (i === 0) {
+                      <i class="bi bi-star-fill text-warning ms-1"></i>
+                    }
+                  </span>
+                </li>
+              } @empty {
+                <li class="list-group-item estado-vazio border-0">
+                  <i class="bi bi-people"></i>
+                  Nenhuma proposta recebida ainda.
+                </li>
+              }
+            </ul>
+          </div>
         </div>
       </div>
     </div>
-
-  </div>
+  } @else if (!erro()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div>
+    </div>
+  }
 </div>

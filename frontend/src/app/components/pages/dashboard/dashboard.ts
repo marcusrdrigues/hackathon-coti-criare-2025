@@ -1,40 +1,41 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common'; 
-import { Navbar } from "../../shared/navbar/navbar";
+import { DatePipe } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { DashboardEmpresa } from '../../../core/models';
+import { AuthService } from '../../../core/services/auth.service';
+import { DashboardService } from '../../../core/services/dashboard.service';
+import { mensagemDeErro } from '../../../core/utils/erros';
+import { Navbar } from '../../shared/navbar/navbar';
 
 @Component({
   selector: 'app-dashboard',
-  standalone: true,
-  imports: [
-    Navbar, 
-    CommonModule
-  ],
+  imports: [Navbar, RouterLink, DatePipe],
   templateUrl: './dashboard.html',
-  styleUrls: ['./dashboard.css']
+  styleUrl: './dashboard.css',
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
+  private readonly dashboardService = inject(DashboardService);
+  protected readonly auth = inject(AuthService);
 
-  // DADOS DOS CARDS DO TOPO (KPIs)
-  kpis = {
-    cotacoesAbertas: 2,      // Status: ABERTO
-    propostasRecebidas: 20,  // Volume total
-    cotacoesNegociacao: 5 // Resultado das cotacoes FECHADAS
-  };
+  protected readonly dados = signal<DashboardEmpresa | null>(null);
+  protected readonly erro = signal<string | null>(null);
+  protected readonly atualizadoEm = signal<Date | null>(null);
 
-  // LISTA DE FORNECEDORES
-  topFornecedores = [
-    { nome: 'Tech Soluções', categoria: 'TI' },
-    { nome: 'Limpeza', categoria: 'Serviços' },
-    { nome: 'Cadeiras', categoria: 'Móveis' },
-    { nome: 'Papelaria', categoria: 'Suprimentos' },
-    { nome: 'Café', categoria: 'Alimentos' }
-  ];
+  /** Uma cor por posição no ranking de categorias. */
+  protected readonly cores = ['bg-primary', 'bg-success', 'bg-info', 'bg-warning', 'bg-secondary', 'bg-dark', 'bg-danger'];
 
-  // DADOS DO GRÁFICO
-  categoriasStats = [
-    { label: 'Informática e TI', porcentagem: 75, cor: 'bg-primary' },
-    { label: 'Mobiliário', porcentagem: 50, cor: 'bg-success' },
-    { label: 'Limpeza e Manutenção', porcentagem: 30, cor: 'bg-info' },
-    { label: 'Copa e Cozinha', porcentagem: 20, cor: 'bg-warning' }
-  ];
+  ngOnInit(): void {
+    this.carregar();
+  }
+
+  carregar(): void {
+    this.erro.set(null);
+    this.dashboardService.empresa(this.auth.usuarioLogado.id).subscribe({
+      next: (dados) => {
+        this.dados.set(dados);
+        this.atualizadoEm.set(new Date());
+      },
+      error: (e) => this.erro.set(mensagemDeErro(e)),
+    });
+  }
 }

@@ -1,10 +1,10 @@
-<app-navbar/>
+<app-navbar />
 
-<div class="container mt-4">
-  
+<div class="container mt-4 mb-5">
+
   <div class="mb-3">
-    <a class="text-decoration-none text-muted" style="cursor: pointer" (click)="cancelar()">
-      <i class="bi bi-arrow-left"></i> Voltar para listagem
+    <a class="link-voltar" [routerLink]="id() ? ['/pages/detalhe-cotacao', id()] : '/pages/consultar-cotacao'">
+      <i class="bi bi-arrow-left"></i> {{ id() ? 'Voltar para a cotação' : 'Voltar para listagem' }}
     </a>
   </div>
 
@@ -12,76 +12,83 @@
     <div class="card-body p-4">
 
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="card-title mb-0">Nova Cotação</h4>
-        <span class="badge bg-primary">Cadastro</span>
+        <h4 class="card-title mb-0 fw-bold">{{ id() ? 'Editar Cotação' : 'Nova Cotação' }}</h4>
+        <span class="badge bg-primary">{{ id() ? 'Edição' : 'Cadastro' }}</span>
       </div>
-      
+
       <p class="text-muted small mb-4">
         Preencha os detalhes abaixo para que os fornecedores possam enviar propostas.
       </p>
 
+      @if (erro(); as mensagem) {
+        <div class="alert alert-danger py-2"><i class="bi bi-exclamation-circle me-1"></i>{{ mensagem }}</div>
+      }
+
       <form (ngSubmit)="salvarCotacao()">
-        
-        <div class="mb-3">
-          <label class="form-label fw-bold">Título do Serviço/Produto</label>
-          <input 
-            type="text" 
-            class="form-control"
-            [(ngModel)]="novaCotacao.titulo"
-            name="titulo"
-            placeholder="Ex: Compra de 10 notebooks" 
-            required />
+
+        <div class="row mb-3">
+          <div class="col-md-8 mb-3 mb-md-0">
+            <label for="nomeServico" class="form-label fw-bold">Título do serviço/produto</label>
+            <input id="nomeServico" type="text" class="form-control" [(ngModel)]="form.nomeServico" name="nomeServico"
+                   placeholder="Ex: Compra de 10 notebooks" maxlength="200" required />
+          </div>
+          <div class="col-md-4">
+            <label for="categoria" class="form-label fw-bold">Categoria</label>
+            <select id="categoria" class="form-select" [(ngModel)]="form.categoria" name="categoria">
+              @for (cat of categorias$ | async; track cat.codigo) {
+                <option [value]="cat.codigo">{{ cat.descricao }}</option>
+              }
+            </select>
+          </div>
         </div>
 
         <div class="row mb-3">
-          <div class="col-md-6">
-            <label class="form-label fw-bold">Data de Abertura</label>
-            <input 
-              type="date" 
-              class="form-control bg-light"
-              [(ngModel)]="novaCotacao.dataCriacao"
-              name="dataCriacao" />
-            <div class="form-text">Data de início da coleta de preços.</div>
+          <div class="col-md-4 mb-3 mb-md-0">
+            <label for="dataCriacao" class="form-label fw-bold">Data de abertura</label>
+            <input id="dataCriacao" type="text" class="form-control bg-light" [value]="hoje | date: 'dd/MM/yyyy'" readonly />
+            <div class="form-text">Início da coleta de preços.</div>
           </div>
 
-          <div class="col-md-6">
-            <label class="form-label fw-bold text-danger">Data Limite para Propostas</label>
-            <input 
-              type="date" 
-              class="form-control"
-              [(ngModel)]="novaCotacao.dataLimite"
-              name="dataLimite" 
-              required />
-             <div class="form-text">Após esta data, a cotação será fechada automaticamente.</div>
+          <div class="col-md-4 mb-3 mb-md-0">
+            <label for="dataLimite" class="form-label fw-bold text-danger">Data limite para propostas</label>
+            <input id="dataLimite" type="date" class="form-control" [(ngModel)]="form.dataLimite" name="dataLimite"
+                   [min]="dataMinima" />
+            <div class="form-text">Depois desta data a cotação sai do mural. Deixe vazio para não ter prazo.</div>
+          </div>
+
+          <div class="col-md-4">
+            <label for="orcamento" class="form-label fw-bold">Orçamento estimado <span class="fw-normal text-muted">(opcional)</span></label>
+            <div class="input-group">
+              <span class="input-group-text">R$</span>
+              <input id="orcamento" type="number" min="0" step="0.01" class="form-control"
+                     [(ngModel)]="form.orcamentoEstimado" name="orcamentoEstimado" placeholder="0,00" />
+            </div>
+            <div class="form-text">Aparece para os fornecedores como referência.</div>
           </div>
         </div>
 
         <div class="mb-4">
-          <label class="form-label fw-bold">Requisitos Detalhados</label>
-          <textarea 
-            class="form-control" 
-            rows="5"
-            [(ngModel)]="novaCotacao.descricao"
-            name="descricao"
-            placeholder="Descreva especificações técnicas, quantidades, prazos de entrega desejados, etc.">
-          </textarea>
+          <label for="requisitos" class="form-label fw-bold">Requisitos detalhados</label>
+          <textarea id="requisitos" class="form-control" rows="5" [(ngModel)]="form.requisitos" name="requisitos"
+                    maxlength="1000" required
+                    placeholder="Descreva especificações técnicas, quantidades, prazos de entrega desejados, etc."></textarea>
+          <div class="form-text text-end">{{ form.requisitos.length }}/1000</div>
         </div>
 
         <hr class="my-4">
 
         <div class="d-flex justify-content-end gap-2">
-          
-          <button type="button" class="btn btn-outline-secondary" (click)="cancelar()">
-            Cancelar
-          </button>
-          
-          <button type="submit" class="btn btn-primary px-4">
-            <i class="bi bi-send-fill me-2"></i> Publicar Cotação
+          <a class="btn btn-outline-secondary"
+             [routerLink]="id() ? ['/pages/detalhe-cotacao', id()] : '/pages/consultar-cotacao'">Cancelar</a>
+          <button type="submit" class="btn btn-primary px-4" [disabled]="salvando()">
+            @if (salvando()) {
+              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Salvando...
+            } @else {
+              <i class="bi bi-send-fill me-2"></i>{{ id() ? 'Salvar alterações' : 'Publicar Cotação' }}
+            }
           </button>
         </div>
-
       </form>
-
     </div>
   </div>
 </div>

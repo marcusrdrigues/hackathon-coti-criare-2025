@@ -1,19 +1,19 @@
-:host { --criare-red: #B2002D; --criare-hover: #900024; }
-
-/* Botão Principal Vermelho */
-.btn-primary {
-    background-color: var(--criare-red) !important;
-    border-color: var(--criare-red) !important;
-}
-.btn-primary:hover {
-    background-color: var(--criare-hover) !important;
-    border-color: var(--criare-hover) !important;
+.filtros {
+  max-width: 560px;
 }
 
-/* Texto Vermelho */
-.text-primary { color: var(--criare-red) !important; }
+.filtros .form-select {
+  width: auto;
+  min-width: 200px;
+}
 
-/* Cards */
-.card { transition: transform 0.2s; border: none; }
-.card:hover { transform: translateY(-3px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; }
-.border-start-primary { border-left: 4px solid var(--criare-red) !important; }
+.filtros .input-group {
+  width: 280px;
+}
+
+@media (max-width: 576px) {
+  .filtros .input-group,
+  .filtros .form-select {
+    width: 100%;
+  }
+}

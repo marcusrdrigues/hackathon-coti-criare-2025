@@ -1,52 +1,38 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { HttpClientModule } from '@angular/common/http';
-import { AuthService } from '../../../services/auth.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { mensagemDeErro } from '../../../core/utils/erros';
 
 @Component({
   selector: 'app-login',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, HttpClientModule], 
+  imports: [FormsModule, RouterLink],
   templateUrl: './login.html',
-  styleUrl: './login.css'
+  styleUrl: './login.css',
 })
 export class Login {
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
 
-  credenciais = {
-    email: '',
-    senha: ''
-  };
+  credenciais = { email: '', senha: '' };
+  protected readonly carregando = signal(false);
+  protected readonly erro = signal<string | null>(null);
 
-  constructor(private authService: AuthService, private router: Router) {}
-
-  fazerLogin() {
+  fazerLogin(): void {
     if (!this.credenciais.email || !this.credenciais.senha) {
-      alert('Preencha todos os campos!');
+      this.erro.set('Preencha e-mail e senha.');
       return;
     }
 
-    console.log('Tentando logar...', this.credenciais);
+    this.carregando.set(true);
+    this.erro.set(null);
 
-    this.authService.login(this.credenciais).subscribe({
-      next: (resposta) => {
-        console.log('Sucesso! Resposta do Java:', resposta);
-
-        // AQUI ACONTECE A MÁGICA DO REDIRECIONAMENTO
-        if (resposta.tipo === 'EMPRESA') {
-          this.router.navigate(['/pages/dashboard']); // Vai para Dashboard da Empresa
-        } else if (resposta.tipo === 'FORNECEDOR') {
-          this.router.navigate(['/pages/dashboard-fornecedor']); // Vai para Dashboard do Fornecedor
-        } else {
-          // Se o tipo vier estranho, manda pra empresa por padrão
-          this.router.navigate(['/pages/dashboard']); 
-        }
+    this.auth.login(this.credenciais).subscribe({
+      next: () => this.router.navigateByUrl(this.auth.rotaInicial()),
+      error: (e) => {
+        this.erro.set(mensagemDeErro(e));
+        this.carregando.set(false);
       },
-      error: (erro) => {
-        console.error('Erro no login:', erro);
-        alert('Falha ao entrar. Verifique email e senha.');
-      }
     });
   }
 }

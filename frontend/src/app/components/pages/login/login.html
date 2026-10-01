@@ -1,53 +1,45 @@
 <div class="login-container">
-  
-  <div class="glass-card fade-in">
-    
+  <div class="glass-card login-card fade-in">
+
     <div class="mb-4">
-      <h2 class="text-danger fw-bold tracking-wide">CRIARE</h2>
-       <p class="text-muted small">CONSULTING</p>
+      <h2 class="text-primary fw-bold tracking-wide mb-0">CRIARE</h2>
+      <p class="text-muted small">CONSULTING</p>
     </div>
 
     <h4 class="mb-1 text-dark fw-bold">Bem-vindo</h4>
-    <p class="text-muted mb-4 small">Acesse o Portal</p>
+    <p class="text-muted mb-4 small">Acesse o portal de cotações</p>
+
+    @if (erro(); as mensagem) {
+      <div class="alert alert-danger py-2 small text-start" role="alert">
+        <i class="bi bi-exclamation-circle me-1"></i>{{ mensagem }}
+      </div>
+    }
 
     <form (ngSubmit)="fazerLogin()">
-      
       <div class="text-start mb-3">
-        <label class="form-label small fw-bold text-secondary ps-1">Email Corporativo</label>
-        <input 
-          type="email" 
-          class="form-control" 
-          [(ngModel)]="credenciais.email" 
-          name="email"
-          placeholder="seu@email.com" 
-          required>
+        <label for="email" class="form-label small fw-bold text-secondary ps-1">E-mail corporativo</label>
+        <input id="email" type="email" class="form-control" [(ngModel)]="credenciais.email" name="email"
+               placeholder="seu@email.com" autocomplete="username" required>
       </div>
 
-      <div class="text-start mb-3">
-        <label class="form-label small fw-bold text-secondary ps-1">Senha</label>
-        <input 
-          type="password" 
-          class="form-control" 
-          [(ngModel)]="credenciais.senha" 
-          name="senha"
-          placeholder="••••••••" 
-          required>
+      <div class="text-start mb-4">
+        <label for="senha" class="form-label small fw-bold text-secondary ps-1">Senha</label>
+        <input id="senha" type="password" class="form-control" [(ngModel)]="credenciais.senha" name="senha"
+               placeholder="••••••••" autocomplete="current-password" required>
       </div>
 
-      <div class="d-flex justify-content-end mb-4">
-        <a href="#" class="login-link small">Esqueceu a senha?</a>
-      </div>
-
-      <button type="submit" class="btn btn-criare shadow-sm mb-3">
-        ENTRAR
+      <button type="submit" class="btn btn-criare shadow-sm mb-3" [disabled]="carregando()">
+        @if (carregando()) {
+          <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>ENTRANDO...
+        } @else {
+          ENTRAR
+        }
       </button>
-
     </form>
-    
+
     <div class="mt-4 border-top pt-3">
       <small class="text-muted">Ainda não tem conta?</small>
       <a routerLink="/pages/cadastro" class="login-link ms-1">Cadastre-se aqui</a>
     </div>
-
   </div>
 </div>

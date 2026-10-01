@@ -1,38 +1,64 @@
-<app-navbar></app-navbar>
+<app-navbar />
 
-<div class="container mt-4">
-    <h2 class="fw-bold text-dark mb-4">Histórico de Propostas</h2>
+<div class="container mt-4 mb-5">
+  <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4">
+    <h2 class="fw-bold text-dark mb-0">Histórico de Propostas</h2>
+    @if (historico().length > 0) {
+      <div class="text-end">
+        <small class="text-muted d-block">Total em negócios fechados</small>
+        <span class="h5 fw-bold text-success mb-0">{{ totalGanho() | currency }}</span>
+      </div>
+    }
+  </div>
 
-    <div class="card shadow-sm border-0">
-        <div class="table-responsive">
-            <table class="table align-middle mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th class="ps-4">Data</th>
-                        <th>Cotação</th>
-                        <th>Empresa</th>
-                        <th>Resultado</th>
-                        <th class="text-end pe-4">Valor Final</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr *ngFor="let item of historico">
-                        <td class="ps-4 text-muted">{{ item.data }}</td>
-                        <td class="fw-bold">{{ item.titulo }}</td>
-                        <td>{{ item.empresa }}</td>
-                        <td>
-                            <span class="badge rounded-pill" 
-                                  [ngClass]="item.ganhou ? 'bg-success' : 'bg-secondary'">
-                                <i class="bi" [class.bi-trophy-fill]="item.ganhou" [class.bi-x-circle-fill]="!item.ganhou"></i>
-                                {{ item.ganhou ? 'Vencida' : 'Perdida' }}
-                            </span>
-                        </td>
-                        <td class="text-end pe-4 fw-bold" [class.text-muted]="!item.ganhou">
-                            {{ item.valor }}
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+  @if (erro(); as mensagem) {
+    <div class="alert alert-danger">{{ mensagem }}</div>
+  }
+
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-criare align-middle mb-0">
+        <thead>
+          <tr>
+            <th class="ps-4">Data</th>
+            <th>Cotação</th>
+            <th>Empresa</th>
+            <th>Resultado</th>
+            <th class="text-end pe-4">Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of historico(); track item.id) {
+            <tr>
+              <td class="ps-4 text-muted">{{ item.dataEnvio ? (item.dataEnvio | date: 'dd/MM/yyyy') : '—' }}</td>
+              <td class="fw-bold">
+                {{ item.cotacaoNome }}
+                @if (item.negociacaoId) {
+                  <a class="small fw-normal ms-1" [routerLink]="['/pages/negociacao', item.negociacaoId]">ver conversa</a>
+                }
+              </td>
+              <td>{{ item.empresaNome }}</td>
+              <td>
+                <span class="badge rounded-pill" [class]="ganhou(item) ? 'bg-success' : 'bg-secondary'">
+                  <i class="bi" [class.bi-trophy-fill]="ganhou(item)" [class.bi-x-circle-fill]="!ganhou(item)"></i>
+                  {{ ganhou(item) ? 'Vencida' : 'Perdida' }}
+                </span>
+                <small class="d-block text-muted mt-1">{{ motivo(item) }}</small>
+              </td>
+              <td class="text-end pe-4 fw-bold" [class.text-muted]="!ganhou(item)">
+                {{ (ganhou(item) ? item.valorFinal : item.valor) | currency }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
+
+    @if (propostas() !== null && historico().length === 0) {
+      <div class="estado-vazio">
+        <i class="bi bi-archive"></i>
+        Nenhuma proposta finalizada ainda.
+      </div>
+    }
+  </div>
 </div>

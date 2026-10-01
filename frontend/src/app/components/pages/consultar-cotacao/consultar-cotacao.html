@@ -1,52 +1,86 @@
-<app-navbar/>
+<app-navbar />
 
-<div class="container mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold text-dark">Minhas Solicitações</h2>
-    
-    <button class="btn btn-primary" routerLink="/pages/cadastro-cotacao">
-      <i class="bi bi-plus-circle me-2"></i>Nova Solicitação
-    </button>
+<div class="container mt-4 mb-5">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <h2 class="fw-bold text-dark mb-0">Minhas Cotações</h2>
+    <a class="btn btn-primary" routerLink="/pages/cadastro-cotacao">
+      <i class="bi bi-plus-circle me-2"></i>Nova Cotação
+    </a>
   </div>
 
+  @if (erro(); as mensagem) {
+    <div class="alert alert-danger">{{ mensagem }}</div>
+  }
+
+  <ul class="nav nav-pills mb-4 gap-1">
+    @for (f of filtros; track f.valor) {
+      <li class="nav-item">
+        <button type="button" class="nav-link" [class.active]="filtro() === f.valor" (click)="filtro.set(f.valor)">
+          {{ f.texto }} <span class="badge rounded-pill bg-light text-dark ms-1">{{ contar(f.valor) }}</span>
+        </button>
+      </li>
+    }
+  </ul>
+
+  @if (solicitacoes() === null && !erro()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div>
+    </div>
+  }
+
   <div class="row">
-    <div class="col-12 mb-3" *ngFor="let item of solicitacoes">
-      
-      <div class="card shadow-sm border-start-primary hover-effect">
-        <div class="card-body">
-          <div class="row align-items-center">
-            
-            <div class="col-md-8">
-              <div class="d-flex align-items-center mb-2">
-                <h5 class="card-title mb-0 me-3 fw-bold">{{ item.titulo }}</h5>
-                <span class="badge rounded-pill" [ngClass]="getStatusClass(item.status)">
-                  {{ item.status }}
-                </span>
-              </div>
-              <p class="card-text text-muted mb-1">{{ item.descricao }}</p>
-              <small class="text-muted">
-                <i class="bi bi-calendar"></i> Criado em: {{ item.dataCriacao | date:'dd/MM/yyyy' }}
-              </small>
-            </div>
+    @for (item of filtradas(); track item.id) {
+      <div class="col-12 mb-3">
+        <div class="card shadow-sm border-start-primary card-hover">
+          <div class="card-body">
+            <div class="row align-items-center">
 
-            <div class="col-md-4 text-md-end mt-3 mt-md-0">
-              <div class="mb-2">
-                <span class="h4 fw-bold text-primary">{{ item.qtdPropostas }}</span>
-                <span class="small text-muted d-block">Propostas Recebidas</span>
+              <div class="col-md-8">
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                  <h5 class="card-title mb-0 fw-bold">{{ item.nomeServico }}</h5>
+                  <span class="badge rounded-pill" [class]="status[item.status].classe">{{ status[item.status].texto }}</span>
+                  @if (item.categoriaDescricao) {
+                    <span class="badge rounded-pill bg-light text-dark border">{{ item.categoriaDescricao }}</span>
+                  }
+                </div>
+                <p class="card-text text-muted mb-2 requisitos">{{ item.requisitos }}</p>
+                <small class="text-muted d-flex flex-wrap gap-3">
+                  <span><i class="bi bi-calendar me-1"></i>Criada em {{ item.dataCriacao | date: 'dd/MM/yyyy' }}</span>
+                  @if (item.dataLimite) {
+                    <span><i class="bi bi-clock me-1"></i>Prazo: {{ item.dataLimite | date: 'dd/MM/yyyy' }}</span>
+                  }
+                  @if (item.melhorOferta !== null) {
+                    <span><i class="bi bi-tag me-1"></i>Melhor oferta: {{ item.melhorOferta | currency }}</span>
+                  }
+                </small>
               </div>
-                <button class="btn btn-outline-primary btn-sm" [routerLink]="['/pages/detalhe-cotacao', item.id]">
-                  Ver Detalhes
-                </button>
-            </div>
 
+              <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <div class="mb-2">
+                  <span class="h4 fw-bold text-primary">{{ item.quantidadePropostas }}</span>
+                  <span class="small text-muted d-block">
+                    {{ item.quantidadePropostas === 1 ? 'Proposta recebida' : 'Propostas recebidas' }}
+                  </span>
+                </div>
+                <a class="btn btn-outline-primary btn-sm" [routerLink]="['/pages/detalhe-cotacao', item.id]">
+                  Ver detalhes
+                </a>
+              </div>
+
+            </div>
           </div>
         </div>
       </div>
+    }
+  </div>
 
+  @if (solicitacoes() !== null && filtradas().length === 0) {
+    <div class="alert alert-light text-center border-0 shadow-sm py-4">
+      @if (filtro() === 'TODAS') {
+        Nenhuma cotação ainda. <a routerLink="/pages/cadastro-cotacao">Crie sua primeira solicitação de compra!</a>
+      } @else {
+        Nenhuma cotação com este status.
+      }
     </div>
-  </div>
-
-  <div *ngIf="solicitacoes.length === 0" class="alert alert-info text-center border-0 shadow-sm">
-    Nenhuma solicitação encontrada. Crie sua primeira solicitação de compra!
-  </div>
+  }
 </div>

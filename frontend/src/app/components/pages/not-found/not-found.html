@@ -1,1 +1,10 @@
-<p>not-found works!</p>
+<div class="login-container">
+  <div class="glass-card not-found-card fade-in">
+    <h1 class="display-3 fw-bold text-primary mb-0">404</h1>
+    <p class="fs-5 fw-semibold mb-1">Página não encontrada</p>
+    <p class="text-muted small mb-4">O endereço que você tentou acessar não existe ou foi movido.</p>
+    <a class="btn btn-criare" [routerLink]="auth.rotaInicial()">
+      {{ auth.logado() ? 'Voltar para o painel' : 'Ir para o login' }}
+    </a>
+  </div>
+</div>

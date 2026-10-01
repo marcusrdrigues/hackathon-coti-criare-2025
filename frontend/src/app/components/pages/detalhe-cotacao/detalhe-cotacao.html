@@ -1,93 +1,144 @@
-<app-navbar></app-navbar>
+<app-navbar />
 
 <div class="container mt-4 mb-5">
-  
-  <div class="d-flex flex-column align-items-start mb-4">
-    <a routerLink="/pages/consultar-cotacao" class="text-decoration-none link-voltar mb-2">
-      <i class="bi bi-arrow-left me-1"></i> Voltar para listagem
-    </a>
 
-    <div class="d-flex justify-content-between w-100 align-items-end">
-        <div>
-            <h2 class="fw-bold text-primary mb-1">{{ cotacao.titulo }}</h2>
-            <div class="d-flex align-items-center gap-2">
-                <span class="badge bg-success">Status: Aberto</span>
-                <span class="text-muted small">|</span>
-                <span class="text-muted small">Criado em: {{ cotacao.dataCriacao }}</span>
-            </div>
-        </div>
-        
-        <div class="text-end d-none d-md-block">
-            <small class="text-muted d-block">Melhor oferta até agora:</small>
-            <h3 class="fw-bold text-success mb-0">{{ cotacao.melhorOferta }}</h3>
-        </div>
-    </div>
-  </div>
+  <a routerLink="/pages/consultar-cotacao" class="link-voltar d-inline-block mb-3">
+    <i class="bi bi-arrow-left me-1"></i> Voltar para listagem
+  </a>
 
-  <div class="card shadow-sm border-0">
-    <div class="card-header bg-white py-3 border-bottom">
-      <div class="d-flex justify-content-between align-items-center">
-          <h5 class="mb-0 fw-bold text-dark">
-            <i class="bi bi-people-fill me-2 text-secondary"></i>Propostas Recebidas
-          </h5>
-          <span class="badge bg-light text-dark border">{{ propostas.length }} fornecedores</span>
+  @if (erro(); as mensagem) {
+    <div class="alert alert-danger">{{ mensagem }}</div>
+  }
+
+  @if (cotacao(); as c) {
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+      <div>
+        <h2 class="fw-bold text-primary mb-1">{{ c.nomeServico }}</h2>
+        <div class="d-flex flex-wrap align-items-center gap-2 small">
+          <span class="badge" [class]="statusCotacao[c.status].classe">{{ statusCotacao[c.status].texto }}</span>
+          @if (c.categoriaDescricao) {
+            <span class="badge bg-light text-dark border">{{ c.categoriaDescricao }}</span>
+          }
+          <span class="text-muted">Criada em {{ c.dataCriacao | date: 'dd/MM/yyyy' }}</span>
+          @if (c.dataLimite) {
+            <span class="text-muted">· Prazo: {{ c.dataLimite | date: 'dd/MM/yyyy' }}</span>
+          }
+        </div>
+      </div>
+
+      <div class="text-end">
+        <small class="text-muted d-block">Melhor oferta até agora</small>
+        <h3 class="fw-bold text-success mb-0">
+          {{ c.melhorOferta !== null ? (c.melhorOferta | currency) : '—' }}
+        </h3>
       </div>
     </div>
-    
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-        <thead>
-          <tr>
-            <th class="ps-4">Fornecedor</th>
-            <th>Valor Inicial</th>
-            <th>Última Oferta</th>
-            <th>Status</th>
-            <th class="text-end pe-4">Ação</th>
-          </tr>
-        </thead>
-        <tbody>
-          
-          <tr *ngFor="let p of propostas">
-            <td class="ps-4 py-3">
-              <div class="fw-bold text-dark">{{ p.fornecedor }}</div>
-              <small class="text-muted">CNPJ: {{ p.cnpj }}</small>
-            </td>
 
-            <td class="text-muted text-decoration-line-through">
-                {{ p.valorInicial }}
-            </td>
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h6 class="fw-bold text-uppercase text-muted small mb-2">Requisitos</h6>
+        <p class="mb-0 texto-quebrado">{{ c.requisitos }}</p>
+        @if (c.orcamentoEstimado !== null) {
+          <p class="mb-0 mt-3 small text-muted">
+            Orçamento estimado: <strong>{{ c.orcamentoEstimado | currency }}</strong>
+          </p>
+        }
 
-            <td>
-                <span class="fw-bold" [class.text-success]="p.status !== 'RECUSADO'">
-                    {{ p.ultimaOferta }}
-                </span>
-            </td>
-
-            <td>
-                <span class="badge rounded-pill" [ngClass]="getBadgeClass(p.status)">
-                    {{ p.status }}
-                </span>
-            </td>
-
-            <td class="text-end pe-4">
-              <button class="btn btn-sm" 
-                       [class.btn-primary]="p.status !== 'RECUSADO'" 
-                       [class.btn-secondary]="p.status === 'RECUSADO'"
-                       [routerLink]="['/pages/negociacao', p.id]"
-                       [disabled]="p.status === 'RECUSADO'">
-                 <i class="bi bi-chat-left-text me-1"></i>
-                 {{ p.status === 'RECUSADO' ? 'Arquivado' : 'Negociar' }}
-               </button>
-            </td>
-          </tr>
-
-        </tbody>
-      </table>
+        @if (c.status === 'ABERTA') {
+          <div class="d-flex gap-2 mt-3 pt-3 border-top">
+            <a class="btn btn-sm btn-outline-primary" [routerLink]="['/pages/cadastro-cotacao', c.id]">
+              <i class="bi bi-pencil me-1"></i>Editar
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="cancelarCotacao()">
+              <i class="bi bi-x-circle me-1"></i>Cancelar cotação
+            </button>
+          </div>
+        }
+      </div>
     </div>
-    
-    <div *ngIf="propostas.length === 0" class="p-5 text-center text-muted">
-        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-        Ainda não há propostas para esta cotação.
+
+    @if (c.status === 'EM_NEGOCIACAO') {
+      <div class="alert alert-warning d-flex align-items-center gap-2">
+        <i class="bi bi-chat-dots-fill"></i>
+        Há uma negociação em andamento. As outras propostas ficam em espera até ela ser fechada ou encerrada.
+      </div>
+    }
+
+    <div class="card shadow-sm">
+      <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold text-dark">
+          <i class="bi bi-people-fill me-2 text-secondary"></i>Propostas Recebidas
+        </h5>
+        <span class="badge bg-light text-dark border">
+          {{ propostas().length }} {{ propostas().length === 1 ? 'fornecedor' : 'fornecedores' }}
+        </span>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover table-criare align-middle mb-0">
+          <thead>
+            <tr>
+              <th class="ps-4">Fornecedor</th>
+              <th>Valor proposto</th>
+              <th>Condições</th>
+              <th>Status</th>
+              <th class="text-end pe-4">Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of propostas(); track p.id) {
+              <tr [class.text-muted]="p.status === 'RECUSADA'">
+                <td class="ps-4 py-3">
+                  <div class="fw-bold text-dark">{{ p.fornecedorNome }}</div>
+                  <small class="text-muted">CNPJ: {{ p.fornecedorCnpj | cnpj }}</small>
+                </td>
+                <td>
+                  <span class="fw-bold" [class.text-success]="p.valor === c.melhorOferta && p.status !== 'RECUSADA'">
+                    {{ p.valor | currency }}
+                  </span>
+                  @if (p.valorFinal !== null) {
+                    <small class="d-block text-success">Fechado: {{ p.valorFinal | currency }}</small>
+                  }
+                </td>
+                <td class="small condicoes">{{ p.descricao }}</td>
+                <td>
+                  <span class="badge rounded-pill" [class]="statusDa(p).classe">{{ statusDa(p).texto }}</span>
+                </td>
+                <td class="text-end pe-4 text-nowrap">
+                  @if (p.negociacaoId) {
+                    <a class="btn btn-sm btn-primary" [routerLink]="['/pages/negociacao', p.negociacaoId]">
+                      <i class="bi bi-chat-left-text me-1"></i>
+                      {{ p.negociacaoStatus === 'EM_ANDAMENTO' ? 'Abrir negociação' : 'Ver histórico' }}
+                    </a>
+                  } @else if (podeNegociar(p)) {
+                    <button type="button" class="btn btn-sm btn-primary me-1" [disabled]="processando() === p.id"
+                            (click)="negociar(p)">
+                      <i class="bi bi-chat-left-text me-1"></i>Negociar
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="processando() === p.id"
+                            (click)="recusar(p)" title="Recusar proposta">
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  } @else {
+                    <span class="small text-muted">{{ p.status === 'RECUSADA' ? 'Arquivada' : 'Em espera' }}</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (propostas().length === 0) {
+        <div class="estado-vazio">
+          <i class="bi bi-inbox"></i>
+          Ainda não há propostas para esta cotação.
+        </div>
+      }
     </div>
-  </div>
+  } @else if (!erro()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div>
+    </div>
+  }
 </div>
