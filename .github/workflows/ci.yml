@@ -34,7 +34,18 @@ jobs:
           cache: maven
 
       - name: Compilar e rodar os testes
-        run: ./mvnw -B -ntp verify
+        run: |
+          set -o pipefail
+          ./mvnw -B -ntp verify 2>&1 | tee build.log
+
+      - name: Resumo dos erros de build/teste
+        if: failure()
+        run: |
+          # Junta as linhas de erro numa anotação, para ver o motivo direto no resumo do job
+          resumo=$(grep -E "^\[ERROR\]|Tests run:.*Fail|expected|Exception" build.log | grep -v "^\[ERROR\] *$" | head -60 || true)
+          if [ -n "$resumo" ]; then
+            echo "::error title=Build do back-end::$(echo "$resumo" | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')"
+          fi
 
       - name: Subir a API com dados de demonstração (PostgreSQL)
         run: |
