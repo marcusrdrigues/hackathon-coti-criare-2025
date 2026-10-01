@@ -44,13 +44,17 @@ import java.util.List;
 public class SecurityConfig {
 
     private static final int TAMANHO_MINIMO_CHAVE = 32; // 256 bits, exigido pelo HS256
+    private static final SecureRandom ALEATORIO = new SecureRandom();
 
     @Bean
     public SecurityFilterChain filtroDeSeguranca(HttpSecurity http, RespostasDeSeguranca respostas) throws Exception {
         http
-                // Sem sessão e sem cookie de autenticação nas rotas protegidas, então não há CSRF a explorar.
-                // O cookie do refresh token é SameSite=Strict e restrito a /api/v1/auth.
-                .csrf(AbstractHttpConfigurer::disable)
+                // CSRF desligado de propósito (revisado, ver docs/adr/0003):
+                // - as rotas protegidas exigem o access token no cabeçalho Authorization, que o navegador
+                //   não envia sozinho, então um site de terceiros não consegue forjar a requisição;
+                // - o único cookie é o do refresh token: SameSite=Strict (o navegador não o manda em
+                //   requisições vindas de outro site), HttpOnly e restrito ao caminho /api/v1/auth.
+                .csrf(AbstractHttpConfigurer::disable) // NOSONAR java:S4502 - API sem estado, ver comentário acima
                 .cors(Customizer.withDefaults())
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
@@ -84,7 +88,7 @@ public class SecurityConfig {
 
         if (segredo == null || segredo.isBlank()) {
             bytes = new byte[TAMANHO_MINIMO_CHAVE];
-            new SecureRandom().nextBytes(bytes);
+            ALEATORIO.nextBytes(bytes);
             log.warn("JWT_SECRET não definido: usando uma chave aleatória. Os access tokens deixam de valer "
                     + "quando a API reinicia. Defina JWT_SECRET em produção.");
         } else {
