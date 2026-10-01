@@ -102,7 +102,7 @@
           }
         </div>
 
-        <div class="mensagens" #rolagem tabindex="0" aria-label="Mensagens">
+        <div class="mensagens" #rolagem role="log" aria-label="Mensagens">
           @for (g of grupos(); track g.dia) {
             <p class="dia">{{ g.dia }}</p>
             @for (m of g.mensagens; track m.id) {
