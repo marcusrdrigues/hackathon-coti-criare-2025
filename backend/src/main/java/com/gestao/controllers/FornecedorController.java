@@ -1,77 +1,66 @@
 package com.gestao.controllers;
 
-
 import com.gestao.dtos.fornecedor.FornecedorCadastroRequest;
 import com.gestao.dtos.fornecedor.FornecedorResponse;
 import com.gestao.dtos.fornecedor.FornecedorUpdateRequest;
-import com.gestao.entities.Fornecedor;
 import com.gestao.mappers.FornecedorMapper;
+import com.gestao.security.UsuarioAtual;
 import com.gestao.services.FornecedorService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/fornecedores")
 @RequiredArgsConstructor
+@Tag(name = "Fornecedores", description = "Cadastro e perfil de fornecedores")
 public class FornecedorController {
 
     private final FornecedorService fornecedorService;
     private final FornecedorMapper fornecedorMapper;
+    private final UsuarioAtual usuarioAtual;
 
-    // POST /api/fornecedores - Cadastrar fornecedor
+    @Operation(summary = "Cadastrar fornecedor", description = "Rota pública. CNPJ validado e senha gravada com BCrypt")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Fornecedor cadastrado"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "409", description = "Email ou CNPJ já cadastrado")
+    })
     @PostMapping
     public ResponseEntity<FornecedorResponse> cadastrarFornecedor(@Valid @RequestBody FornecedorCadastroRequest request) {
-        Fornecedor fornecedor = fornecedorMapper.toEntity(request);
-        Fornecedor novoFornecedor = fornecedorService.cadastrarFornecedor(fornecedor);
-        FornecedorResponse response = fornecedorMapper.toResponse(novoFornecedor);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        var fornecedor = fornecedorService.cadastrarFornecedor(fornecedorMapper.toEntity(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(fornecedorMapper.toResponse(fornecedor));
     }
 
-    // GET /api/fornecedores - Listar todos os fornecedores
-    @GetMapping
-    public ResponseEntity<List<FornecedorResponse>> listarTodos() {
-        List<Fornecedor> fornecedores = fornecedorService.listarTodos();
-        List<FornecedorResponse> responses = fornecedores.stream()
-                .map(fornecedorMapper::toResponse)
-                .toList();
-        return ResponseEntity.ok(responses);
-    }
-
-    // GET /api/fornecedores/{id} - Buscar fornecedor por ID
+    @Operation(summary = "Buscar fornecedor por ID")
     @GetMapping("/{id}")
-    public ResponseEntity<FornecedorResponse> buscarPorId(@PathVariable UUID id) {
-        Fornecedor fornecedor = fornecedorService.buscarPorId(id);
-        FornecedorResponse response = fornecedorMapper.toResponse(fornecedor);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<FornecedorResponse> buscarPorId(@Parameter(description = "ID do fornecedor") @PathVariable UUID id) {
+        return ResponseEntity.ok(fornecedorMapper.toResponse(fornecedorService.buscarPorId(id)));
     }
 
-    // GET /api/fornecedores/email/{email} - Buscar fornecedor por email
-    @GetMapping("/email/{email}")
-    public ResponseEntity<FornecedorResponse> buscarPorEmail(@PathVariable String email) {
-        Fornecedor fornecedor = fornecedorService.buscarPorEmail(email);
-        FornecedorResponse response = fornecedorMapper.toResponse(fornecedor);
-        return ResponseEntity.ok(response);
-    }
-
-    // PUT /api/fornecedores/{id} - Atualizar fornecedor
+    @Operation(summary = "Atualizar fornecedor", description = "Só o próprio fornecedor pode alterar o cadastro")
     @PutMapping("/{id}")
     public ResponseEntity<FornecedorResponse> atualizarFornecedor(
-            @PathVariable UUID id,
+            @Parameter(description = "ID do fornecedor") @PathVariable UUID id,
             @Valid @RequestBody FornecedorUpdateRequest request) {
-        Fornecedor fornecedorAtualizado = fornecedorService.atualizarFornecedor(id, request.nomeCompleto());
-        FornecedorResponse response = fornecedorMapper.toResponse(fornecedorAtualizado);
-        return ResponseEntity.ok(response);
+        usuarioAtual.exigirMesmoUsuario(id);
+        return ResponseEntity.ok(fornecedorMapper.toResponse(
+                fornecedorService.atualizarFornecedor(id, request.nomeCompleto())));
     }
 
-    // DELETE /api/fornecedores/{id} - Deletar fornecedor
+    @Operation(summary = "Excluir fornecedor", description = "Só o próprio fornecedor pode excluir a conta")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarFornecedor(@PathVariable UUID id) {
+    public ResponseEntity<Void> deletarFornecedor(@Parameter(description = "ID do fornecedor") @PathVariable UUID id) {
+        usuarioAtual.exigirMesmoUsuario(id);
         fornecedorService.deletarFornecedor(id);
         return ResponseEntity.noContent().build();
     }

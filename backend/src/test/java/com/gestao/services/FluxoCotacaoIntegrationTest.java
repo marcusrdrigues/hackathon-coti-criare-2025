@@ -1,6 +1,5 @@
 package com.gestao.services;
 
-import com.gestao.dtos.auth.LoginResponse;
 import com.gestao.dtos.dashboard.DashboardEmpresaResponse;
 import com.gestao.dtos.dashboard.DashboardFornecedorResponse;
 import com.gestao.entities.Cotacao;
@@ -14,10 +13,13 @@ import com.gestao.enums.StatusCotacao;
 import com.gestao.enums.StatusNegociacao;
 import com.gestao.enums.StatusProposta;
 import com.gestao.enums.TipoRemetente;
+import com.gestao.enums.TipoUsuario;
+import com.gestao.exceptions.AcessoNegadoException;
 import com.gestao.exceptions.BusinessException;
 import com.gestao.exceptions.DuplicateResourceException;
 import com.gestao.exceptions.UnauthorizedException;
 import com.gestao.repositories.MensagemNegociacaoRepository;
+import com.gestao.security.UsuarioAutenticado;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,12 +74,12 @@ class FluxoCotacaoIntegrationTest {
 
     @Test
     void loginIdentificaOTipoDeUsuario() {
-        LoginResponse loginEmpresa = authService.login("COMPRAS@criare.com", "segredo123");
-        assertEquals("EMPRESA", loginEmpresa.tipo());
-        assertEquals(empresa.getId(), loginEmpresa.id());
+        var loginEmpresa = authService.login("COMPRAS@criare.com", "segredo123").resposta();
+        assertEquals(TipoUsuario.EMPRESA, loginEmpresa.usuario().tipo());
+        assertEquals(empresa.getId(), loginEmpresa.usuario().id());
 
-        LoginResponse loginFornecedor = authService.login("tech@fornecedor.com", "segredo123");
-        assertEquals("FORNECEDOR", loginFornecedor.tipo());
+        var loginFornecedor = authService.login("tech@fornecedor.com", "segredo123").resposta();
+        assertEquals(TipoUsuario.FORNECEDOR, loginFornecedor.usuario().tipo());
 
         assertThrows(UnauthorizedException.class, () -> authService.login("tech@fornecedor.com", "errada"));
         assertThrows(UnauthorizedException.class, () -> authService.login("ninguem@x.com", "segredo123"));
@@ -105,7 +107,7 @@ class FluxoCotacaoIntegrationTest {
         assertThrows(BusinessException.class, () -> enviarProposta(fornecedorA, cotacao, "9000.00"));
 
         // Empresa escolhe negociar com o fornecedor A
-        Negociacao negociacao = negociacaoService.criarNegociacao(propostaA.getId());
+        Negociacao negociacao = negociacaoService.criarNegociacao(propostaA.getId(), empresa.getId());
         assertEquals(StatusProposta.ACEITA, propostaA.getStatus());
         assertEquals(StatusCotacao.EM_NEGOCIACAO, cotacao.getStatus());
         assertEquals(new BigDecimal("10000.00"), negociacao.getUltimaOferta());
@@ -116,28 +118,28 @@ class FluxoCotacaoIntegrationTest {
         assertEquals(TipoRemetente.FORNECEDOR, historico.get(0).getTipoRemetente());
 
         // Não dá para abrir uma segunda negociação na mesma cotação
-        assertThrows(BusinessException.class, () -> negociacaoService.criarNegociacao(propostaB.getId()));
+        assertThrows(BusinessException.class, () -> negociacaoService.criarNegociacao(propostaB.getId(), empresa.getId()));
 
         // Contraproposta da empresa e resposta do fornecedor
         mensagemService.enviarMensagem(negociacao.getId(), "Consegue fazer por 9.000?",
-                new BigDecimal("9000.00"), TipoRemetente.EMPRESA, empresa.getId());
+                new BigDecimal("9000.00"), comoEmpresa());
         mensagemService.enviarMensagem(negociacao.getId(), null,
-                new BigDecimal("9200.00"), TipoRemetente.FORNECEDOR, fornecedorA.getId());
+                new BigDecimal("9200.00"), comoFornecedor(fornecedorA));
         assertEquals(new BigDecimal("9200.00"), negociacao.getUltimaOferta());
 
         // Quem não participa da negociação não pode enviar mensagem
-        assertThrows(BusinessException.class, () -> mensagemService.enviarMensagem(negociacao.getId(), "oi",
-                null, TipoRemetente.FORNECEDOR, fornecedorB.getId()));
+        assertThrows(AcessoNegadoException.class, () -> mensagemService.enviarMensagem(negociacao.getId(), "oi",
+                null, comoFornecedor(fornecedorB)));
 
         // Fechamento
-        negociacaoService.finalizarNegociacao(negociacao.getId(), new BigDecimal("9200.00"));
+        negociacaoService.finalizarNegociacao(negociacao.getId(), new BigDecimal("9200.00"), empresa.getId());
         assertEquals(StatusNegociacao.FINALIZADA, negociacao.getStatus());
         assertEquals(StatusCotacao.FECHADA, cotacao.getStatus());
         assertEquals(StatusProposta.RECUSADA, propostaB.getStatus());
 
         // Negociação encerrada não recebe mais mensagens
         assertThrows(BusinessException.class, () -> mensagemService.enviarMensagem(negociacao.getId(), "oi",
-                null, TipoRemetente.EMPRESA, empresa.getId()));
+                null, comoEmpresa()));
 
         DashboardFornecedorResponse painelA = dashboardService.resumoFornecedor(fornecedorA.getId());
         assertEquals(1, painelA.cotacoesGanhas());
@@ -150,15 +152,15 @@ class FluxoCotacaoIntegrationTest {
         Proposta propostaA = enviarProposta(fornecedorA, cotacao, "10000.00");
         Proposta propostaB = enviarProposta(fornecedorB, cotacao, "9800.00");
 
-        Negociacao negociacao = negociacaoService.criarNegociacao(propostaA.getId());
-        negociacaoService.cancelarNegociacao(negociacao.getId());
+        Negociacao negociacao = negociacaoService.criarNegociacao(propostaA.getId(), empresa.getId());
+        negociacaoService.cancelarNegociacao(negociacao.getId(), empresa.getId());
 
         assertEquals(StatusNegociacao.CANCELADA, negociacao.getStatus());
         assertEquals(StatusProposta.RECUSADA, propostaA.getStatus());
         assertEquals(StatusCotacao.ABERTA, cotacao.getStatus());
 
         // Agora a empresa pode negociar com o outro fornecedor
-        Negociacao segunda = negociacaoService.criarNegociacao(propostaB.getId());
+        Negociacao segunda = negociacaoService.criarNegociacao(propostaB.getId(), empresa.getId());
         assertNotEquals(negociacao.getId(), segunda.getId());
     }
 
@@ -184,7 +186,7 @@ class FluxoCotacaoIntegrationTest {
         Cotacao cotacao = criarCotacao(5);
         Proposta proposta = enviarProposta(fornecedorA, cotacao, "700.00");
 
-        cotacaoService.cancelarCotacao(cotacao.getId());
+        cotacaoService.cancelarCotacao(cotacao.getId(), empresa.getId());
 
         assertEquals(StatusCotacao.CANCELADA, cotacao.getStatus());
         assertEquals(StatusProposta.RECUSADA, proposta.getStatus());
@@ -207,7 +209,58 @@ class FluxoCotacaoIntegrationTest {
         assertEquals(2, painel.topFornecedores().size());
     }
 
+    @Test
+    void outraEmpresaNaoVeNemAlteraACotacao() {
+        Empresa concorrente = empresaService.cadastrarEmpresa(
+                novaEmpresa("Concorrente SA", "90.817.263/0001-80", "compras@concorrente.com"));
+        Cotacao cotacao = criarCotacao(5);
+        enviarProposta(fornecedorA, cotacao, "500.00");
+
+        UsuarioAutenticado outra = new UsuarioAutenticado(concorrente.getId(), TipoUsuario.EMPRESA);
+        assertThrows(AcessoNegadoException.class, () -> cotacaoService.buscarParaUsuario(cotacao.getId(), outra));
+        assertThrows(AcessoNegadoException.class, () -> cotacaoService.cancelarCotacao(cotacao.getId(), concorrente.getId()));
+        assertThrows(AcessoNegadoException.class, () -> propostaService.listarPorCotacao(cotacao.getId(), concorrente.getId()));
+
+        // Fornecedores enxergam qualquer cotação (é o mural)
+        assertEquals(cotacao.getId(), cotacaoService.buscarParaUsuario(cotacao.getId(), comoFornecedor(fornecedorB)).getId());
+    }
+
+    @Test
+    void fornecedorNaoVePropostaDoConcorrente() {
+        Cotacao cotacao = criarCotacao(5);
+        Proposta propostaA = enviarProposta(fornecedorA, cotacao, "500.00");
+
+        assertThrows(AcessoNegadoException.class,
+                () -> propostaService.buscarParaUsuario(propostaA.getId(), comoFornecedor(fornecedorB)));
+        assertThrows(AcessoNegadoException.class,
+                () -> propostaService.deletarProposta(propostaA.getId(), fornecedorB.getId()));
+        assertEquals(propostaA.getId(),
+                propostaService.buscarParaUsuario(propostaA.getId(), comoFornecedor(fornecedorA)).getId());
+    }
+
+    @Test
+    void fornecedorNaoFechaNegocioNemVeNegociacaoDosOutros() {
+        Cotacao cotacao = criarCotacao(5);
+        Proposta propostaA = enviarProposta(fornecedorA, cotacao, "500.00");
+        Negociacao negociacao = negociacaoService.criarNegociacao(propostaA.getId(), empresa.getId());
+
+        assertThrows(AcessoNegadoException.class,
+                () -> negociacaoService.finalizarNegociacao(negociacao.getId(), BigDecimal.TEN, fornecedorA.getId()));
+        assertThrows(AcessoNegadoException.class,
+                () -> negociacaoService.buscarParaParticipante(negociacao.getId(), comoFornecedor(fornecedorB)));
+        assertThrows(AcessoNegadoException.class,
+                () -> mensagemService.listarMensagens(negociacao.getId(), comoFornecedor(fornecedorB)));
+    }
+
     // ---------------------------------------------------------------- helpers
+
+    private UsuarioAutenticado comoEmpresa() {
+        return new UsuarioAutenticado(empresa.getId(), TipoUsuario.EMPRESA);
+    }
+
+    private UsuarioAutenticado comoFornecedor(Fornecedor fornecedor) {
+        return new UsuarioAutenticado(fornecedor.getId(), TipoUsuario.FORNECEDOR);
+    }
 
     private Cotacao criarCotacao(int diasDePrazo) {
         return cotacaoService.criarCotacao(novaCotacao(diasDePrazo), empresa.getId());

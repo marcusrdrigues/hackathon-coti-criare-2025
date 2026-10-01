@@ -35,6 +35,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: coti
       # Troque para "demo" para subir com dados de exemplo
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
+      # Defina para os tokens continuarem válidos depois de reiniciar (openssl rand -base64 32)
+      JWT_SECRET: ${JWT_SECRET:-}
     networks:
       - gestaohackaton_network
 

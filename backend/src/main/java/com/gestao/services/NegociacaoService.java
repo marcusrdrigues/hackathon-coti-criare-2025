@@ -8,11 +8,13 @@ import com.gestao.enums.StatusCotacao;
 import com.gestao.enums.StatusNegociacao;
 import com.gestao.enums.StatusProposta;
 import com.gestao.enums.TipoRemetente;
+import com.gestao.exceptions.AcessoNegadoException;
 import com.gestao.exceptions.BusinessException;
 import com.gestao.exceptions.ResourceNotFoundException;
 import com.gestao.repositories.MensagemNegociacaoRepository;
 import com.gestao.repositories.NegociacaoRepository;
 import com.gestao.repositories.PropostaRepository;
+import com.gestao.security.UsuarioAutenticado;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,12 +40,14 @@ public class NegociacaoService {
      * transação), e a cotação passa para EM_NEGOCIACAO.
      */
     @Transactional
-    public Negociacao criarNegociacao(UUID propostaId) {
+    public Negociacao criarNegociacao(UUID propostaId, UUID empresaId) {
+        Proposta proposta = propostaService.buscarPorId(propostaId);
+        propostaService.verificarEmpresaDaCotacao(proposta, empresaId);
+
         if (negociacaoRepository.existsByPropostaId(propostaId)) {
             throw new BusinessException("Já existe uma negociação para esta proposta!");
         }
 
-        Proposta proposta = propostaService.buscarPorId(propostaId);
         if (proposta.getStatus() == StatusProposta.ENVIADA || proposta.getStatus() == StatusProposta.EM_ANALISE) {
             proposta = propostaService.aceitarProposta(propostaId);
         }
@@ -79,34 +83,40 @@ public class NegociacaoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Negociação não encontrada!"));
     }
 
+    /** Só a empresa e o fornecedor da negociação podem vê-la. */
     @Transactional(readOnly = true)
-    public Negociacao buscarPorProposta(UUID propostaId) {
-        return negociacaoRepository.findByPropostaId(propostaId)
+    public Negociacao buscarParaParticipante(UUID id, UsuarioAutenticado usuario) {
+        Negociacao negociacao = buscarPorId(id);
+        verificarParticipante(negociacao, usuario);
+        return negociacao;
+    }
+
+    @Transactional(readOnly = true)
+    public Negociacao buscarPorPropostaParaParticipante(UUID propostaId, UsuarioAutenticado usuario) {
+        Negociacao negociacao = negociacaoRepository.findByPropostaId(propostaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Negociação não encontrada!"));
+        verificarParticipante(negociacao, usuario);
+        return negociacao;
     }
 
     @Transactional(readOnly = true)
-    public List<Negociacao> listarPorEmpresa(UUID empresaId) {
-        return negociacaoRepository.findByEmpresaId(empresaId);
+    public List<Negociacao> listarDoUsuario(UsuarioAutenticado usuario) {
+        return usuario.ehEmpresa()
+                ? negociacaoRepository.findByEmpresaId(usuario.id())
+                : negociacaoRepository.findByFornecedorId(usuario.id());
     }
 
-    @Transactional(readOnly = true)
-    public List<Negociacao> listarPorFornecedor(UUID fornecedorId) {
-        return negociacaoRepository.findByFornecedorId(fornecedorId);
-    }
 
-    @Transactional(readOnly = true)
-    public List<Negociacao> listarPorStatus(StatusNegociacao status) {
-        return negociacaoRepository.findByStatus(status);
-    }
+
 
     /**
      * Fecha o negócio: grava o valor final, fecha a cotação e recusa as demais
      * propostas que ainda estavam pendentes.
      */
     @Transactional
-    public Negociacao finalizarNegociacao(UUID id, BigDecimal valorFinal) {
+    public Negociacao finalizarNegociacao(UUID id, BigDecimal valorFinal, UUID empresaId) {
         Negociacao negociacao = buscarPorId(id);
+        verificarEmpresa(negociacao, empresaId);
 
         if (negociacao.getStatus() != StatusNegociacao.EM_ANDAMENTO) {
             throw new BusinessException("Negociação não está em andamento!");
@@ -135,8 +145,9 @@ public class NegociacaoService {
      * volta a ficar aberta para negociar com outro fornecedor.
      */
     @Transactional
-    public Negociacao cancelarNegociacao(UUID id) {
+    public Negociacao cancelarNegociacao(UUID id, UUID empresaId) {
         Negociacao negociacao = buscarPorId(id);
+        verificarEmpresa(negociacao, empresaId);
 
         if (negociacao.getStatus() != StatusNegociacao.EM_ANDAMENTO) {
             throw new BusinessException("Negociação não está em andamento!");
@@ -152,8 +163,19 @@ public class NegociacaoService {
         return negociacaoRepository.save(negociacao);
     }
 
-    @Transactional(readOnly = true)
-    public List<Negociacao> listarTodas() {
-        return negociacaoRepository.findAll();
+    void verificarParticipante(Negociacao negociacao, UsuarioAutenticado usuario) {
+        UUID participante = usuario.ehEmpresa()
+                ? negociacao.getEmpresa().getId()
+                : negociacao.getFornecedor().getId();
+        if (!participante.equals(usuario.id())) {
+            throw new AcessoNegadoException("Você não participa desta negociação.");
+        }
+    }
+
+    /** Fechar ou encerrar é decisão da empresa compradora. */
+    private void verificarEmpresa(Negociacao negociacao, UUID empresaId) {
+        if (!negociacao.getEmpresa().getId().equals(empresaId)) {
+            throw new AcessoNegadoException("Só a empresa desta negociação pode fechá-la ou encerrá-la.");
+        }
     }
 }

@@ -4,13 +4,17 @@ import com.gestao.dtos.negociacao.FinalizarNegociacaoRequest;
 import com.gestao.dtos.negociacao.NegociacaoRequest;
 import com.gestao.dtos.negociacao.NegociacaoResponse;
 import com.gestao.entities.Negociacao;
-import com.gestao.enums.StatusNegociacao;
 import com.gestao.mappers.NegociacaoMapper;
+import com.gestao.security.UsuarioAtual;
 import com.gestao.services.NegociacaoService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,90 +23,61 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/negociacoes")
 @RequiredArgsConstructor
+@Tag(name = "Negociações", description = "Negociação entre a empresa e o fornecedor escolhido")
 public class NegociacaoController {
 
     private final NegociacaoService negociacaoService;
     private final NegociacaoMapper negociacaoMapper;
+    private final UsuarioAtual usuarioAtual;
 
-    // POST /api/negociacoes - Criar negociação
+    @Operation(summary = "Iniciar negociação",
+            description = "Perfil EMPRESA, dona da cotação. Aceita a proposta e coloca a cotação em EM_NEGOCIACAO")
+    @PreAuthorize("hasRole('EMPRESA')")
     @PostMapping
     public ResponseEntity<NegociacaoResponse> criarNegociacao(@Valid @RequestBody NegociacaoRequest request) {
-        Negociacao novaNegociacao = negociacaoService.criarNegociacao(request.propostaId());
-        NegociacaoResponse response = negociacaoMapper.toResponse(novaNegociacao);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        Negociacao negociacao = negociacaoService.criarNegociacao(request.propostaId(), usuarioAtual.obter().id());
+        return ResponseEntity.status(HttpStatus.CREATED).body(negociacaoMapper.toResponse(negociacao));
     }
 
-    // GET /api/negociacoes - Listar todas as negociações
-    @GetMapping
-    public ResponseEntity<List<NegociacaoResponse>> listarTodas() {
-        List<Negociacao> negociacoes = negociacaoService.listarTodas();
-        List<NegociacaoResponse> responses = negociacoes.stream()
+    @Operation(summary = "Minhas negociações", description = "Negociações em que o usuário do token participa")
+    @GetMapping("/minhas")
+    public ResponseEntity<List<NegociacaoResponse>> minhas() {
+        return ResponseEntity.ok(negociacaoService.listarDoUsuario(usuarioAtual.obter()).stream()
                 .map(negociacaoMapper::toResponse)
-                .toList();
-        return ResponseEntity.ok(responses);
+                .toList());
     }
 
-    // GET /api/negociacoes/{id} - Buscar negociação por ID
+    @Operation(summary = "Buscar negociação", description = "Só a empresa e o fornecedor participantes")
     @GetMapping("/{id}")
-    public ResponseEntity<NegociacaoResponse> buscarPorId(@PathVariable UUID id) {
-        Negociacao negociacao = negociacaoService.buscarPorId(id);
-        NegociacaoResponse response = negociacaoMapper.toResponse(negociacao);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<NegociacaoResponse> buscarPorId(@Parameter(description = "ID da negociação") @PathVariable UUID id) {
+        return ResponseEntity.ok(negociacaoMapper.toResponse(
+                negociacaoService.buscarParaParticipante(id, usuarioAtual.obter())));
     }
 
-    // GET /api/negociacoes/proposta/{propostaId} - Buscar negociação por proposta
+    @Operation(summary = "Negociação de uma proposta", description = "Só a empresa e o fornecedor participantes")
     @GetMapping("/proposta/{propostaId}")
     public ResponseEntity<NegociacaoResponse> buscarPorProposta(@PathVariable UUID propostaId) {
-        Negociacao negociacao = negociacaoService.buscarPorProposta(propostaId);
-        NegociacaoResponse response = negociacaoMapper.toResponse(negociacao);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(negociacaoMapper.toResponse(
+                negociacaoService.buscarPorPropostaParaParticipante(propostaId, usuarioAtual.obter())));
     }
 
-    // GET /api/negociacoes/empresa/{empresaId} - Listar negociações de uma empresa
-    @GetMapping("/empresa/{empresaId}")
-    public ResponseEntity<List<NegociacaoResponse>> listarPorEmpresa(@PathVariable UUID empresaId) {
-        List<Negociacao> negociacoes = negociacaoService.listarPorEmpresa(empresaId);
-        List<NegociacaoResponse> responses = negociacoes.stream()
-                .map(negociacaoMapper::toResponse)
-                .toList();
-        return ResponseEntity.ok(responses);
-    }
-
-    // GET /api/negociacoes/fornecedor/{fornecedorId} - Listar negociações de um fornecedor
-    @GetMapping("/fornecedor/{fornecedorId}")
-    public ResponseEntity<List<NegociacaoResponse>> listarPorFornecedor(@PathVariable UUID fornecedorId) {
-        List<Negociacao> negociacoes = negociacaoService.listarPorFornecedor(fornecedorId);
-        List<NegociacaoResponse> responses = negociacoes.stream()
-                .map(negociacaoMapper::toResponse)
-                .toList();
-        return ResponseEntity.ok(responses);
-    }
-
-    // GET /api/negociacoes/status/{status} - Listar negociações por status
-    @GetMapping("/status/{status}")
-    public ResponseEntity<List<NegociacaoResponse>> listarPorStatus(@PathVariable StatusNegociacao status) {
-        List<Negociacao> negociacoes = negociacaoService.listarPorStatus(status);
-        List<NegociacaoResponse> responses = negociacoes.stream()
-                .map(negociacaoMapper::toResponse)
-                .toList();
-        return ResponseEntity.ok(responses);
-    }
-
-    // PATCH /api/negociacoes/{id}/finalizar - Finalizar negociação
+    @Operation(summary = "Fechar negócio",
+            description = "Perfil EMPRESA participante. Fecha a cotação e recusa as demais propostas")
+    @PreAuthorize("hasRole('EMPRESA')")
     @PatchMapping("/{id}/finalizar")
     public ResponseEntity<NegociacaoResponse> finalizarNegociacao(
             @PathVariable UUID id,
             @Valid @RequestBody FinalizarNegociacaoRequest request) {
-        Negociacao negociacao = negociacaoService.finalizarNegociacao(id, request.valorFinal());
-        NegociacaoResponse response = negociacaoMapper.toResponse(negociacao);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(negociacaoMapper.toResponse(
+                negociacaoService.finalizarNegociacao(id, request.valorFinal(), usuarioAtual.obter().id())));
     }
 
-    // PATCH /api/negociacoes/{id}/cancelar - Cancelar negociação
+    @Operation(summary = "Encerrar sem acordo",
+            description = "Perfil EMPRESA participante. Recusa a proposta e reabre a cotação")
+    @PreAuthorize("hasRole('EMPRESA')")
     @PatchMapping("/{id}/cancelar")
     public ResponseEntity<NegociacaoResponse> cancelarNegociacao(@PathVariable UUID id) {
-        Negociacao negociacao = negociacaoService.cancelarNegociacao(id);
-        NegociacaoResponse response = negociacaoMapper.toResponse(negociacao);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(negociacaoMapper.toResponse(
+                negociacaoService.cancelarNegociacao(id, usuarioAtual.obter().id())));
     }
 }

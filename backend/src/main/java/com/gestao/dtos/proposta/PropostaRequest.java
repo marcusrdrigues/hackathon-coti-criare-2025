@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+/** O fornecedor que envia é sempre o usuário do token. */
 public record PropostaRequest(
         @NotNull(message = "Valor é obrigatório")
         @DecimalMin(value = "0.01", message = "Valor deve ser maior que zero")
@@ -16,9 +17,6 @@ public record PropostaRequest(
         @NotBlank(message = "Descrição é obrigatória")
         @Size(max = 1000, message = "Descrição deve ter no máximo 1000 caracteres")
         String descricao,
-
-        @NotNull(message = "ID do fornecedor é obrigatório")
-        UUID fornecedorId,
 
         @NotNull(message = "ID da cotação é obrigatório")
         UUID cotacaoId

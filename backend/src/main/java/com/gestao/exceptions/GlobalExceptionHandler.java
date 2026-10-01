@@ -2,9 +2,11 @@ package com.gestao.exceptions;
 
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -63,7 +65,7 @@ public class GlobalExceptionHandler {
             UnauthorizedException ex,
             WebRequest request) {
 
-        log.error("UnauthorizedException: {}", ex.getMessage());
+        log.warn("UnauthorizedException: {}", ex.getMessage());
 
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.UNAUTHORIZED.value(),
@@ -72,6 +74,45 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
+    @ExceptionHandler({AcessoNegadoException.class, AccessDeniedException.class})
+    public ResponseEntity<ErrorResponse> handleAcessoNegado(
+            RuntimeException ex,
+            WebRequest request) {
+
+        log.warn("Acesso negado: {}", ex.getMessage());
+
+        // AccessDeniedException vem do @PreAuthorize (perfil errado); a nossa traz a mensagem do service
+        String mensagem = ex instanceof AcessoNegadoException
+                ? ex.getMessage()
+                : "Seu perfil não tem permissão para esta ação.";
+
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.FORBIDDEN.value(),
+                mensagem,
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+
+    @ExceptionHandler(MuitasTentativasException.class)
+    public ResponseEntity<ErrorResponse> handleMuitasTentativas(
+            MuitasTentativasException ex,
+            WebRequest request) {
+
+        log.warn("Login bloqueado temporariamente: {}", ex.getMessage());
+
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.TOO_MANY_REQUESTS.value(),
+                ex.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getSegundosParaLiberar()))
+                .body(error);
     }
 
     @ExceptionHandler(DuplicateResourceException.class)

@@ -3,13 +3,19 @@ package com.gestao.controllers;
 import com.gestao.dtos.proposta.PropostaRequest;
 import com.gestao.dtos.proposta.PropostaResponse;
 import com.gestao.entities.Proposta;
-import com.gestao.enums.StatusProposta;
 import com.gestao.mappers.PropostaMapper;
+import com.gestao.security.UsuarioAtual;
 import com.gestao.services.PropostaService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,113 +24,82 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/propostas")
 @RequiredArgsConstructor
+@Tag(name = "Propostas", description = "Lances dos fornecedores para as cotações")
 public class PropostaController {
 
     private final PropostaService propostaService;
     private final PropostaMapper propostaMapper;
+    private final UsuarioAtual usuarioAtual;
 
-    // POST /api/propostas - Criar proposta
+    @Operation(summary = "Enviar proposta", description = "Perfil FORNECEDOR. Uma proposta por cotação, dentro do prazo")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Proposta enviada"),
+            @ApiResponse(responseCode = "400", description = "Cotação fechada, prazo vencido ou proposta repetida"),
+            @ApiResponse(responseCode = "403", description = "Usuário não é um fornecedor")
+    })
+    @PreAuthorize("hasRole('FORNECEDOR')")
     @PostMapping
     public ResponseEntity<PropostaResponse> criarProposta(@Valid @RequestBody PropostaRequest request) {
-        Proposta proposta = propostaMapper.toEntity(request);
-        Proposta novaProposta = propostaService.criarProposta(
-                proposta,
-                request.fornecedorId(),
-                request.cotacaoId()
-        );
-        PropostaResponse response = propostaMapper.toResponse(novaProposta);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        Proposta proposta = propostaService.criarProposta(
+                propostaMapper.toEntity(request), usuarioAtual.obter().id(), request.cotacaoId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(propostaMapper.toResponse(proposta));
     }
 
-    // GET /api/propostas/{id} - Buscar proposta por ID
+    @Operation(summary = "Minhas propostas", description = "Perfil FORNECEDOR. Propostas enviadas pelo fornecedor do token")
+    @PreAuthorize("hasRole('FORNECEDOR')")
+    @GetMapping("/minhas")
+    public ResponseEntity<List<PropostaResponse>> minhas() {
+        return ResponseEntity.ok(paraResposta(propostaService.listarPorFornecedor(usuarioAtual.obter().id())));
+    }
+
+    @Operation(summary = "Buscar proposta", description = "Só o fornecedor autor e a empresa dona da cotação")
     @GetMapping("/{id}")
-    public ResponseEntity<PropostaResponse> buscarPorId(@PathVariable UUID id) {
-        Proposta proposta = propostaService.buscarPorId(id);
-        PropostaResponse response = propostaMapper.toResponse(proposta);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<PropostaResponse> buscarPorId(@Parameter(description = "ID da proposta") @PathVariable UUID id) {
+        return ResponseEntity.ok(propostaMapper.toResponse(propostaService.buscarParaUsuario(id, usuarioAtual.obter())));
     }
 
-    // GET /api/propostas/cotacao/{cotacaoId} - Listar propostas de uma cotação
+    @Operation(summary = "Propostas de uma cotação",
+            description = "Perfil EMPRESA, dona da cotação. Fornecedores não veem os lances dos concorrentes")
+    @PreAuthorize("hasRole('EMPRESA')")
     @GetMapping("/cotacao/{cotacaoId}")
-    public ResponseEntity<List<PropostaResponse>> listarPorCotacao(@PathVariable UUID cotacaoId) {
-        List<Proposta> propostas = propostaService.listarPorCotacao(cotacaoId);
-        List<PropostaResponse> responses = propostas.stream()
-                .map(propostaMapper::toResponse)
-                .toList();
-        return ResponseEntity.ok(responses);
+    public ResponseEntity<List<PropostaResponse>> listarPorCotacao(
+            @Parameter(description = "ID da cotação") @PathVariable UUID cotacaoId) {
+        return ResponseEntity.ok(paraResposta(propostaService.listarPorCotacao(cotacaoId, usuarioAtual.obter().id())));
     }
 
-    // GET /api/propostas/fornecedor/{fornecedorId} - Listar propostas de um fornecedor
-    @GetMapping("/fornecedor/{fornecedorId}")
-    public ResponseEntity<List<PropostaResponse>> listarPorFornecedor(@PathVariable UUID fornecedorId) {
-        List<Proposta> propostas = propostaService.listarPorFornecedor(fornecedorId);
-        List<PropostaResponse> responses = propostas.stream()
-                .map(propostaMapper::toResponse)
-                .toList();
-        return ResponseEntity.ok(responses);
-    }
-
-    // GET /api/propostas/status/{status} - Listar propostas por status
-    @GetMapping("/status/{status}")
-    public ResponseEntity<List<PropostaResponse>> listarPorStatus(@PathVariable StatusProposta status) {
-        List<Proposta> propostas = propostaService.listarPorStatus(status);
-        List<PropostaResponse> responses = propostas.stream()
-                .map(propostaMapper::toResponse)
-                .toList();
-        return ResponseEntity.ok(responses);
-    }
-
-    // GET /api/propostas/cotacao/{cotacaoId}/count - Contar propostas de uma cotação
+    @Operation(summary = "Quantidade de propostas de uma cotação")
     @GetMapping("/cotacao/{cotacaoId}/count")
     public ResponseEntity<Long> contarPropostasPorCotacao(@PathVariable UUID cotacaoId) {
-        long count = propostaService.contarPropostasPorCotacao(cotacaoId);
-        return ResponseEntity.ok(count);
+        return ResponseEntity.ok(propostaService.contarPropostasPorCotacao(cotacaoId));
     }
 
-    // PUT /api/propostas/{id} - Atualizar proposta
+    @Operation(summary = "Editar proposta", description = "Perfil FORNECEDOR, autor. Só enquanto não foi analisada")
+    @PreAuthorize("hasRole('FORNECEDOR')")
     @PutMapping("/{id}")
     public ResponseEntity<PropostaResponse> atualizarProposta(
-            @PathVariable UUID id,
+            @Parameter(description = "ID da proposta") @PathVariable UUID id,
             @Valid @RequestBody PropostaRequest request) {
-        Proposta proposta = propostaMapper.toEntity(request);
-        Proposta propostaAtualizada = propostaService.atualizarProposta(id, request.fornecedorId(), proposta);
-        PropostaResponse response = propostaMapper.toResponse(propostaAtualizada);
-        return ResponseEntity.ok(response);
+        Proposta proposta = propostaService.atualizarProposta(
+                id, usuarioAtual.obter().id(), propostaMapper.toEntity(request));
+        return ResponseEntity.ok(propostaMapper.toResponse(proposta));
     }
 
-    // PATCH /api/propostas/{id}/aceitar - Aceitar proposta
-    @PatchMapping("/{id}/aceitar")
-    public ResponseEntity<PropostaResponse> aceitarProposta(@PathVariable UUID id) {
-        Proposta proposta = propostaService.aceitarProposta(id);
-        PropostaResponse response = propostaMapper.toResponse(proposta);
-        return ResponseEntity.ok(response);
-    }
-
-    // PATCH /api/propostas/{id}/recusar - Recusar proposta
+    @Operation(summary = "Recusar proposta", description = "Perfil EMPRESA, dona da cotação")
+    @PreAuthorize("hasRole('EMPRESA')")
     @PatchMapping("/{id}/recusar")
-    public ResponseEntity<PropostaResponse> recusarProposta(@PathVariable UUID id) {
-        Proposta proposta = propostaService.recusarProposta(id);
-        PropostaResponse response = propostaMapper.toResponse(proposta);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<PropostaResponse> recusarProposta(@Parameter(description = "ID da proposta") @PathVariable UUID id) {
+        return ResponseEntity.ok(propostaMapper.toResponse(propostaService.recusarProposta(id, usuarioAtual.obter().id())));
     }
 
-    // PATCH /api/propostas/{id}/status - Atualizar status da proposta
-    @PatchMapping("/{id}/status")
-    public ResponseEntity<PropostaResponse> atualizarStatus(
-            @PathVariable UUID id,
-            @RequestBody StatusRequest statusRequest) {
-        Proposta proposta = propostaService.atualizarStatus(id, statusRequest.status());
-        PropostaResponse response = propostaMapper.toResponse(proposta);
-        return ResponseEntity.ok(response);
-    }
-
-    // DELETE /api/propostas/{id} - Deletar proposta
+    @Operation(summary = "Retirar proposta", description = "Perfil FORNECEDOR, autor. Só enquanto não foi aceita")
+    @PreAuthorize("hasRole('FORNECEDOR')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarProposta(@PathVariable UUID id) {
-        propostaService.deletarProposta(id);
+    public ResponseEntity<Void> deletarProposta(@Parameter(description = "ID da proposta") @PathVariable UUID id) {
+        propostaService.deletarProposta(id, usuarioAtual.obter().id());
         return ResponseEntity.noContent().build();
     }
 
-    // Record auxiliar
-    public record StatusRequest(StatusProposta status) {}
+    private List<PropostaResponse> paraResposta(List<Proposta> propostas) {
+        return propostas.stream().map(propostaMapper::toResponse).toList();
+    }
 }

@@ -6,10 +6,12 @@ import com.gestao.entities.Proposta;
 import com.gestao.enums.CategoriaCotacao;
 import com.gestao.enums.StatusCotacao;
 import com.gestao.enums.StatusProposta;
+import com.gestao.exceptions.AcessoNegadoException;
 import com.gestao.exceptions.BusinessException;
 import com.gestao.exceptions.ResourceNotFoundException;
 import com.gestao.repositories.CotacaoRepository;
 import com.gestao.repositories.PropostaRepository;
+import com.gestao.security.UsuarioAutenticado;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,6 +49,27 @@ public class CotacaoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Cotação não encontrada!"));
     }
 
+    /**
+     * Fornecedores enxergam qualquer cotação (é o que aparece no mural);
+     * empresas só enxergam as próprias.
+     */
+    @Transactional(readOnly = true)
+    public Cotacao buscarParaUsuario(UUID id, UsuarioAutenticado usuario) {
+        Cotacao cotacao = buscarPorId(id);
+        if (usuario.ehEmpresa()) {
+            verificarDona(cotacao, usuario.id());
+        }
+        return cotacao;
+    }
+
+    /** Busca a cotação garantindo que ela pertence à empresa informada. */
+    @Transactional(readOnly = true)
+    public Cotacao buscarDaEmpresa(UUID id, UUID empresaId) {
+        Cotacao cotacao = buscarPorId(id);
+        verificarDona(cotacao, empresaId);
+        return cotacao;
+    }
+
     @Transactional(readOnly = true)
     public List<Cotacao> listarPorEmpresa(UUID empresaId) {
         return cotacaoRepository.findByEmpresaId(empresaId);
@@ -68,16 +91,10 @@ public class CotacaoService {
         return cotacaoRepository.findByEmpresaIdAndStatus(empresaId, status);
     }
 
-    @Transactional
-    public Cotacao atualizarStatus(UUID id, StatusCotacao novoStatus) {
-        Cotacao cotacao = buscarPorId(id);
-        cotacao.setStatus(novoStatus);
-        return cotacaoRepository.save(cotacao);
-    }
 
     @Transactional
-    public Cotacao atualizarCotacao(UUID id, Cotacao cotacaoAtualizada) {
-        Cotacao cotacao = buscarPorId(id);
+    public Cotacao atualizarCotacao(UUID id, UUID empresaId, Cotacao cotacaoAtualizada) {
+        Cotacao cotacao = buscarDaEmpresa(id, empresaId);
 
         if (cotacao.getStatus() != StatusCotacao.ABERTA) {
             throw new BusinessException("Só é possível editar cotações abertas!");
@@ -100,8 +117,8 @@ public class CotacaoService {
      * passam para RECUSADA, para o fornecedor ver o desfecho no histórico.
      */
     @Transactional
-    public Cotacao cancelarCotacao(UUID id) {
-        Cotacao cotacao = buscarPorId(id);
+    public Cotacao cancelarCotacao(UUID id, UUID empresaId) {
+        Cotacao cotacao = buscarDaEmpresa(id, empresaId);
 
         if (cotacao.getStatus() == StatusCotacao.EM_NEGOCIACAO) {
             throw new BusinessException("Encerre a negociação em andamento antes de cancelar a cotação.");
@@ -121,17 +138,19 @@ public class CotacaoService {
     }
 
     @Transactional
-    public void deletarCotacao(UUID id) {
-        Cotacao cotacao = buscarPorId(id);
+    public void deletarCotacao(UUID id, UUID empresaId) {
+        Cotacao cotacao = buscarDaEmpresa(id, empresaId);
         if (propostaRepository.countByCotacaoId(id) > 0) {
             throw new BusinessException("Cotações que já receberam propostas não podem ser excluídas. Cancele-a.");
         }
         cotacaoRepository.delete(cotacao);
     }
 
-    @Transactional(readOnly = true)
-    public List<Cotacao> listarTodas() {
-        return cotacaoRepository.findAll();
+
+    private void verificarDona(Cotacao cotacao, UUID empresaId) {
+        if (!cotacao.getEmpresa().getId().equals(empresaId)) {
+            throw new AcessoNegadoException("Esta cotação pertence a outra empresa.");
+        }
     }
 
     private void validarDataLimite(LocalDateTime dataLimite) {

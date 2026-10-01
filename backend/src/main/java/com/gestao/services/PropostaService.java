@@ -5,9 +5,11 @@ import com.gestao.entities.Fornecedor;
 import com.gestao.entities.Proposta;
 import com.gestao.enums.StatusCotacao;
 import com.gestao.enums.StatusProposta;
+import com.gestao.exceptions.AcessoNegadoException;
 import com.gestao.exceptions.BusinessException;
 import com.gestao.exceptions.ResourceNotFoundException;
 import com.gestao.repositories.PropostaRepository;
+import com.gestao.security.UsuarioAutenticado;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,8 +55,26 @@ public class PropostaService {
                 .orElseThrow(() -> new ResourceNotFoundException("Proposta não encontrada!"));
     }
 
+    /** Só o fornecedor que enviou e a empresa dona da cotação podem ver a proposta. */
     @Transactional(readOnly = true)
-    public List<Proposta> listarPorCotacao(UUID cotacaoId) {
+    public Proposta buscarParaUsuario(UUID id, UsuarioAutenticado usuario) {
+        Proposta proposta = buscarPorId(id);
+        boolean autor = usuario.ehFornecedor() && proposta.getFornecedor().getId().equals(usuario.id());
+        boolean empresaDaCotacao = usuario.ehEmpresa()
+                && proposta.getCotacao().getEmpresa().getId().equals(usuario.id());
+        if (!autor && !empresaDaCotacao) {
+            throw new AcessoNegadoException("Você não tem acesso a esta proposta.");
+        }
+        return proposta;
+    }
+
+    /**
+     * Lista as propostas de uma cotação. Só a empresa dona pode ver: um
+     * fornecedor não pode descobrir o lance dos concorrentes.
+     */
+    @Transactional(readOnly = true)
+    public List<Proposta> listarPorCotacao(UUID cotacaoId, UUID empresaId) {
+        cotacaoService.buscarDaEmpresa(cotacaoId, empresaId);
         return propostaRepository.findByCotacaoId(cotacaoId);
     }
 
@@ -63,30 +83,10 @@ public class PropostaService {
         return propostaRepository.findByFornecedorId(fornecedorId);
     }
 
-    @Transactional(readOnly = true)
-    public List<Proposta> listarPorStatus(StatusProposta status) {
-        return propostaRepository.findByStatus(status);
-    }
-
-    /**
-     * Endpoint genérico de status: só permite marcar uma proposta recém-enviada
-     * como "em análise". Aceitar e recusar têm endpoints próprios com regras.
-     */
-    @Transactional
-    public Proposta atualizarStatus(UUID id, StatusProposta novoStatus) {
-        Proposta proposta = buscarPorId(id);
-
-        if (novoStatus != StatusProposta.EM_ANALISE || proposta.getStatus() != StatusProposta.ENVIADA) {
-            throw new BusinessException("Use os endpoints de aceitar/recusar para mudar o status desta proposta.");
-        }
-
-        proposta.setStatus(novoStatus);
-        return propostaRepository.save(proposta);
-    }
-
     /**
      * Aceitar uma proposta significa escolher o fornecedor com quem negociar:
      * a cotação vai para EM_NEGOCIACAO e não aceita outra negociação em paralelo.
+     * Usado pelo NegociacaoService, que já confere se a empresa é a dona.
      */
     @Transactional
     public Proposta aceitarProposta(UUID id) {
@@ -111,8 +111,9 @@ public class PropostaService {
     }
 
     @Transactional
-    public Proposta recusarProposta(UUID id) {
+    public Proposta recusarProposta(UUID id, UUID empresaId) {
         Proposta proposta = buscarPorId(id);
+        verificarEmpresaDaCotacao(proposta, empresaId);
 
         if (proposta.getStatus() != StatusProposta.ENVIADA && proposta.getStatus() != StatusProposta.EM_ANALISE) {
             throw new BusinessException("Só é possível recusar propostas que ainda aguardam análise!");
@@ -125,10 +126,8 @@ public class PropostaService {
     @Transactional
     public Proposta atualizarProposta(UUID id, UUID fornecedorId, Proposta propostaAtualizada) {
         Proposta proposta = buscarPorId(id);
+        verificarAutor(proposta, fornecedorId);
 
-        if (!proposta.getFornecedor().getId().equals(fornecedorId)) {
-            throw new BusinessException("Esta proposta pertence a outro fornecedor!");
-        }
         if (proposta.getStatus() != StatusProposta.ENVIADA) {
             throw new BusinessException("Só é possível editar propostas que ainda não foram analisadas!");
         }
@@ -149,11 +148,25 @@ public class PropostaService {
 
     /** O fornecedor pode retirar a proposta enquanto ela não foi aceita. */
     @Transactional
-    public void deletarProposta(UUID id) {
+    public void deletarProposta(UUID id, UUID fornecedorId) {
         Proposta proposta = buscarPorId(id);
+        verificarAutor(proposta, fornecedorId);
+
         if (proposta.getStatus() == StatusProposta.ACEITA) {
             throw new BusinessException("Propostas aceitas não podem ser excluídas!");
         }
         propostaRepository.delete(proposta);
+    }
+
+    void verificarEmpresaDaCotacao(Proposta proposta, UUID empresaId) {
+        if (!proposta.getCotacao().getEmpresa().getId().equals(empresaId)) {
+            throw new AcessoNegadoException("Esta proposta foi enviada para a cotação de outra empresa.");
+        }
+    }
+
+    private void verificarAutor(Proposta proposta, UUID fornecedorId) {
+        if (!proposta.getFornecedor().getId().equals(fornecedorId)) {
+            throw new AcessoNegadoException("Esta proposta pertence a outro fornecedor.");
+        }
     }
 }

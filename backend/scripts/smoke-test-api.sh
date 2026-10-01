@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Teste de fumaça da API: percorre o fluxo completo via HTTP, como o front-end faz.
-# Pré-requisito: API rodando com o profile "demo" (dados de exemplo) e jq instalado.
+# Teste de fumaça da API: percorre o fluxo completo via HTTP, como o front-end faz,
+# incluindo autenticação JWT, renovação de sessão pelo cookie e regras de acesso.
+# Pré-requisito: API rodando com o profile "demo" (dados de exemplo), curl e jq.
 #
 #   ./mvnw spring-boot:run -Dspring-boot.run.profiles=demo
 #   ./scripts/smoke-test-api.sh            # usa http://localhost:8085
@@ -11,6 +12,9 @@ set -euo pipefail
 API="${API:-http://localhost:8085}"
 V1="$API/api/v1"
 ORIGEM_FRONT="http://localhost:4200"
+SENHA_DEMO="demo1234"
+COOKIES=$(mktemp -d)
+trap 'rm -rf "$COOKIES"' EXIT
 
 falhar() {
   # Formato reconhecido pelo GitHub Actions (vira anotação no job)
@@ -19,17 +23,17 @@ falhar() {
   exit 1
 }
 
-# Faz a requisição e confere o status HTTP esperado. Imprime o corpo da resposta.
+# chamar MÉTODO URL STATUS_ESPERADO [CORPO] [TOKEN] [ARQUIVO_DE_COOKIES]
+# Confere o status HTTP e imprime o corpo da resposta.
 chamar() {
-  local metodo="$1" url="$2" esperado="$3" corpo="${4:-}"
-  local saida status
-  if [[ -n "$corpo" ]]; then
-    saida=$(curl -sS -w '\n%{http_code}' -X "$metodo" "$url" -H 'Content-Type: application/json' -d "$corpo")
-  else
-    saida=$(curl -sS -w '\n%{http_code}' -X "$metodo" "$url")
-  fi
+  local metodo="$1" url="$2" esperado="$3" corpo="${4:-}" token="${5:-}" jar="${6:-}"
+  local args=(-sS -w '\n%{http_code}' -X "$metodo" "$url")
+  [[ -n "$corpo" ]] && args+=(-H 'Content-Type: application/json' -d "$corpo")
+  [[ -n "$token" ]] && args+=(-H "Authorization: Bearer $token")
+  [[ -n "$jar" ]] && args+=(-b "$jar" -c "$jar")
+  local saida status resposta
+  saida=$(curl "${args[@]}")
   status=$(tail -n1 <<<"$saida")
-  local resposta
   resposta=$(sed '$d' <<<"$saida")
   [[ "$status" == "$esperado" ]] || falhar "$metodo $url retornou $status (esperado $esperado): $resposta"
   echo "$resposta"
@@ -39,87 +43,123 @@ passo() { echo "✔ $1"; }
 
 echo "Testando $API"
 
-# 1. Login dos usuários de demonstração
-EMPRESA=$(chamar POST "$V1/auth/login" 200 '{"email":"empresa@demo.com","senha":"demo123"}')
-EMPRESA_ID=$(jq -r .id <<<"$EMPRESA")
-[[ $(jq -r .tipo <<<"$EMPRESA") == "EMPRESA" ]] || falhar "login da empresa não retornou tipo EMPRESA"
-FORNECEDOR=$(chamar POST "$V1/auth/login" 200 '{"email":"limpabem@demo.com","senha":"demo123"}')
-FORNECEDOR_ID=$(jq -r .id <<<"$FORNECEDOR")
-[[ $(jq -r .tipo <<<"$FORNECEDOR") == "FORNECEDOR" ]] || falhar "login do fornecedor não retornou tipo FORNECEDOR"
-chamar POST "$V1/auth/login" 401 '{"email":"empresa@demo.com","senha":"errada"}' >/dev/null
-passo "login (empresa, fornecedor e senha errada)"
+# 1. Login: access token no corpo, refresh token só no cookie
+EMP_JAR="$COOKIES/empresa"; FORN_JAR="$COOKIES/fornecedor"
+LOGIN_E=$(chamar POST "$V1/auth/login" 200 "{\"email\":\"empresa@demo.com\",\"senha\":\"$SENHA_DEMO\"}" "" "$EMP_JAR")
+TOKEN_E=$(jq -r .accessToken <<<"$LOGIN_E")
+EMPRESA_ID=$(jq -r .usuario.id <<<"$LOGIN_E")
+[[ $(jq -r .usuario.tipo <<<"$LOGIN_E") == "EMPRESA" ]] || falhar "login da empresa não retornou tipo EMPRESA"
+grep -q refresh_token "$EMP_JAR" || falhar "login não gravou o cookie refresh_token"
+jq -e 'has("refreshToken") | not' <<<"$LOGIN_E" >/dev/null || falhar "refresh token não pode vir no corpo"
 
-# 2. CORS para o front-end Angular
+LOGIN_F=$(chamar POST "$V1/auth/login" 200 "{\"email\":\"limpabem@demo.com\",\"senha\":\"$SENHA_DEMO\"}" "" "$FORN_JAR")
+TOKEN_F=$(jq -r .accessToken <<<"$LOGIN_F")
+TOKEN_TECH=$(chamar POST "$V1/auth/login" 200 "{\"email\":\"fornecedor@demo.com\",\"senha\":\"$SENHA_DEMO\"}" | jq -r .accessToken)
+chamar POST "$V1/auth/login" 401 '{"email":"empresa@demo.com","senha":"errada123"}' >/dev/null
+passo "login (empresa, fornecedores e senha errada)"
+
+# 2. Proteção das rotas
+chamar GET "$V1/cotacoes/abertas" 401 >/dev/null
+chamar GET "$V1/cotacoes/abertas" 401 "" "token.invalido.aqui" >/dev/null
+chamar GET "$V1/cotacoes/categorias" 200 >/dev/null
+[[ $(chamar GET "$V1/auth/me" 200 "" "$TOKEN_E" | jq -r .email) == "empresa@demo.com" ]] || falhar "/auth/me não identificou a empresa"
+passo "rotas protegidas exigem token válido"
+
+# 3. CORS para o front-end Angular (com credenciais, por causa do cookie)
 CORS=$(curl -sS -o /dev/null -D - -X OPTIONS "$V1/cotacoes" \
   -H "Origin: $ORIGEM_FRONT" -H 'Access-Control-Request-Method: POST')
 grep -qi "access-control-allow-origin: $ORIGEM_FRONT" <<<"$CORS" || falhar "CORS não liberou $ORIGEM_FRONT"
+grep -qi "access-control-allow-credentials: true" <<<"$CORS" || falhar "CORS não liberou credenciais"
 passo "CORS liberado para $ORIGEM_FRONT"
 
-# 3. Validação e cadastro
+# 4. Validação e cadastro
 chamar POST "$V1/fornecedores" 400 '{"nomeCompleto":"","cnpj":"1","email":"x","senha":"1"}' >/dev/null
 chamar POST "$V1/fornecedores" 400 \
-  '{"nomeCompleto":"CNPJ Errado","cnpj":"11.222.333/0001-00","email":"cnpj@teste.com","senha":"123456"}' >/dev/null
+  '{"nomeCompleto":"Senha Fraca","cnpj":"33.445.566/0001-86","email":"fraca@teste.com","senha":"somenteletras"}' >/dev/null
+chamar POST "$V1/fornecedores" 400 \
+  '{"nomeCompleto":"CNPJ Errado","cnpj":"11.222.333/0001-00","email":"cnpj@teste.com","senha":"senha1234"}' >/dev/null
 chamar POST "$V1/fornecedores" 409 \
-  '{"nomeCompleto":"Duplicado","cnpj":"33.445.566/0001-86","email":"empresa@demo.com","senha":"123456"}' >/dev/null
-passo "validação de campos, CNPJ e e-mail duplicado"
+  '{"nomeCompleto":"Duplicado","cnpj":"33.445.566/0001-86","email":"empresa@demo.com","senha":"senha1234"}' >/dev/null
+passo "validação de campos, senha, CNPJ e e-mail duplicado"
 
-# 4. Empresa publica uma cotação
+# 5. Regras de perfil
+chamar POST "$V1/cotacoes" 403 '{"nomeServico":"X","requisitos":"Y"}' "$TOKEN_F" >/dev/null
+chamar GET "$V1/dashboard/empresa" 403 "" "$TOKEN_F" >/dev/null
+passo "fornecedor não acessa ações de empresa"
+
+# 6. Empresa publica uma cotação (o dono vem do token)
 LIMITE=$(date -d '+7 days' '+%Y-%m-%dT23:59:59')
-CATEGORIAS=$(chamar GET "$V1/cotacoes/categorias" 200)
-[[ $(jq length <<<"$CATEGORIAS") -ge 5 ]] || falhar "lista de categorias vazia"
-COTACAO=$(chamar POST "$V1/cotacoes" 201 "$(jq -n --arg e "$EMPRESA_ID" --arg d "$LIMITE" \
-  '{nomeServico:"Café e descartáveis",requisitos:"Fornecimento mensal",categoria:"ALIMENTOS",orcamentoEstimado:1500,dataLimite:$d,empresaId:$e}')")
+COTACAO=$(chamar POST "$V1/cotacoes" 201 "$(jq -n --arg d "$LIMITE" \
+  '{nomeServico:"Café e descartáveis",requisitos:"Fornecimento mensal",categoria:"ALIMENTOS",orcamentoEstimado:1500,dataLimite:$d}')" "$TOKEN_E")
 COTACAO_ID=$(jq -r .id <<<"$COTACAO")
-[[ $(jq -r .status <<<"$COTACAO") == "ABERTA" ]] || falhar "cotação criada sem status ABERTA"
-chamar GET "$V1/cotacoes/abertas" 200 | jq -e --arg id "$COTACAO_ID" 'any(.[]; .id == $id)' >/dev/null \
+[[ $(jq -r .empresaId <<<"$COTACAO") == "$EMPRESA_ID" ]] || falhar "cotação não ficou em nome da empresa do token"
+chamar GET "$V1/cotacoes/abertas" 200 "" "$TOKEN_F" | jq -e --arg id "$COTACAO_ID" 'any(.[]; .id == $id)' >/dev/null \
   || falhar "cotação nova não aparece no mural"
 passo "cotação publicada e visível no mural"
 
-# 5. Fornecedor envia proposta (e não pode enviar duas)
-PROPOSTA_JSON=$(jq -n --arg f "$FORNECEDOR_ID" --arg c "$COTACAO_ID" \
-  '{valor:1400,descricao:"Entrega semanal",fornecedorId:$f,cotacaoId:$c}')
-PROPOSTA=$(chamar POST "$V1/propostas" 201 "$PROPOSTA_JSON")
+# 7. Propostas: uma por fornecedor, e um não vê a do outro
+PROPOSTA=$(chamar POST "$V1/propostas" 201 "{\"valor\":1400,\"descricao\":\"Entrega semanal\",\"cotacaoId\":\"$COTACAO_ID\"}" "$TOKEN_F")
 PROPOSTA_ID=$(jq -r .id <<<"$PROPOSTA")
-chamar POST "$V1/propostas" 400 "$PROPOSTA_JSON" >/dev/null
-passo "proposta enviada (duplicada bloqueada)"
+chamar POST "$V1/propostas" 400 "{\"valor\":1300,\"descricao\":\"De novo\",\"cotacaoId\":\"$COTACAO_ID\"}" "$TOKEN_F" >/dev/null
+chamar GET "$V1/propostas/$PROPOSTA_ID" 403 "" "$TOKEN_TECH" >/dev/null
+chamar GET "$V1/propostas/cotacao/$COTACAO_ID" 403 "" "$TOKEN_F" >/dev/null
+[[ $(chamar GET "$V1/propostas/cotacao/$COTACAO_ID" 200 "" "$TOKEN_E" | jq length) -eq 1 ]] || falhar "empresa não viu a proposta"
+passo "proposta enviada; duplicada e espionagem bloqueadas"
 
-# 6. Empresa abre a negociação
-NEGOCIACAO=$(chamar POST "$V1/negociacoes" 201 "{\"propostaId\":\"$PROPOSTA_ID\"}")
+# 8. Negociação
+NEGOCIACAO=$(chamar POST "$V1/negociacoes" 201 "{\"propostaId\":\"$PROPOSTA_ID\"}" "$TOKEN_E")
 NEGOCIACAO_ID=$(jq -r .id <<<"$NEGOCIACAO")
 [[ $(jq -r .cotacaoStatus <<<"$NEGOCIACAO") == "EM_NEGOCIACAO" ]] || falhar "cotação não foi para EM_NEGOCIACAO"
-passo "negociação aberta"
+chamar GET "$V1/negociacoes/$NEGOCIACAO_ID" 403 "" "$TOKEN_TECH" >/dev/null
+passo "negociação aberta e restrita aos participantes"
 
-# 7. Troca de mensagens e contrapropostas
-chamar POST "$V1/mensagens" 201 "$(jq -n --arg n "$NEGOCIACAO_ID" --arg r "$EMPRESA_ID" \
-  '{negociacaoId:$n,mensagem:"Fecha por 1.300?",valorOfertado:1300,tipoRemetente:"EMPRESA",remetenteId:$r}')" >/dev/null
-chamar POST "$V1/mensagens" 201 "$(jq -n --arg n "$NEGOCIACAO_ID" --arg r "$FORNECEDOR_ID" \
-  '{negociacaoId:$n,mensagem:null,valorOfertado:1350,tipoRemetente:"FORNECEDOR",remetenteId:$r}')" >/dev/null
-chamar POST "$V1/mensagens" 400 "$(jq -n --arg n "$NEGOCIACAO_ID" --arg r "$EMPRESA_ID" \
-  '{negociacaoId:$n,mensagem:"intruso",tipoRemetente:"FORNECEDOR",remetenteId:$r}')" >/dev/null
-MENSAGENS=$(chamar GET "$V1/mensagens/negociacao/$NEGOCIACAO_ID" 200)
+# 9. Mensagens e contrapropostas (remetente vem do token)
+chamar POST "$V1/mensagens" 201 "{\"negociacaoId\":\"$NEGOCIACAO_ID\",\"mensagem\":\"Fecha por 1.300?\",\"valorOfertado\":1300}" "$TOKEN_E" >/dev/null
+chamar POST "$V1/mensagens" 201 "{\"negociacaoId\":\"$NEGOCIACAO_ID\",\"valorOfertado\":1350}" "$TOKEN_F" >/dev/null
+chamar POST "$V1/mensagens" 403 "{\"negociacaoId\":\"$NEGOCIACAO_ID\",\"mensagem\":\"intruso\"}" "$TOKEN_TECH" >/dev/null
+MENSAGENS=$(chamar GET "$V1/mensagens/negociacao/$NEGOCIACAO_ID" 200 "" "$TOKEN_F")
 [[ $(jq length <<<"$MENSAGENS") -eq 3 ]] || falhar "esperava 3 mensagens no histórico, veio $(jq length <<<"$MENSAGENS")"
-ULTIMA=$(chamar GET "$V1/negociacoes/$NEGOCIACAO_ID" 200 | jq -r .ultimaOferta)
+[[ $(jq -r '.[2].tipoRemetente' <<<"$MENSAGENS") == "FORNECEDOR" ]] || falhar "remetente não veio do token"
+ULTIMA=$(chamar GET "$V1/negociacoes/$NEGOCIACAO_ID" 200 "" "$TOKEN_E" | jq -r .ultimaOferta)
 [[ "$ULTIMA" == "1350" || "$ULTIMA" == "1350.00" || "$ULTIMA" == "1350.0" ]] || falhar "última oferta deveria ser 1350, veio $ULTIMA"
-passo "mensagens, contraproposta e bloqueio de remetente"
+passo "mensagens, contraproposta e bloqueio de intruso"
 
-# 8. Fechamento do negócio
-FINAL=$(chamar PATCH "$V1/negociacoes/$NEGOCIACAO_ID/finalizar" 200 '{"valorFinal":1350}')
+# 10. Só a empresa fecha o negócio
+chamar PATCH "$V1/negociacoes/$NEGOCIACAO_ID/finalizar" 403 '{"valorFinal":1350}' "$TOKEN_F" >/dev/null
+FINAL=$(chamar PATCH "$V1/negociacoes/$NEGOCIACAO_ID/finalizar" 200 '{"valorFinal":1350}' "$TOKEN_E")
 [[ $(jq -r .status <<<"$FINAL") == "FINALIZADA" ]] || falhar "negociação não finalizou"
-[[ $(jq -r .status <<<"$(chamar GET "$V1/cotacoes/$COTACAO_ID" 200)") == "FECHADA" ]] || falhar "cotação não fechou"
+[[ $(chamar GET "$V1/cotacoes/$COTACAO_ID" 200 "" "$TOKEN_E" | jq -r .status) == "FECHADA" ]] || falhar "cotação não fechou"
 passo "negócio fechado e cotação encerrada"
 
-# 9. Dashboards
-DASH_F=$(chamar GET "$V1/dashboard/fornecedor/$FORNECEDOR_ID" 200)
-[[ $(jq -r .cotacoesGanhas <<<"$DASH_F") -ge 1 ]] || falhar "dashboard do fornecedor sem cotação ganha"
-DASH_E=$(chamar GET "$V1/dashboard/empresa/$EMPRESA_ID" 200)
+# 11. Dashboards
+[[ $(chamar GET "$V1/dashboard/fornecedor" 200 "" "$TOKEN_F" | jq -r .cotacoesGanhas) -ge 1 ]] || falhar "dashboard do fornecedor sem cotação ganha"
+DASH_E=$(chamar GET "$V1/dashboard/empresa" 200 "" "$TOKEN_E")
 [[ $(jq -r .cotacoesFechadas <<<"$DASH_E") -ge 1 ]] || falhar "dashboard da empresa sem cotação fechada"
 [[ $(jq '.categorias | length' <<<"$DASH_E") -ge 1 ]] || falhar "dashboard da empresa sem categorias"
 passo "dashboards de empresa e fornecedor"
 
-# 10. Erros tratados
-chamar GET "$V1/cotacoes/nao-e-uuid" 400 >/dev/null
-chamar GET "$V1/cotacoes/00000000-0000-0000-0000-000000000000" 404 >/dev/null
+# 12. Sessão: refresh pelo cookie, rotação, reuso e logout
+cp "$EMP_JAR" "$COOKIES/antigo"
+RENOVADO=$(chamar POST "$V1/auth/refresh" 200 "" "" "$EMP_JAR")
+[[ $(jq -r .accessToken <<<"$RENOVADO") != "null" ]] || falhar "refresh não devolveu access token"
+chamar GET "$V1/auth/me" 200 "" "$(jq -r .accessToken <<<"$RENOVADO")" >/dev/null
+chamar POST "$V1/auth/refresh" 401 "" "" "$COOKIES/antigo" >/dev/null     # cookie antigo: reuso detectado
+chamar POST "$V1/auth/refresh" 401 "" "" "$EMP_JAR" >/dev/null            # e a sessão inteira caiu
+chamar POST "$V1/auth/logout" 204 "" "" "$FORN_JAR" >/dev/null
+chamar POST "$V1/auth/refresh" 401 "" "" "$FORN_JAR" >/dev/null
+passo "refresh com rotação, detecção de reuso e logout"
+
+# 13. Força bruta: 5 erros bloqueiam o login daquele e-mail
+for _ in 1 2 3 4 5; do
+  chamar POST "$V1/auth/login" 401 '{"email":"infoworld@demo.com","senha":"errada123"}' >/dev/null
+done
+chamar POST "$V1/auth/login" 429 "{\"email\":\"infoworld@demo.com\",\"senha\":\"$SENHA_DEMO\"}" >/dev/null
+passo "bloqueio de força bruta no login"
+
+# 14. Erros tratados e documentação
+chamar GET "$V1/cotacoes/nao-e-uuid" 400 "" "$TOKEN_E" >/dev/null
+chamar GET "$V1/cotacoes/00000000-0000-0000-0000-000000000000" 404 "" "$TOKEN_E" >/dev/null
 chamar GET "$API/api-docs" 200 >/dev/null
-passo "erros 400/404 e documentação OpenAPI"
+passo "erros 400/404 e documentação OpenAPI pública"
 
 echo "Todos os testes de fumaça passaram."

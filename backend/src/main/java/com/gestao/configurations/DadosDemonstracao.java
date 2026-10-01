@@ -34,7 +34,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class DadosDemonstracao implements CommandLineRunner {
 
-    public static final String SENHA_DEMO = "demo123";
+    public static final String SENHA_DEMO = "demo1234";
 
     private final EmpresaRepository empresaRepository;
     private final EmpresaService empresaService;
@@ -82,7 +82,7 @@ public class DadosDemonstracao implements CommandLineRunner {
         propostaService.criarProposta(
                 proposta("7200.00", "Equipe de 6 pessoas, conclusão em 3 dias."), limpa.getId(), limpeza.getId());
 
-        negociacaoService.criarNegociacao(propostaTech.getId());
+        negociacaoService.criarNegociacao(propostaTech.getId(), criare.getId());
 
         log.info("Dados de demonstração criados. Logins: empresa@demo.com / fornecedor@demo.com (senha: {})", SENHA_DEMO);
     }

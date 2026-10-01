@@ -1,10 +1,10 @@
 package com.gestao.controllers;
 
-import com.gestao.entities.Empresa;
 import com.gestao.dtos.empresa.EmpresaCadastroRequest;
 import com.gestao.dtos.empresa.EmpresaResponse;
 import com.gestao.dtos.empresa.EmpresaUpdateRequest;
 import com.gestao.mappers.EmpresaMapper;
+import com.gestao.security.UsuarioAtual;
 import com.gestao.services.EmpresaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,92 +17,49 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/empresas")
 @RequiredArgsConstructor
-@Tag(name = "Empresas", description = "Endpoints para gerenciamento de empresas")
+@Tag(name = "Empresas", description = "Cadastro e perfil de empresas compradoras")
 public class EmpresaController {
 
     private final EmpresaService empresaService;
     private final EmpresaMapper empresaMapper;
+    private final UsuarioAtual usuarioAtual;
 
-    @Operation(summary = "Cadastrar nova empresa", description = "Cria uma nova empresa no sistema")
+    @Operation(summary = "Cadastrar empresa", description = "Rota pública. CNPJ validado e senha gravada com BCrypt")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Empresa cadastrada com sucesso"),
+            @ApiResponse(responseCode = "201", description = "Empresa cadastrada"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
             @ApiResponse(responseCode = "409", description = "Email ou CNPJ já cadastrado")
     })
     @PostMapping
     public ResponseEntity<EmpresaResponse> cadastrarEmpresa(@Valid @RequestBody EmpresaCadastroRequest request) {
-        Empresa empresa = empresaMapper.toEntity(request);
-        Empresa novaEmpresa = empresaService.cadastrarEmpresa(empresa);
-        EmpresaResponse response = empresaMapper.toResponse(novaEmpresa);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        var empresa = empresaService.cadastrarEmpresa(empresaMapper.toEntity(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(empresaMapper.toResponse(empresa));
     }
 
-    @Operation(summary = "Listar todas as empresas", description = "Retorna uma lista com todas as empresas cadastradas")
-    @ApiResponse(responseCode = "200", description = "Lista de empresas retornada com sucesso")
-    @GetMapping
-    public ResponseEntity<List<EmpresaResponse>> listarTodas() {
-        List<Empresa> empresas = empresaService.listarTodas();
-        List<EmpresaResponse> responses = empresas.stream()
-                .map(empresaMapper::toResponse)
-                .toList();
-        return ResponseEntity.ok(responses);
-    }
-
-    @Operation(summary = "Buscar empresa por ID", description = "Retorna os dados de uma empresa específica pelo ID")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Empresa encontrada"),
-            @ApiResponse(responseCode = "404", description = "Empresa não encontrada")
-    })
+    @Operation(summary = "Buscar empresa por ID")
     @GetMapping("/{id}")
-    public ResponseEntity<EmpresaResponse> buscarPorId(
-            @Parameter(description = "ID da empresa") @PathVariable UUID id) {
-        Empresa empresa = empresaService.buscarPorId(id);
-        EmpresaResponse response = empresaMapper.toResponse(empresa);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<EmpresaResponse> buscarPorId(@Parameter(description = "ID da empresa") @PathVariable UUID id) {
+        return ResponseEntity.ok(empresaMapper.toResponse(empresaService.buscarPorId(id)));
     }
 
-    @Operation(summary = "Buscar empresa por email", description = "Retorna os dados de uma empresa específica pelo email")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Empresa encontrada"),
-            @ApiResponse(responseCode = "404", description = "Empresa não encontrada")
-    })
-    @GetMapping("/email/{email}")
-    public ResponseEntity<EmpresaResponse> buscarPorEmail(
-            @Parameter(description = "Email da empresa") @PathVariable String email) {
-        Empresa empresa = empresaService.buscarPorEmail(email);
-        EmpresaResponse response = empresaMapper.toResponse(empresa);
-        return ResponseEntity.ok(response);
-    }
-
-    @Operation(summary = "Atualizar empresa", description = "Atualiza os dados de uma empresa existente")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Empresa atualizada com sucesso"),
-            @ApiResponse(responseCode = "404", description = "Empresa não encontrada"),
-            @ApiResponse(responseCode = "400", description = "Dados inválidos")
-    })
+    @Operation(summary = "Atualizar empresa", description = "Só a própria empresa pode alterar o cadastro")
     @PutMapping("/{id}")
     public ResponseEntity<EmpresaResponse> atualizarEmpresa(
             @Parameter(description = "ID da empresa") @PathVariable UUID id,
             @Valid @RequestBody EmpresaUpdateRequest request) {
-        Empresa empresaAtualizada = empresaService.atualizarEmpresa(id, request.razaoSocial());
-        EmpresaResponse response = empresaMapper.toResponse(empresaAtualizada);
-        return ResponseEntity.ok(response);
+        usuarioAtual.exigirMesmoUsuario(id);
+        return ResponseEntity.ok(empresaMapper.toResponse(empresaService.atualizarEmpresa(id, request.razaoSocial())));
     }
 
-    @Operation(summary = "Deletar empresa", description = "Remove uma empresa do sistema")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Empresa deletada com sucesso"),
-            @ApiResponse(responseCode = "404", description = "Empresa não encontrada")
-    })
+    @Operation(summary = "Excluir empresa", description = "Só a própria empresa pode excluir a conta")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarEmpresa(
-            @Parameter(description = "ID da empresa") @PathVariable UUID id) {
+    public ResponseEntity<Void> deletarEmpresa(@Parameter(description = "ID da empresa") @PathVariable UUID id) {
+        usuarioAtual.exigirMesmoUsuario(id);
         empresaService.deletarEmpresa(id);
         return ResponseEntity.noContent().build();
     }

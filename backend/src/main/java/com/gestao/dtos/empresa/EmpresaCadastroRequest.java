@@ -2,6 +2,7 @@ package com.gestao.dtos.empresa;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record EmpresaCadastroRequest(
@@ -19,6 +20,7 @@ public record EmpresaCadastroRequest(
         String email,
 
         @NotBlank(message = "Senha é obrigatória")
-        @Size(min = 6, max = 72, message = "Senha deve ter entre 6 e 72 caracteres")
+        @Size(min = 8, max = 72, message = "Senha deve ter entre 8 e 72 caracteres")
+        @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d).+$", message = "Senha deve ter letras e números")
         String senha
 ) {}

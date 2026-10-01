@@ -1,11 +1,12 @@
 package com.gestao.controllers;
 
+import com.gestao.dtos.cotacao.CategoriaResponse;
 import com.gestao.dtos.cotacao.CotacaoRequest;
 import com.gestao.dtos.cotacao.CotacaoResponse;
 import com.gestao.entities.Cotacao;
-import com.gestao.dtos.cotacao.CategoriaResponse;
 import com.gestao.enums.CategoriaCotacao;
 import com.gestao.mappers.CotacaoMapper;
+import com.gestao.security.UsuarioAtual;
 import com.gestao.services.CotacaoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,6 +17,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
@@ -25,121 +27,79 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/cotacoes")
 @RequiredArgsConstructor
-@Tag(name = "Cotações", description = "Endpoints para gerenciamento de cotações")
+@Tag(name = "Cotações", description = "Pedidos de compra publicados pelas empresas")
 public class CotacaoController {
 
     private final CotacaoService cotacaoService;
     private final CotacaoMapper cotacaoMapper;
+    private final UsuarioAtual usuarioAtual;
 
-    @Operation(summary = "Criar cotação", description = "Cria uma nova cotação de serviço")
+    @Operation(summary = "Criar cotação", description = "Perfil EMPRESA. A cotação fica em nome da empresa do token")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Cotação criada com sucesso"),
-            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
-            @ApiResponse(responseCode = "404", description = "Empresa não encontrada")
+            @ApiResponse(responseCode = "201", description = "Cotação criada"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos ou data limite no passado"),
+            @ApiResponse(responseCode = "403", description = "Usuário não é uma empresa")
     })
+    @PreAuthorize("hasRole('EMPRESA')")
     @PostMapping
     public ResponseEntity<CotacaoResponse> criarCotacao(@Valid @RequestBody CotacaoRequest request) {
-        Cotacao cotacao = cotacaoMapper.toEntity(request);
-        Cotacao novaCotacao = cotacaoService.criarCotacao(cotacao, request.empresaId());
-        CotacaoResponse response = cotacaoMapper.toResponse(novaCotacao);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        Cotacao cotacao = cotacaoService.criarCotacao(cotacaoMapper.toEntity(request), usuarioAtual.obter().id());
+        return ResponseEntity.status(HttpStatus.CREATED).body(cotacaoMapper.toResponse(cotacao));
     }
 
-    @Operation(summary = "Listar todas as cotações", description = "Retorna uma lista com todas as cotações")
-    @ApiResponse(responseCode = "200", description = "Lista de cotações retornada com sucesso")
-    @GetMapping
-    public ResponseEntity<List<CotacaoResponse>> listarTodas() {
-        List<Cotacao> cotacoes = cotacaoService.listarTodas();
-        List<CotacaoResponse> responses = cotacoes.stream()
-                .map(cotacaoMapper::toResponse)
-                .toList();
-        return ResponseEntity.ok(responses);
+    @Operation(summary = "Minhas cotações", description = "Perfil EMPRESA. Cotações da empresa do token, mais recentes primeiro")
+    @PreAuthorize("hasRole('EMPRESA')")
+    @GetMapping("/minhas")
+    public ResponseEntity<List<CotacaoResponse>> minhas() {
+        return ResponseEntity.ok(paraResposta(cotacaoService.listarPorEmpresa(usuarioAtual.obter().id())));
     }
 
-    @Operation(summary = "Listar categorias", description = "Categorias disponíveis para classificar uma cotação")
-    @GetMapping("/categorias")
-    public ResponseEntity<List<CategoriaResponse>> listarCategorias() {
-        List<CategoriaResponse> categorias = Arrays.stream(CategoriaCotacao.values())
-                .map(c -> new CategoriaResponse(c.name(), c.getDescricao()))
-                .toList();
-        return ResponseEntity.ok(categorias);
-    }
-
-    @Operation(summary = "Listar cotações abertas", description = "Retorna todas as cotações com status ABERTA")
-    @ApiResponse(responseCode = "200", description = "Lista de cotações abertas retornada com sucesso")
+    @Operation(summary = "Mural", description = "Cotações abertas e dentro do prazo")
     @GetMapping("/abertas")
     public ResponseEntity<List<CotacaoResponse>> listarCotacoesAbertas() {
-        List<Cotacao> cotacoes = cotacaoService.listarCotacoesAbertas();
-        List<CotacaoResponse> responses = cotacoes.stream()
-                .map(cotacaoMapper::toResponse)
-                .toList();
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(paraResposta(cotacaoService.listarCotacoesAbertas()));
     }
 
-    @Operation(summary = "Buscar cotação por ID", description = "Retorna os dados de uma cotação específica")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Cotação encontrada"),
-            @ApiResponse(responseCode = "404", description = "Cotação não encontrada")
-    })
+    @Operation(summary = "Listar categorias", description = "Rota pública. Categorias disponíveis para classificar uma cotação")
+    @GetMapping("/categorias")
+    public ResponseEntity<List<CategoriaResponse>> listarCategorias() {
+        return ResponseEntity.ok(Arrays.stream(CategoriaCotacao.values())
+                .map(c -> new CategoriaResponse(c.name(), c.getDescricao()))
+                .toList());
+    }
+
+    @Operation(summary = "Buscar cotação", description = "Fornecedores veem qualquer cotação; empresas, só as próprias")
     @GetMapping("/{id}")
-    public ResponseEntity<CotacaoResponse> buscarPorId(
-            @Parameter(description = "ID da cotação") @PathVariable UUID id) {
-        Cotacao cotacao = cotacaoService.buscarPorId(id);
-        CotacaoResponse response = cotacaoMapper.toResponse(cotacao);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<CotacaoResponse> buscarPorId(@Parameter(description = "ID da cotação") @PathVariable UUID id) {
+        return ResponseEntity.ok(cotacaoMapper.toResponse(cotacaoService.buscarParaUsuario(id, usuarioAtual.obter())));
     }
 
-    @Operation(summary = "Listar cotações por empresa", description = "Retorna todas as cotações de uma empresa específica")
-    @ApiResponse(responseCode = "200", description = "Lista de cotações retornada com sucesso")
-    @GetMapping("/empresa/{empresaId}")
-    public ResponseEntity<List<CotacaoResponse>> listarPorEmpresa(
-            @Parameter(description = "ID da empresa") @PathVariable UUID empresaId) {
-        List<Cotacao> cotacoes = cotacaoService.listarPorEmpresa(empresaId);
-        List<CotacaoResponse> responses = cotacoes.stream()
-                .map(cotacaoMapper::toResponse)
-                .toList();
-        return ResponseEntity.ok(responses);
-    }
-
-    @Operation(summary = "Atualizar cotação", description = "Atualiza os dados de uma cotação existente")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Cotação atualizada com sucesso"),
-            @ApiResponse(responseCode = "404", description = "Cotação não encontrada"),
-            @ApiResponse(responseCode = "400", description = "Cotação não pode ser editada")
-    })
+    @Operation(summary = "Editar cotação", description = "Perfil EMPRESA, dona da cotação. Só cotações abertas")
+    @PreAuthorize("hasRole('EMPRESA')")
     @PutMapping("/{id}")
     public ResponseEntity<CotacaoResponse> atualizarCotacao(
             @Parameter(description = "ID da cotação") @PathVariable UUID id,
             @Valid @RequestBody CotacaoRequest request) {
-        Cotacao cotacao = cotacaoMapper.toEntity(request);
-        Cotacao cotacaoAtualizada = cotacaoService.atualizarCotacao(id, cotacao);
-        CotacaoResponse response = cotacaoMapper.toResponse(cotacaoAtualizada);
-        return ResponseEntity.ok(response);
+        Cotacao cotacao = cotacaoService.atualizarCotacao(id, usuarioAtual.obter().id(), cotacaoMapper.toEntity(request));
+        return ResponseEntity.ok(cotacaoMapper.toResponse(cotacao));
     }
 
-    @Operation(summary = "Cancelar cotação", description = "Cancela uma cotação existente")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Cotação cancelada com sucesso"),
-            @ApiResponse(responseCode = "404", description = "Cotação não encontrada")
-    })
+    @Operation(summary = "Cancelar cotação", description = "Perfil EMPRESA, dona da cotação. Recusa as propostas pendentes")
+    @PreAuthorize("hasRole('EMPRESA')")
     @PatchMapping("/{id}/cancelar")
-    public ResponseEntity<CotacaoResponse> cancelarCotacao(
-            @Parameter(description = "ID da cotação") @PathVariable UUID id) {
-        Cotacao cotacao = cotacaoService.cancelarCotacao(id);
-        CotacaoResponse response = cotacaoMapper.toResponse(cotacao);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<CotacaoResponse> cancelarCotacao(@Parameter(description = "ID da cotação") @PathVariable UUID id) {
+        return ResponseEntity.ok(cotacaoMapper.toResponse(cotacaoService.cancelarCotacao(id, usuarioAtual.obter().id())));
     }
 
-    @Operation(summary = "Deletar cotação", description = "Remove uma cotação do sistema")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Cotação deletada com sucesso"),
-            @ApiResponse(responseCode = "404", description = "Cotação não encontrada")
-    })
+    @Operation(summary = "Excluir cotação", description = "Perfil EMPRESA, dona da cotação. Só cotações sem propostas")
+    @PreAuthorize("hasRole('EMPRESA')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarCotacao(
-            @Parameter(description = "ID da cotação") @PathVariable UUID id) {
-        cotacaoService.deletarCotacao(id);
+    public ResponseEntity<Void> deletarCotacao(@Parameter(description = "ID da cotação") @PathVariable UUID id) {
+        cotacaoService.deletarCotacao(id, usuarioAtual.obter().id());
         return ResponseEntity.noContent().build();
     }
 
+    private List<CotacaoResponse> paraResposta(List<Cotacao> cotacoes) {
+        return cotacoes.stream().map(cotacaoMapper::toResponse).toList();
+    }
 }
