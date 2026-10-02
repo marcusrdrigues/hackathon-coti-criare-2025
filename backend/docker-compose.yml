@@ -40,6 +40,10 @@ services:
       # Opcional: superadmin da plataforma (a senha precisa de 12 caracteres ou mais)
       SUPERADMIN_EMAIL: ${SUPERADMIN_EMAIL:-}
       SUPERADMIN_SENHA: ${SUPERADMIN_SENHA:-}
+      # Opcional: envio de e-mail pela Brevo (redefinição de senha). Sem os dois, nada é enviado
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      EMAIL_REMETENTE: ${EMAIL_REMETENTE:-}
+      APP_URL_FRONTEND: ${APP_URL_FRONTEND:-http://localhost:4200}
     networks:
       - gestaohackaton_network
 

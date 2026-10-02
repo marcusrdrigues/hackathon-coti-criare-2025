@@ -5,7 +5,7 @@ Cada passo termina com o CI verde e o roadmap do README atualizado.
 ## Passo 1 · Spec
 
 - [x] Spec, plano e tarefas
-- [ ] Spec aprovada e decisões em aberto resolvidas
+- [x] Spec aprovada e decisões em aberto resolvidas
 
 ## Passo 2 · Back-end
 

@@ -34,7 +34,9 @@ public record EventoDeSeguranca(Tipo tipo, UUID usuarioId, UUID organizacaoId, S
         SUPERADMIN_DESATIVADO,
         ACESSO_NEGADO,
         CONSULTA_DE_AUDITORIA,
-        DADOS_PESSOAIS_ANONIMIZADOS
+        DADOS_PESSOAIS_ANONIMIZADOS,
+        REDEFINICAO_DE_SENHA_PEDIDA,
+        SENHA_REDEFINIDA
     }
 
     public EventoDeSeguranca {

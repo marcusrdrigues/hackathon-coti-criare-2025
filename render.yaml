@@ -37,3 +37,9 @@ services:
         sync: false # opcional: e-mail do superadmin da plataforma
       - key: SUPERADMIN_SENHA
         sync: false # opcional: senha do superadmin, com pelo menos 12 caracteres
+      - key: APP_URL_FRONTEND
+        sync: false # endereço do front-end, usado nos links dos e-mails
+      - key: BREVO_API_KEY
+        sync: false # chave da API da Brevo; sem ela, nenhum e-mail sai
+      - key: EMAIL_REMETENTE
+        sync: false # remetente verificado na Brevo

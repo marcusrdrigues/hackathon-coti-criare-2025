@@ -61,7 +61,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(rotas -> rotas
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/refresh",
-                                "/api/v1/auth/logout", "/api/v1/auth/demo/*").permitAll()
+                                "/api/v1/auth/logout", "/api/v1/auth/demo/*", "/api/v1/auth/redefinicao",
+                                "/api/v1/auth/redefinicao/consulta", "/api/v1/auth/redefinicao/confirmacao").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/demo").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/cadastro").permitAll()

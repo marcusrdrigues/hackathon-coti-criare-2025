@@ -1,6 +1,6 @@
 # 004 · Redefinição de senha
 
-- **Status:** Rascunho
+- **Status:** Em implementação
 - **Data:** 2026-10-02
 - **Plano:** [plan.md](plan.md) · **Tarefas:** [tasks.md](tasks.md)
 
@@ -79,7 +79,9 @@ Quem esquece a senha não tem como voltar a entrar no portal:
 - **Acessibilidade:** as duas telas seguem o padrão das telas de acesso (rótulos, foco, mensagens anunciadas).
 - **Qualidade:** cada critério de aceite vira um teste; nenhum teste envia e-mail de verdade.
 
-## Decisões em aberto
+## Decisões tomadas
 
-1. **Provedor de e-mail.** A hospedagem gratuita da API bloqueia as portas de SMTP, então o envio precisa ser pela API HTTP de um provedor. Recomendação: **Brevo**, que no plano gratuito envia 300 e-mails por dia e aceita um remetente verificado por e-mail, sem domínio próprio. O código fica atrás de uma porta, e trocar de provedor é trocar um adaptador. É preciso criar a conta e configurar a chave no servidor.
-2. **Prazo do link.** Recomendação: 30 minutos, comum para esse tipo de link.
+Resolvidas antes da implementação, em 2026-10-02:
+
+1. **Provedor de e-mail: Brevo.** A hospedagem gratuita da API bloqueia as portas de SMTP, então o envio é pela API HTTP de um provedor. A Brevo envia 300 e-mails por dia no plano gratuito e aceita um remetente verificado por e-mail, sem domínio próprio. O código fica atrás de uma porta: trocar de provedor é trocar um adaptador.
+2. **O link vale por 30 minutos.** Quem pede a redefinição quer entrar agora.

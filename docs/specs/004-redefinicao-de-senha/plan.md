@@ -15,7 +15,8 @@ Como a [spec 004](spec.md) vira código.
 
 ## Identidade
 
-- Entidade `RedefinicaoDeSenha` (`tb_redefinicao_senha`, migração V8): pessoa, hash do token, criada em, expira em, usada em, substituída em. Sem `@Audited`: é uma credencial temporária.
+- Entidade `RedefinicaoDeSenha` (`tb_redefinicao_senha`, migração V8): pessoa, hash do token, criada em, expira em, usada em, substituída em. Sem `@Audited`: é uma credencial temporária. A chave estrangeira para a pessoa apaga os links junto com ela (o reset da demo apaga as pessoas).
+- O uso do link é uma atualização condicional (`usado_em IS NULL`): dois envios ao mesmo tempo não trocam a senha duas vezes.
 - `RedefinicaoDeSenhaService`:
   - **pedir(email):** normaliza o e-mail; se a conta existe, está ativa, tem vínculo ativo, não é superadmin, não é conta de exemplo e não passou do limite, invalida os links anteriores, grava o novo e publica `RedefinicaoPedida` com o token. Em qualquer outro caso, não faz nada. O retorno é sempre o mesmo.
   - **consultar(token)** e **confirmar(token, senha):** buscam pelo hash, conferem prazo e uso, trocam o hash da senha (`Usuario.trocarSenha`), marcam o link como usado, revogam todas as sessões e zeram as tentativas de login.
@@ -25,12 +26,12 @@ Como a [spec 004](spec.md) vira código.
 ## Envio de e-mail
 
 - Porta `EnvioDeEmail` na aplicação da identidade, com uma mensagem simples (para, assunto, texto, HTML).
-- **O envio acontece depois de confirmar a transação e fora da requisição** (`@TransactionalEventListener(AFTER_COMMIT)` com `@Async`): a resposta sai no mesmo tempo com conta ou sem, e uma falha no provedor não desfaz nada.
+- **O envio acontece depois de confirmar a transação e fora da requisição** (`@TransactionalEventListener(AFTER_COMMIT)` com `@Async`, e o rastreio da requisição copiado para a thread do envio): a resposta sai no mesmo tempo com conta ou sem, e uma falha no provedor não desfaz nada.
 - Adaptadores na infraestrutura:
   - `EmailPelaBrevo`: `POST` na API HTTP da Brevo com o `RestClient`, chave e remetente por variável de ambiente (`BREVO_API_KEY`, `EMAIL_REMETENTE`, `EMAIL_REMETENTE_NOME`). Ativo quando a chave existe.
   - `EmailDesligado`: o padrão sem chave. Registra no log que o envio está desligado, só com o e-mail mascarado.
 - O link é montado com o endereço do front-end (`APP_URL_FRONTEND`) e o token no fragmento: `/redefinir-senha#token=...`. O fragmento não sai do navegador, então não chega a servidor, proxy nem log.
-- Modelo do e-mail em texto e HTML simples, sem imagens externas nem rastreamento.
+- Modelo do e-mail em texto e HTML simples, sem imagens externas e com um link só. O rastreamento de cliques da Brevo fica desligado na conta: ele trocaria o link por um redirecionamento do provedor.
 
 ## Eventos de segurança
 

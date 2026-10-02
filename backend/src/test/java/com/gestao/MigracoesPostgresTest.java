@@ -51,7 +51,7 @@ class MigracoesPostgresTest {
         assertEquals(List.of(
                 "tb_convite", "tb_convite_aud", "tb_cotacao", "tb_cotacao_aud", "tb_evento_seguranca",
                 "tb_membro", "tb_membro_aud", "tb_mensagem_negociacao", "tb_negociacao", "tb_negociacao_aud",
-                "tb_organizacao", "tb_organizacao_aud", "tb_proposta", "tb_proposta_aud", "tb_refresh_token",
-                "tb_revisao", "tb_revisao_entidade", "tb_usuario", "tb_usuario_aud"), tabelas);
+                "tb_organizacao", "tb_organizacao_aud", "tb_proposta", "tb_proposta_aud", "tb_redefinicao_senha",
+                "tb_refresh_token", "tb_revisao", "tb_revisao_entidade", "tb_usuario", "tb_usuario_aud"), tabelas);
     }
 }
