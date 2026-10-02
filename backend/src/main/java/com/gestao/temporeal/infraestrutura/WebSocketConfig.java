@@ -9,6 +9,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 
 import java.util.Arrays;
 
@@ -32,6 +33,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private static final long BATIMENTO_MS = 10_000;
 
     private final AutenticacaoStomp autenticacao;
+    private final SessoesWebSocket sessoes;
 
     @Value("${app.cors.allowed-origins:http://localhost:4200}")
     private String origensPermitidas;
@@ -57,6 +59,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setTaskScheduler(batimentos);
         registry.setApplicationDestinationPrefixes("/app");
         registry.setUserDestinationPrefix("/user");
+    }
+
+    @Override
+    public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
+        registration.addDecoratorFactory(sessoes);
     }
 
     @Override

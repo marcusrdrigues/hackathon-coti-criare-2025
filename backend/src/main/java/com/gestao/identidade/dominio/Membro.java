@@ -59,4 +59,9 @@ public class Membro {
     public boolean ativo() {
         return removidoEm == null && usuario.ativo();
     }
+
+    /** Sai da organização. O registro fica, para o histórico continuar com o nome da pessoa. */
+    public void remover(LocalDateTime agora) {
+        this.removidoEm = agora;
+    }
 }

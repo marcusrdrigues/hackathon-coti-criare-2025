@@ -2,9 +2,11 @@ package com.gestao.identidade.infraestrutura.persistencia;
 
 import com.gestao.identidade.aplicacao.porta.MembroRepositorio;
 import com.gestao.identidade.dominio.Membro;
+import com.gestao.identidade.dominio.Papel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -21,7 +23,17 @@ class MembroRepositorioJpa implements MembroRepositorio {
     }
 
     @Override
+    public Optional<Membro> buscarPorId(UUID id) {
+        return jpa.findById(id);
+    }
+
+    @Override
     public Optional<Membro> buscarAtivoDoUsuario(UUID usuarioId) {
         return jpa.ativoDoUsuario(usuarioId);
+    }
+
+    @Override
+    public List<Membro> listarAtivosDaOrganizacao(UUID organizacaoId) {
+        return jpa.ativosDaOrganizacao(organizacaoId, Papel.PROPRIETARIO);
     }
 }

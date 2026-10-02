@@ -11,6 +11,7 @@ import com.gestao.compras.dominio.Proposta;
 import com.gestao.identidade.aplicacao.AuthService;
 import com.gestao.identidade.aplicacao.CadastroService.NovaOrganizacao;
 import com.gestao.identidade.aplicacao.CadastroService;
+import com.gestao.identidade.aplicacao.EquipeService;
 import com.gestao.identidade.aplicacao.UsuarioAutenticado;
 import com.gestao.identidade.dominio.TipoOrganizacao;
 import com.gestao.temporeal.infraestrutura.Destinos;
@@ -37,6 +38,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -73,6 +75,7 @@ class TempoRealIntegrationTest {
     @Autowired private NegociacaoService negociacaoService;
     @Autowired private MensagemNegociacaoService mensagemService;
     @Autowired private AuthService authService;
+    @Autowired private EquipeService equipeService;
 
     private UsuarioAutenticado empresa;
     private UsuarioAutenticado fornecedor;
@@ -169,6 +172,21 @@ class TempoRealIntegrationTest {
         assertNotNull(evento, "o fornecedor deveria ver que a empresa está digitando");
         assertTrue(evento.contains("\"DIGITANDO\""), evento);
         assertTrue(evento.contains("\"EMPRESA\""), evento);
+    }
+
+    @Test
+    void quemSaiDaOrganizacaoTemAConexaoEncerrada() throws Exception {
+        UsuarioAutenticado saindo = cadastroService.adicionarMembro(
+                empresa.organizacaoId(), "Pessoa de Saída", "saindo@hospital.com", SENHA);
+        Erros erros = new Erros();
+        conectar(token("saindo@hospital.com"), erros);
+        UUID vinculo = equipeService.listarMembros(empresa).stream()
+                .filter(m -> m.getUsuario().getId().equals(saindo.usuarioId()))
+                .findFirst().orElseThrow().getId();
+
+        equipeService.removerMembro(empresa, vinculo);
+
+        assertNotNull(erros.primeiro.get(ESPERA_S, TimeUnit.SECONDS), "a conexão deveria ser encerrada");
     }
 
     @Test

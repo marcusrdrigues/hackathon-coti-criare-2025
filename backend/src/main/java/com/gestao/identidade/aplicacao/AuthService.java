@@ -65,6 +65,11 @@ public class AuthService {
         refreshTokenService.revogar(refreshToken);
     }
 
+    /** Abre a sessão de quem acabou de entrar na plataforma sem passar pelo login (ao aceitar um convite). */
+    Sessao abrirSessao(UUID usuarioId) {
+        return new Sessao(resposta(vinculoAtivo(usuarioId)), refreshTokenService.emitir(usuarioId));
+    }
+
     @Transactional(readOnly = true)
     public UsuarioResponse usuario(UsuarioAutenticado atual) {
         return paraResposta(vinculoAtivo(atual.usuarioId()));

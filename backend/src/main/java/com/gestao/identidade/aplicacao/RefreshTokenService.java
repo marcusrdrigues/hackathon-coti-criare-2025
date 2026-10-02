@@ -9,14 +9,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.HexFormat;
 import java.util.UUID;
 
 /**
@@ -32,7 +26,6 @@ public class RefreshTokenService {
 
     private final RefreshTokenRepositorio repositorio;
     private final Duration validade;
-    private final SecureRandom aleatorio = new SecureRandom();
 
     public RefreshTokenService(RefreshTokenRepositorio repositorio,
                                @Value("${app.jwt.expiracao-refresh}") Duration validade) {
@@ -44,9 +37,7 @@ public class RefreshTokenService {
 
     @Transactional
     public String emitir(UUID usuarioId) {
-        byte[] bytes = new byte[32];
-        aleatorio.nextBytes(bytes);
-        String tokenBruto = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        String tokenBruto = TokenAleatorio.gerar();
 
         Instant agora = Instant.now();
         RefreshToken token = new RefreshToken();
@@ -107,12 +98,13 @@ public class RefreshTokenService {
         }
     }
 
+    /** Encerra todas as sessões da pessoa (por exemplo, quando ela sai da organização). */
+    @Transactional
+    public void revogarTodas(UUID usuarioId) {
+        repositorio.revogarTodosDoUsuario(usuarioId, Instant.now());
+    }
+
     static String hash(String tokenBruto) {
-        try {
-            byte[] digest = MessageDigest.getInstance("SHA-256").digest(tokenBruto.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(digest);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 indisponível", e);
-        }
+        return TokenAleatorio.hash(tokenBruto);
     }
 }

@@ -13,4 +13,7 @@ public interface CanalTempoReal {
 
     /** Para toda a equipe de uma organização, na fila de avisos (cada pessoa conectada recebe). */
     void avisar(UUID organizacaoId, AvisoTempoReal aviso);
+
+    /** Fecha as conexões abertas pela pessoa (por exemplo, quando ela sai da organização). */
+    void encerrarConexoesDe(UUID usuarioId);
 }

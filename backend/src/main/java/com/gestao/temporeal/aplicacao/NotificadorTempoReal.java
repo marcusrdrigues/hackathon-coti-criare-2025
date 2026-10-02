@@ -12,6 +12,7 @@ import com.gestao.compras.dominio.NegociacaoAlteradaEvento;
 import com.gestao.compras.dominio.Proposta;
 import com.gestao.compras.dominio.PropostaRecebidaEvento;
 import com.gestao.compras.dominio.TipoRemetente;
+import com.gestao.identidade.dominio.MembroRemovidoEvento;
 import com.gestao.temporeal.aplicacao.porta.CanalTempoReal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -65,6 +66,16 @@ public class NotificadorTempoReal {
             publicarAlteracao(negociacaoService.buscarPorId(evento.negociacaoId()), evento.tipo());
         } catch (RuntimeException e) {
             log.warn("Não foi possível publicar a negociação {} em tempo real: {}", evento.negociacaoId(), e.getMessage());
+        }
+    }
+
+    /** Quem saiu da organização para de receber os avisos dela na hora. */
+    @TransactionalEventListener
+    public void aoRemoverMembro(MembroRemovidoEvento evento) {
+        try {
+            canal.encerrarConexoesDe(evento.usuarioId());
+        } catch (RuntimeException e) {
+            log.warn("Não foi possível encerrar as conexões do usuário {}: {}", evento.usuarioId(), e.getMessage());
         }
     }
 

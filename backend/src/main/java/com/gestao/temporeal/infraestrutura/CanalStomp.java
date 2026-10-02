@@ -15,6 +15,7 @@ import java.util.UUID;
 class CanalStomp implements CanalTempoReal {
 
     private final SimpMessagingTemplate mensageiro;
+    private final SessoesWebSocket sessoes;
 
     @Override
     public void publicarNaNegociacao(UUID negociacaoId, EventoNegociacao evento) {
@@ -24,5 +25,10 @@ class CanalStomp implements CanalTempoReal {
     @Override
     public void avisar(UUID organizacaoId, AvisoTempoReal aviso) {
         mensageiro.convertAndSendToUser(organizacaoId.toString(), Destinos.FILA_AVISOS, aviso);
+    }
+
+    @Override
+    public void encerrarConexoesDe(UUID usuarioId) {
+        sessoes.encerrarDe(usuarioId);
     }
 }

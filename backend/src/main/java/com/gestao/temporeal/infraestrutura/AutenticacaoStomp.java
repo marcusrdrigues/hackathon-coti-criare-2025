@@ -41,6 +41,7 @@ public class AutenticacaoStomp implements ChannelInterceptor {
 
     private final JwtDecoder jwtDecoder;
     private final AcessoCompras acessoCompras;
+    private final SessoesWebSocket sessoes;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -50,7 +51,9 @@ public class AutenticacaoStomp implements ChannelInterceptor {
         }
         StompCommand comando = acesso.getCommand();
         if (comando == StompCommand.CONNECT) {
-            acesso.setUser(autenticar(acesso.getFirstNativeHeader("Authorization")));
+            JwtAuthenticationToken usuario = autenticar(acesso.getFirstNativeHeader("Authorization"));
+            acesso.setUser(usuario);
+            sessoes.associar(acesso.getSessionId(), UUID.fromString(usuario.getToken().getSubject()));
         } else if (comando == StompCommand.SUBSCRIBE) {
             autorizarAssinatura(acesso.getDestination(), usuarioDa(acesso.getUser()));
         } else if (comando == StompCommand.SEND) {

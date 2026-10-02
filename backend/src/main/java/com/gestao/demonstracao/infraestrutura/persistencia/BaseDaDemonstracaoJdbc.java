@@ -22,6 +22,7 @@ class BaseDaDemonstracaoJdbc implements BaseDaDemonstracao {
             "DELETE FROM tb_proposta",
             "DELETE FROM tb_cotacao",
             "DELETE FROM tb_refresh_token",
+            "DELETE FROM tb_convite",
             "DELETE FROM tb_membro",
             "DELETE FROM tb_usuario",
             "DELETE FROM tb_organizacao"};

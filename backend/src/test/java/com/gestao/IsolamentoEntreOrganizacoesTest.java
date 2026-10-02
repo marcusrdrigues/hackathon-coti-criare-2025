@@ -9,6 +9,7 @@ import com.gestao.compras.dominio.Proposta;
 import com.gestao.identidade.aplicacao.AuthService;
 import com.gestao.identidade.aplicacao.CadastroService.NovaOrganizacao;
 import com.gestao.identidade.aplicacao.CadastroService;
+import com.gestao.identidade.aplicacao.EquipeService;
 import com.gestao.identidade.aplicacao.UsuarioAutenticado;
 import com.gestao.identidade.dominio.TipoOrganizacao;
 import com.jayway.jsonpath.JsonPath;
@@ -72,6 +73,7 @@ class IsolamentoEntreOrganizacoesTest {
     @Autowired private CotacaoService cotacaoService;
     @Autowired private PropostaService propostaService;
     @Autowired private NegociacaoService negociacaoService;
+    @Autowired private EquipeService equipeService;
 
     private MockMvc mvc;
 
@@ -80,6 +82,9 @@ class IsolamentoEntreOrganizacoesTest {
     private UUID propostaPendente;
     private UUID cotacaoEmNegociacao;
     private UUID negociacao;
+    /** Da equipe da Criare: um membro e um convite pendente. */
+    private UUID membroDaCriare;
+    private UUID conviteDaCriare;
 
     /** Uma empresa e um fornecedor que não têm nada com esses dados. */
     private String empresaIntrusa;
@@ -105,6 +110,11 @@ class IsolamentoEntreOrganizacoesTest {
         cotacaoEmNegociacao = cotacaoService.criarCotacao(cotacao(), criare).getId();
         Proposta aceita = propostaService.criarProposta(proposta(), tech, cotacaoEmNegociacao);
         negociacao = negociacaoService.criarNegociacao(aceita.getId(), criare).getId();
+
+        cadastroService.adicionarMembro(criare.organizacaoId(), "Bruno Costa", "bruno@criare.com", SENHA);
+        membroDaCriare = equipeService.listarMembros(criare).stream()
+                .filter(m -> m.getUsuario().getEmail().equals("bruno@criare.com")).findFirst().orElseThrow().getId();
+        conviteDaCriare = equipeService.convidar(criare, "Carla Dias", "carla@criare.com").convite().getId();
 
         empresaIntrusa = token("intrusa@concorrente.com");
         fornecedorIntruso = token("intruso@fornecedor.com");
@@ -166,6 +176,14 @@ class IsolamentoEntreOrganizacoesTest {
                 new Caso("outra empresa", empresaIntrusa, negociacao, id -> get("/api/v1/mensagens/negociacao/" + id)),
                 new Caso("fornecedor concorrente", fornecedorIntruso, negociacao,
                         id -> get("/api/v1/mensagens/negociacao/" + id))));
+
+        // A empresa intrusa é proprietária da organização dela, então passa pelo @PreAuthorize
+        casos.put("DELETE /api/v1/equipe/membros/{id}", List.of(
+                new Caso("proprietária de outra organização", empresaIntrusa, membroDaCriare,
+                        id -> delete("/api/v1/equipe/membros/" + id))));
+        casos.put("DELETE /api/v1/equipe/convites/{id}", List.of(
+                new Caso("proprietária de outra organização", empresaIntrusa, conviteDaCriare,
+                        id -> delete("/api/v1/equipe/convites/" + id))));
         return casos;
     }
 
