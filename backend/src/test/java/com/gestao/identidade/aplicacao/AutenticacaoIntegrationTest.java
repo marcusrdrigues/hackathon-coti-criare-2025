@@ -1,11 +1,7 @@
-package com.gestao.identidade;
+package com.gestao.identidade.aplicacao;
 
 import com.gestao.compartilhado.dominio.MuitasTentativasException;
 import com.gestao.compartilhado.dominio.NaoAutenticadoException;
-import com.gestao.identidade.aplicacao.AuthService;
-import com.gestao.identidade.aplicacao.FornecedorService;
-import com.gestao.identidade.aplicacao.RefreshTokenService;
-import com.gestao.identidade.aplicacao.TentativasLoginService;
 import com.gestao.identidade.aplicacao.porta.RefreshTokenRepositorio;
 import com.gestao.identidade.dominio.Fornecedor;
 import com.gestao.identidade.dominio.TipoUsuario;

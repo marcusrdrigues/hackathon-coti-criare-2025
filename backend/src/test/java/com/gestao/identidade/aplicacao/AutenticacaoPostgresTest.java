@@ -1,4 +1,4 @@
-package com.gestao.identidade;
+package com.gestao.identidade.aplicacao;
 
 import com.gestao.PostgresTestcontainersConfig;
 import org.springframework.context.annotation.Import;
