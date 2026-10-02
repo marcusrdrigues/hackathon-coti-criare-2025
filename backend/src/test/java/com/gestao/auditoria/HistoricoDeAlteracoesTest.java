@@ -33,6 +33,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
@@ -142,9 +143,11 @@ class HistoricoDeAlteracoesTest {
         assertThat(cadastro.getOrigem()).isEqualTo(OrigemDaRevisao.PUBLICO);
         assertThat(cadastro.getUsuarioId()).isNull();
 
-        // Fora de uma requisição e sem ninguém logado: é o próprio sistema
-        cadastroService.adicionarMembro(idDaOrganizacao(emailEmpresa), "Pessoa do Sistema",
-                "sistema-" + sufixo + "@empresa.com", SENHA);
+        // Fora de uma requisição e sem ninguém logado, como uma rotina agendada: é o próprio sistema.
+        // Numa thread própria, porque a do teste carrega uma requisição simulada do Spring.
+        UUID organizacao = idDaOrganizacao(emailEmpresa);
+        CompletableFuture.runAsync(() -> cadastroService.adicionarMembro(organizacao, "Pessoa do Sistema",
+                "sistema-" + sufixo + "@empresa.com", SENHA)).join();
 
         UUID membro = idDoVinculo("sistema-" + sufixo + "@empresa.com");
         Revisao revisao = ler(leitor -> leitor.findRevision(Revisao.class, ultimaRevisaoDe(leitor, membro)));
