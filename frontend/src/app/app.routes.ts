@@ -26,6 +26,20 @@ export const routes: Routes = [
     loadComponent: () => import('./components/pages/cadastro/cadastro').then((m) => m.CadastroComponent),
   },
 
+  {
+    path: 'pages/esqueci-a-senha',
+    canActivate: [visitanteGuard],
+    title: 'Redefinir senha | Portal Criare',
+    loadComponent: () => import('./components/pages/esqueci-senha/esqueci-senha').then((m) => m.EsqueciSenha),
+  },
+
+  // Link do e-mail de redefinição: público, com o token depois do "#" (spec 004)
+  {
+    path: 'redefinir-senha',
+    title: 'Senha nova | Portal Criare',
+    loadComponent: () => import('./components/pages/redefinir-senha/redefinir-senha').then((m) => m.RedefinirSenha),
+  },
+
   // Convite para a equipe: público, aberto pelo link (o token vem depois do "#")
   {
     path: 'convite',

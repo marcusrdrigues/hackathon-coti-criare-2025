@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 public class RedefinicaoDeSenhaService {
 
     static final Duration VALIDADE = Duration.ofMinutes(30);
-    static final String LINK_INVALIDO = "Este link não vale mais. Peça um novo na tela de login.";
+    static final String LINK_INVALIDO = "Este link não vale mais. Peça um link novo.";
 
     private final RedefinicaoDeSenhaRepositorio repositorio;
     private final UsuarioRepositorio usuarioRepositorio;

@@ -2,6 +2,10 @@
   <h1 class="titulo">Entrar no portal</h1>
   <p class="subtitulo">Use o e-mail cadastrado ou explore uma conta de demonstração.</p>
 
+  @if (senhaAlterada()) {
+    <p class="aviso aviso-sucesso" role="status">Senha alterada. Entre com a senha nova.</p>
+  }
+
   @if (erro(); as mensagem) {
     <p class="aviso aviso-erro" role="alert">{{ mensagem }}</p>
   }
@@ -42,7 +46,12 @@
     </div>
 
     <div class="campo">
-      <label for="senha" class="rotulo">Senha</label>
+      <div class="campo-cabecalho">
+        <label for="senha" class="rotulo">Senha</label>
+        <a routerLink="/pages/esqueci-a-senha" [state]="{ email: credenciais.email }" class="link link-discreto">
+          Esqueci minha senha
+        </a>
+      </div>
       <input id="senha" type="password" class="entrada" [(ngModel)]="credenciais.senha" name="senha"
              autocomplete="current-password" required>
     </div>

@@ -1,0 +1,58 @@
+<app-layout-acesso>
+  @if (estado() === 'invalido') {
+    <h1 class="titulo">Link indisponível</h1>
+    <p class="aviso aviso-erro" role="alert">{{ motivo() }}</p>
+    <a routerLink="/pages/esqueci-a-senha" class="botao-principal">Pedir um link novo</a>
+    <p class="rodape">
+      Lembrou a senha? <a routerLink="/pages/login" class="link">Entrar</a>
+    </p>
+  } @else if (estado() === 'valido') {
+    <h1 class="titulo">Criar uma senha nova</h1>
+    <p class="subtitulo">Depois de salvar, você entra com a senha nova em todos os aparelhos.</p>
+
+    @if (erroGeral(); as mensagem) {
+      <p class="aviso aviso-erro" role="alert">{{ mensagem }}</p>
+    }
+
+    <form (ngSubmit)="salvar()" novalidate>
+      <div class="campo">
+        <label for="senha" class="rotulo">Senha nova</label>
+        <input id="senha" type="password" class="entrada" name="senha" autocomplete="new-password" maxlength="72"
+               [ngModel]="senha()" (ngModelChange)="senha.set($event)"
+               [attr.aria-invalid]="tentouEnviar() && !!erros().senha" aria-describedby="senha-regras">
+        <ul id="senha-regras" class="requisitos">
+          <li [class.cumprido]="senhaTemTamanho()">
+            <span class="marcador" aria-hidden="true"></span>
+            Pelo menos 8 caracteres<span class="visually-hidden">{{ senhaTemTamanho() ? ': atendido' : ': pendente' }}</span>
+          </li>
+          <li [class.cumprido]="senhaTemLetraENumero()">
+            <span class="marcador" aria-hidden="true"></span>
+            Letras e números<span class="visually-hidden">{{ senhaTemLetraENumero() ? ': atendido' : ': pendente' }}</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="campo">
+        <label for="confirmacao" class="rotulo">Repita a senha nova</label>
+        <input id="confirmacao" type="password" class="entrada" name="confirmacao" autocomplete="new-password"
+               maxlength="72" [ngModel]="confirmacao()" (ngModelChange)="confirmacao.set($event)"
+               [attr.aria-invalid]="tentouEnviar() && !!erros().confirmacao"
+               [attr.aria-describedby]="tentouEnviar() && erros().confirmacao ? 'confirmacao-erro' : null">
+        @if (tentouEnviar() && erros().confirmacao; as erro) {
+          <p id="confirmacao-erro" class="erro-campo">{{ erro }}</p>
+        }
+      </div>
+
+      <button type="submit" class="botao-principal" [disabled]="carregando()">
+        @if (carregando()) {
+          <span class="girando" aria-hidden="true"></span>
+          <span>Salvando…</span>
+        } @else {
+          Salvar senha nova
+        }
+      </button>
+    </form>
+  } @else {
+    <div class="carregando-pagina" role="status"><span class="girando"></span><span class="visually-hidden">Conferindo o link</span></div>
+  }
+</app-layout-acesso>

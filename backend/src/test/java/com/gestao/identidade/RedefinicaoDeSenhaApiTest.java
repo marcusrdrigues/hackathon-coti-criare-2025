@@ -52,7 +52,7 @@ class RedefinicaoDeSenhaApiTest {
 
     private static final String SENHA = "segredo123";
     private static final String SENHA_NOVA = "outraSenha456";
-    private static final String LINK_INVALIDO = "Este link não vale mais. Peça um novo na tela de login.";
+    private static final String LINK_INVALIDO = "Este link não vale mais. Peça um link novo.";
     private static final Pattern TOKEN_NO_LINK = Pattern.compile("/redefinir-senha#token=([A-Za-z0-9_-]+)");
 
     @Autowired private WebApplicationContext contexto;

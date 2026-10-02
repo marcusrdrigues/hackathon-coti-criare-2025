@@ -27,8 +27,11 @@ export class Login implements OnInit {
   protected readonly servidorLento = signal(false);
   protected readonly erro = signal<string | null>(null);
   protected readonly contasDemo = signal<ContaDemo[]>([]);
+  /** Veio da tela de senha nova: confirma a troca antes do primeiro login */
+  protected readonly senhaAlterada = signal(false);
 
   ngOnInit(): void {
+    this.senhaAlterada.set((history.state as { senhaAlterada?: unknown } | null)?.senhaAlterada === true);
     this.auth.contasDemo().subscribe((contas) => this.contasDemo.set(contas));
   }
 
@@ -52,6 +55,7 @@ export class Login implements OnInit {
   private entrar(login$: Observable<Usuario>): void {
     this.carregando.set(true);
     this.erro.set(null);
+    this.senhaAlterada.set(false);
 
     // Em hospedagem gratuita, a primeira requisição depois de um tempo parado pode demorar
     const aviso = setTimeout(() => this.servidorLento.set(true), AVISO_SERVIDOR_LENTO_MS);

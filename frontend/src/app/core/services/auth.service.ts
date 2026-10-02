@@ -109,6 +109,14 @@ export class AuthService {
     this.router.navigate(['/pages/login']);
   }
 
+  /**
+   * A senha foi trocada por um link de redefinição: o servidor já encerrou todas as
+   * sessões, então só falta esquecer a deste navegador, sem aviso nem redirecionamento.
+   */
+  esquecerSessao(): void {
+    this.limparSessao();
+  }
+
   iniciarSessao(resposta: TokenResponse): Usuario {
     this.accessToken = resposta.accessToken;
     this.usuarioAtual.set(resposta.usuario);

@@ -1,0 +1,50 @@
+<app-layout-acesso>
+  @if (enviadoPara(); as email) {
+    <h1 class="titulo">Confira seu e-mail</h1>
+    <p class="subtitulo" role="status">
+      Se houver uma conta com <strong>{{ email }}</strong>, enviamos um link para você criar uma senha nova.
+      Ele vale por 30 minutos.
+    </p>
+    <p class="aviso aviso-info">
+      Não chegou em alguns minutos? Procure na caixa de spam ou de promoções.
+    </p>
+    <a routerLink="/pages/login" class="botao-principal">Voltar para o login</a>
+    <p class="rodape">
+      <button type="button" class="link link-botao" (click)="outroEmail()">Usar outro e-mail</button>
+    </p>
+  } @else {
+    <h1 class="titulo">Redefinir senha</h1>
+    <p class="subtitulo">Informe o e-mail da sua conta. Enviamos um link para você criar uma senha nova.</p>
+
+    @if (erro(); as mensagem) {
+      <p class="aviso aviso-erro" role="alert">{{ mensagem }}</p>
+    }
+
+    <form (ngSubmit)="enviar()" novalidate>
+      <div class="campo">
+        <label for="email" class="rotulo">E-mail</label>
+        <input id="email" type="email" class="entrada" name="email" placeholder="nome@empresa.com.br"
+               autocomplete="username" inputmode="email" maxlength="100" required
+               [ngModel]="email()" (ngModelChange)="email.set($event)"
+               [attr.aria-invalid]="tentouEnviar() && !!erroEmail()"
+               [attr.aria-describedby]="tentouEnviar() && erroEmail() ? 'email-erro' : null">
+        @if (tentouEnviar() && erroEmail(); as mensagem) {
+          <p id="email-erro" class="erro-campo">{{ mensagem }}</p>
+        }
+      </div>
+
+      <button type="submit" class="botao-principal" [disabled]="carregando()">
+        @if (carregando()) {
+          <span class="girando" aria-hidden="true"></span>
+          <span>Enviando…</span>
+        } @else {
+          Enviar link
+        }
+      </button>
+    </form>
+
+    <p class="rodape">
+      Lembrou a senha? <a routerLink="/pages/login" class="link">Entrar</a>
+    </p>
+  }
+</app-layout-acesso>
