@@ -447,6 +447,8 @@ Depois é só rodar o front-end como no passo 3.
 
 ### Variáveis de ambiente do back-end
 
+Para rodar localmente sem exportar nada, copie [`backend/.env.example`](backend/.env.example) para `backend/.env` e preencha: a API lê esse arquivo ao subir (pelo Maven ou pelo `docker compose`), e ele fica fora do git. Variáveis de ambiente de verdade, como as do Render, têm prioridade sobre o arquivo.
+
 | Variável | Padrão | Para que serve |
 |---|---|---|
 | `SERVER_PORT` | `8085` | Porta da API (também aceita `PORT`, usada por plataformas como o Render) |
