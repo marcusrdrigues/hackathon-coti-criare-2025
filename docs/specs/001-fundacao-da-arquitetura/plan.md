@@ -157,7 +157,7 @@ ADR: **0016 · Autorização por organização** (substitui o ADR 0005).
 - **Paginação** com `Pageable` do Spring Data: padrão de 20 itens, máximo de 50, e uma lista de campos aceitos para ordenação por endpoint. A resposta usa o formato estável do Spring Data (`content` + `page`). No front-end, as listas ganham "Carregar mais".
 - **Problem Details (RFC 9457)** com o `ProblemDetail` do Spring: `title`, `status`, `detail`, `instance`, mais `traceId` e `erros` (por campo). O front-end passa a ler `detail`.
 
-ADR: **0017 · Paginação e Problem Details**.
+ADR: **0019 · Paginação e Problem Details**.
 
 ## Política de dados (R8)
 

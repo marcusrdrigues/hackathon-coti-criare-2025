@@ -9,6 +9,7 @@ import com.gestao.identidade.aplicacao.UsuarioAutenticado;
 import com.gestao.identidade.dominio.Papel;
 import com.gestao.identidade.dominio.TipoOrganizacao;
 import com.jayway.jsonpath.JsonPath;
+import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,6 +56,7 @@ class EquipeApiTest {
     @Autowired private CadastroService cadastroService;
     @Autowired private CotacaoService cotacaoService;
     @Autowired private JdbcTemplate jdbc;
+    @Autowired private EntityManager entityManager;
 
     private MockMvc mvc;
     private String proprietaria;
@@ -122,6 +124,8 @@ class EquipeApiTest {
         String vencido = convidar("Carla Dias", "carla@criare.com");
         jdbc.update("UPDATE tb_convite SET expira_em = ? WHERE email = 'carla@criare.com'",
                 Timestamp.valueOf(LocalDateTime.now().minusMinutes(1)));
+        // O convite ainda estava na memória do Hibernate, com a validade antiga
+        entityManager.clear();
         aceitar(vencido, "Carla Dias")
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value(containsString("venceu")));

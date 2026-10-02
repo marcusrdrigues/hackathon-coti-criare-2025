@@ -22,5 +22,7 @@ Uma decisão registrada não se edita. Se ela mudar, um ADR novo a substitui, e 
 | [0014](0014-rastreio-por-requisicao-e-logs-estruturados.md) | Rastreio por requisição e logs estruturados, sem dados sensíveis | Aceita |
 | [0015](0015-pessoas-e-organizacoes-separadas.md) | Pessoas e organizações separadas, com papéis e autoria | Aceita |
 | [0016](0016-autorizacao-por-organizacao.md) | Autorização por organização, com 404 e trava de rota nova | Aceita |
+| [0017](0017-equipe-com-convite-por-link.md) | Equipe com convite por link de uso único | Aceita |
+| [0018](0018-liquid-glass-na-camada-flutuante.md) | Liquid Glass só na camada que flutua | Aceita |
 
 Modelo para um ADR novo: [template.md](template.md).

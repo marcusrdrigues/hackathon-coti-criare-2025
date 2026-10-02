@@ -47,10 +47,12 @@ Cada passo é entregue com o CI verde (testes, ponta a ponta e quality gate) e c
 
 ## Passo 6 · Equipe (R2)
 
-- [ ] Convite por link de uso único (72 horas, guardado como hash)
-- [ ] Aceitar convite, listar e remover membros, com revogação das sessões
-- [ ] Telas de equipe e de aceitar convite
-- [ ] Teste ponta a ponta: convidar, aceitar e operar como membro
+- [x] Convite por link de uso único (72 horas, guardado como hash, token fora da URL que vai ao servidor)
+- [x] Aceitar convite, listar e remover membros, com revogação das sessões e do WebSocket
+- [x] Telas de equipe e de aceitar convite
+- [x] Teste ponta a ponta: convidar, aceitar, operar como membro e ser removido
+- [x] ADR 0017
+- [x] Visual Liquid Glass na camada flutuante, com barra de abas em cápsula (ADR 0018)
 
 ## Passo 7 · Superadmin (R3)
 
@@ -62,7 +64,7 @@ Cada passo é entregue com o CI verde (testes, ponta a ponta e quality gate) e c
 
 - [ ] Paginação nas listagens, com "Carregar mais" no front-end
 - [ ] Erros no formato Problem Details, com o front-end ajustado
-- [ ] ADR 0017
+- [ ] ADR 0019
 
 ## Passo 9 · Política de dados (R8)
 
@@ -70,5 +72,5 @@ Cada passo é entregue com o CI verde (testes, ponta a ponta e quality gate) e c
 
 ## Passo 10 · Fechamento
 
-- [ ] Migração V4 removendo as tabelas antigas, depois da validação em produção
+- [ ] Migração V5 removendo as tabelas antigas, depois da validação em produção
 - [ ] Spec marcada como concluída e fase 4 fechada no README

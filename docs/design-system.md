@@ -68,14 +68,30 @@ Campos usam 16px: abaixo disso o iPhone dá zoom ao focar.
 ### Espaço, forma e movimento
 
 - Espaços em múltiplos de 4px: `--esp-1` (4px) até `--esp-8` (48px).
-- Raios: `--raio-pequeno` 8px, `--raio` 10px, `--raio-grande` 14px.
+- Raios: `--raio-pequeno` 8px, `--raio` 10px, `--raio-grande` 16px, `--raio-vidro` 26px (barras e painéis flutuantes) e `--raio-cheio` (cápsula: botões e barra de abas).
 - Controles com `--altura-controle` de 40px no computador e 44px em telas de toque (`pointer: coarse`), o mínimo recomendado pela Apple.
 - Movimento curto (`--duracao` 200ms) e discreto. Com `prefers-reduced-motion`, as animações somem.
 
 ## Estrutura das telas
 
-- **Computador (a partir de 1024px):** barra lateral com a marca, a navegação e o menu da conta (nome, aparência e sair).
-- **Celular e tablet:** barra de topo translúcida com a marca e a conta, e barra de abas embaixo com 3 ou 4 destinos.
+- **Computador (a partir de 1024px):** barra lateral de vidro, afastada das bordas, com a marca, a navegação, a Equipe e o menu da conta (pessoa, organização e papel, aparência e sair).
+- **Celular e tablet:** barra de topo de vidro com a marca e a conta, e barra de abas em cápsula de vidro, flutuando acima da borda, com 3 ou 4 destinos. A Equipe fica no menu da conta.
+
+### Liquid Glass ([ADR 0018](adr/0018-liquid-glass-na-camada-flutuante.md))
+
+O vidro é só para o que flutua sobre o conteúdo. Listas, cartões e o fundo das telas nunca são de vidro.
+
+| Token | Uso |
+|---|---|
+| `--vidro-fino` | Barras pequenas: abas e topo |
+| `--vidro-espesso` | Superfícies com texto: barra lateral, painéis, diálogos, avisos |
+| `--vidro-menu` | Menus e listas de opção, quase opacos (abrem dentro de outra barra de vidro) |
+| `--vidro-filtro` | `blur(24px) saturate(180%)` |
+| `--vidro-brilho`, `--vidro-contorno`, `--vidro-sombra` | Reflexo na borda de cima, contorno de meio pixel e sombra |
+| `--vidro-selecao` | A "lente" da aba ou do item selecionado |
+| `--brilho-conteudo` | O brilho da marca no fundo, que o vidro recolhe |
+
+Com "Reduzir transparência", "Aumentar contraste" ou sem suporte a `backdrop-filter`, os tokens de vidro viram superfícies sólidas.
 - **Sala de negociação:** conversa no centro; detalhes à direita a partir de 1280px (abaixo disso, num painel); lista de negociações à esquerda a partir de 1536px.
 
 Destinos: a empresa tem Início, Cotações e Negociações. O fornecedor tem Início, Mural, Negociações e Propostas.

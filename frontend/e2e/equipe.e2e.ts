@@ -39,7 +39,7 @@ test('proprietária convida, a pessoa entra na equipe e depois é removida', asy
   await test.step('a pessoa abre o link, define a senha e já entra na empresa', async () => {
     await convidada.goto(link);
     await expect(convidada.getByRole('heading', { name: 'Entrar na equipe' })).toBeVisible();
-    await expect(convidada.getByText('Criare Consulting')).toBeVisible();
+    await expect(convidada.locator('.convite-origem')).toContainText('Criare Consulting');
     // O token sai da barra de endereço assim que é lido
     await expect(convidada).toHaveURL(/\/convite$/);
 

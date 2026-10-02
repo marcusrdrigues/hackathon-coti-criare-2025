@@ -112,12 +112,13 @@ sequenceDiagram
 ### 🔧 Em todas as telas
 
 - Login com JWT: a sessão sobrevive ao F5 e é renovada sozinha quando o token vence; *guards* de rota por perfil
-- Visual no padrão das interfaces da Apple: tipografia do sistema, listas agrupadas, barra lateral no computador e barra de abas no celular, ícones só onde ajudam
+- Visual no padrão das interfaces da Apple, com **Liquid Glass** na camada que flutua: barra de abas em cápsula de vidro no celular, barra lateral e topo de vidro, menus e painéis translúcidos, botões em cápsula. O conteúdo continua sólido, e o vidro vira superfície sólida quando o sistema pede menos transparência ou mais contraste ([ADR 0018](docs/adr/0018-liquid-glass-na-camada-flutuante.md))
 - Componentes próprios (seletor, menu, controle segmentado, painel lateral, diálogo de confirmação), acessíveis pelo teclado e pelo leitor de tela
 - Avisos rápidos de sucesso e erro, com as mensagens que vêm da API
 - Moeda e datas no formato brasileiro (`R$ 1.234,56`, `31/12/2025`)
 - Máscara de CNPJ no cadastro, que cria a organização e a pessoa proprietária juntas
 - Menu da conta com a pessoa, a organização e o papel dela (proprietária ou membro)
+- **Equipe**: todos veem quem faz parte da organização; a proprietária convida pelo nome e e-mail, recebe um link de uso único para copiar ou compartilhar, cancela convites e remove pessoas. Quem recebe o link define a senha e já entra trabalhando
 - Na negociação, cada mensagem fica do lado da organização de quem escreveu e mostra o nome da pessoa
 - Sala de negociação **ao vivo** (WebSocket): mensagens e ofertas chegam na hora, com "digitando…" e indicador de conexão; sem conexão, volta a consultar a cada 10 segundos
 - **Mensagens não lidas** contadas na barra lateral, nas abas do celular e em cada negociação da lista; abrir a conversa zera o contador
@@ -196,6 +197,8 @@ sequenceDiagram
 | **Refresh token** | Valor aleatório de 256 bits num cookie `HttpOnly`, `SameSite=Strict`, restrito a `/api/v1/auth` | O JavaScript não lê o cookie, e ele não é enviado a partir de outros sites (CSRF) |
 | **No banco** | Só o **hash SHA-256** do refresh token | Quem acessar o banco não consegue usar as sessões gravadas |
 | **Rotação** | Cada renovação gera um refresh token novo e revoga o anterior | Um token roubado só serve uma vez |
+| **Convites** | Link com token aleatório de 256 bits, válido por 72 horas e uma vez só; o banco guarda só o hash. O token vai depois do `#` do link e no corpo das requisições, nunca no caminho da URL | Quem acessa o banco não usa os convites, e o token não aparece em log de acesso da Vercel, da API ou de proxies |
+| **Saída da equipe** | Remover uma pessoa revoga todas as sessões dela e fecha as conexões em tempo real abertas por ela | O acesso acaba na hora; o access token em uso vence em até 15 minutos |
 | **Detecção de reuso** | Se um refresh token já usado aparecer de novo, **todas** as sessões daquele usuário são encerradas | Reuso indica que alguém copiou o token |
 | **Força bruta** | 5 senhas erradas para o mesmo e-mail em 15 minutos bloqueiam o login (HTTP 429 com `Retry-After`) | Dificulta adivinhar senhas |
 | **Senhas** | BCrypt; cadastro exige 8+ caracteres com letras e números | Hash lento e com *salt*, resistente a vazamentos |
@@ -302,6 +305,8 @@ erDiagram
     NEGOCIACAO ||--o{ MENSAGEM_NEGOCIACAO : contem
     USUARIO ||--o{ MENSAGEM_NEGOCIACAO : escreve
     USUARIO ||--o{ REFRESH_TOKEN : "sessões"
+    ORGANIZACAO ||--o{ CONVITE : "convida para"
+    USUARIO ||--o{ CONVITE : convida
 
     ORGANIZACAO {
         uuid id
@@ -315,6 +320,14 @@ erDiagram
         string email
         string senha_hash
         boolean superadmin
+    }
+    CONVITE {
+        uuid id
+        string nome
+        string email
+        string token_hash
+        datetime expira_em
+        datetime aceito_em
     }
     MEMBRO {
         uuid id
@@ -515,6 +528,23 @@ Legenda: 🌐 público · 🔑 qualquer usuário logado · 🏢 só empresa · �
 </details>
 
 <details>
+<summary><b>Equipe e convites</b></summary>
+
+| Método | Endpoint | Acesso | Descrição |
+|---|---|---|---|
+| `GET` | `/equipe/membros` | 🔑 | Pessoas ativas da organização, proprietários primeiro (`voce` marca quem pediu) |
+| `DELETE` | `/equipe/membros/{id}` | 👑 dona | Remove da equipe: revoga as sessões e fecha o tempo real da pessoa (`204`) |
+| `GET` | `/equipe/convites` | 👑 | Convites pendentes, sem o link |
+| `POST` | `/equipe/convites` | 👑 | `{ nome, email }`; devolve o `token` do link, só nesta resposta (`201`) |
+| `DELETE` | `/equipe/convites/{id}` | 👑 dona | Cancela o convite; o link deixa de valer (`204`) |
+| `POST` | `/convites/consulta` | 🌐 | `{ token }`; de qual organização é o convite e para quem |
+| `POST` | `/convites/aceite` | 🌐 | `{ token, nome, senha }`; cria a conta como membro e já abre a sessão (`201` + cookie) |
+
+👑 só o proprietário da organização. O link que a pessoa recebe é `https://…/convite#<token>`.
+
+</details>
+
+<details>
 <summary><b>Cotações</b></summary>
 
 | Método | Endpoint | Acesso | Descrição |
@@ -631,18 +661,19 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | `ComprasApiTest` | O contrato HTTP de compras, como o front-end usa: publicar, editar, propor, retirar, recusar, negociar, conversar, fechar e cancelar, painéis, e o formato das respostas de erro (validação por campo, 404, id malformado, JSON inválido, cadastro repetido) |
 | `AutenticacaoIntegrationTest` | Conteúdo do JWT (pessoa, organização, tipo e papel), token de antes da separação recusado, login de um membro, token adulterado, refresh gravado como hash, rotação, detecção de reuso, logout e bloqueio de força bruta |
 | `SegurancaApiTest` | Pela camada HTTP: cadastro público (201, 409 e validação por campo), formato de `/auth/me`, 401 sem token e com token inválido, rotas públicas, cookie `HttpOnly`/`SameSite`, 403 por perfil, 404 para recurso de outra organização, identidade vinda do token, refresh pelo cookie, logout e CORS |
-| `TempoRealIntegrationTest` | WebSocket de verdade (STOMP): conexão sem token ou com token inválido recusada, mensagem e aviso entregues na hora (o aviso chega a toda a equipe da organização), "digitando…" e quem não participa não consegue assinar a negociação |
+| `TempoRealIntegrationTest` | WebSocket de verdade (STOMP): conexão sem token ou com token inválido recusada, mensagem e aviso entregues na hora (o aviso chega a toda a equipe da organização), conexão encerrada quando a pessoa sai da equipe, "digitando…" e quem não participa não consegue assinar a negociação |
 | `MigracoesPostgresTest` | Num PostgreSQL 16 real (Testcontainers): o Flyway aplica as migrações, o Hibernate valida o esquema e todas as tabelas existem |
 | `MigracaoPessoasEOrganizacoesTest` | A migração V3 sobre dados no formato antigo, num PostgreSQL real: empresas e fornecedores viram organizações com o mesmo id, cada conta vira uma pessoa proprietária com a mesma senha, o negócio ganha autoria, as chaves apontam para as tabelas novas e as sessões antigas são encerradas |
 | `FluxoCotacaoPostgresTest` e `AutenticacaoPostgresTest` | Os mesmos cenários das duas suítes acima, agora no PostgreSQL real, para pegar diferenças que o H2 esconde |
 | `DemonstracaoApiTest` | Login de demonstração em um clique, health check e reset diário dos dados de exemplo |
+| `EquipeApiTest` | Convidar, consultar e aceitar o convite (já logado como membro), link usado, vencido, cancelado ou adulterado sem criar conta, convite novo substituindo o anterior, e-mail já cadastrado, membro sem permissão de convidar ou remover, remoção revogando as sessões e mantendo o nome no histórico |
 | `IsolamentoEntreOrganizacoesTest` | Toda rota da API que recebe id, no caminho ou no corpo, tentada por outra organização: a resposta é `404` com a mesma mensagem de um id inexistente. Lê as rotas do Spring MVC e falha se uma rota com id não tiver caso cadastrado |
 | `ArquiteturaTest` | A arquitetura como teste: módulos sem ciclos e usando só a API uns dos outros (Spring Modulith), e camadas da Clean Architecture com as dependências apontando para dentro (ArchUnit) |
 | `DocumentosTest` | Validação de CNPJ e normalização de dados |
 | `RastreioELogsTest` | Toda resposta com `X-Trace-Id`, o mesmo id no corpo dos erros (inclusive os do Spring Security), id enviado pelo cliente ignorado, e um fluxo inteiro (cadastro, senha errada, proposta, mensagem) sem senha, token, e-mail, nome de pessoa ou conteúdo sigiloso nos logs |
 | `GlobalExceptionHandlerTest` | Respostas de erro difíceis de provocar pela API: erro inesperado sem detalhes internos, violação de integridade, acesso negado por perfil e bloqueio de login com `Retry-After` |
 | `smoke-test-api.sh` | Contra a API real com PostgreSQL: login (inclusive de um membro da equipe), proteção das rotas, CORS, validações, regras de perfil e de posse, cotação → proposta → negociação → mensagens → fechamento, dashboards, refresh com rotação e reuso, logout e força bruta |
-| Playwright (`frontend/e2e`) | No navegador, com API e banco reais: empresa e fornecedor negociam do começo ao fim (publicar, propor pelo painel do mural, contraproposta, aceitar, fechar com confirmação), vendo um ao outro **ao vivo** (proposta e aviso chegando à empresa, contador de não lidas do fornecedor e atalho do aviso, "digitando…", aceite e fechamento sem recarregar), rota protegida, login com erro, cadastro com validação de CNPJ, sessão após F5, sair e tema claro/escuro. As telas de acesso rodam também num celular emulado |
+| Playwright (`frontend/e2e`) | No navegador, com API e banco reais: empresa e fornecedor negociam do começo ao fim (publicar, propor pelo painel do mural, contraproposta, aceitar, fechar com confirmação), vendo um ao outro **ao vivo** (proposta e aviso chegando à empresa, contador de não lidas do fornecedor e atalho do aviso, "digitando…", aceite e fechamento sem recarregar), a proprietária convida, a pessoa aceita pelo link num outro navegador, trabalha como membro e perde o acesso ao ser removida, rota protegida, login com erro, cadastro com validação de CNPJ, sessão após F5, sair e tema claro/escuro. As telas de acesso rodam também num celular emulado |
 | Front-end | Interceptor (token, renovação automática e expiração), guards por perfil, tema claro/escuro, seletor (teclado e busca por letra), controle segmentado, confirmação, máscara de CNPJ e componente raiz |
 
 O **GitHub Actions** (`.github/workflows/ci.yml`) roda a cada push: compila e testa o back-end (inclusive contra PostgreSQL com Testcontainers), sobe a API com PostgreSQL e executa o teste de fumaça, faz o build de produção e os testes do front-end, e roda os testes ponta a ponta com Playwright. O **CodeQL** procura vulnerabilidades no código Java e TypeScript, e o **Dependabot** abre PRs semanais com as atualizações de dependências.
@@ -718,7 +749,8 @@ A base que as próximas fases exigem, feita antes delas. Especificação: [spec 
 - [x] **Rastreio por requisição** (OpenTelemetry) e logs em JSON, sem dados sensíveis, verificados por teste
 - [x] **Pessoas e organizações**: várias pessoas por empresa ou fornecedor, com papéis, e registro de quem fez cada ação ([ADR 0015](docs/adr/0015-pessoas-e-organizacoes-separadas.md))
 - [x] **Autorização por organização**, com teste de isolamento em todas as rotas e trava para rotas novas ([ADR 0016](docs/adr/0016-autorizacao-por-organizacao.md))
-- [ ] **Equipe**: convite por link de uso único e gestão de membros
+- [x] **Equipe**: convite por link de uso único e gestão de membros ([ADR 0017](docs/adr/0017-equipe-com-convite-por-link.md))
+- [x] **Liquid Glass**: barra de abas em cápsula e barras de vidro, com versão sólida para acessibilidade ([ADR 0018](docs/adr/0018-liquid-glass-na-camada-flutuante.md))
 - [ ] **Superadmin**, criado só pela configuração do servidor
 - [ ] **Paginação** nas listagens e erros no padrão **Problem Details** (RFC 9457)
 - [ ] **Política de dados**: o que é sensível e onde cada dado pode aparecer (logs, auditoria, IA, demo)
