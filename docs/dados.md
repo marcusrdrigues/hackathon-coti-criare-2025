@@ -24,6 +24,8 @@ Quando um dado se encaixa em duas classes, vale a mais restrita: o nome de uma p
 | **Empresariais públicos** | Ids. Razão social e CNPJ só quando ajudam a investigar | Sim | Sim, da própria organização e do que ela já vê no mural | Organizações fictícias, com CNPJ de dígitos válidos |
 | **Comerciais sigilosos** | Nunca (nem valores, nem condições, nem mensagens) | Sim, com o valor anterior de cada mudança; só o superadmin consulta | Só da própria organização, nunca misturando organizações; o texto de propostas e mensagens é dado, nunca instrução | Só negócios fictícios |
 
+**Quem vê a auditoria** ([spec 003](specs/003-auditoria-e-administracao/spec.md)): o **proprietário** vê a atividade da própria organização, em linguagem de negócio (quem da equipe fez o quê, com o antes e o depois dos campos de negócio). Os registros técnicos (logins, endereços de rede, rastreio, eventos de segurança) e a plataforma inteira ficam com o **superadmin**. Membros comuns não veem a auditoria.
+
 Fora da tabela, valem sempre:
 
 - **Nada sensível em URL.** Tokens vão no corpo das requisições, no cabeçalho `Authorization` ou depois do `#` do link de convite, que o navegador não envia ao servidor. URLs aparecem em logs de acesso da Vercel, do Render e de proxies.
@@ -40,7 +42,7 @@ Fora da tabela, valem sempre:
 | Convites | Valem 72 horas e uma vez só | O registro fica, sem o token (só o hash) |
 | Dados da demo pública | Um dia | Tudo volta ao estado inicial às 4h, menos o superadmin |
 | Logs | O que a hospedagem guarda | Como nada sensível entra neles, o prazo da plataforma basta |
-| Auditoria (fase 5) | A definir na fase 5, nunca menos que o dos negócios | Registros só de acréscimo |
+| Auditoria (fase 5) | 5 anos, o prazo comum para registros comerciais | Registros só de acréscimo; uma rotina diária apaga o que passou do prazo ([spec 003](specs/003-auditoria-e-administracao/spec.md)) |
 
 Um pedido de exclusão de uma pessoa (LGPD, art. 18) troca o nome e o e-mail dela por um marcador anônimo, mantendo os negócios da organização íntegros. Isso entra junto com a auditoria, na fase 5.
 

@@ -798,15 +798,18 @@ A base que as próximas fases exigem, feita antes delas. Especificação: [spec 
 - [x] **Política de dados**: o que é sensível, onde cada dado pode aparecer (logs, auditoria, IA, demo) e por quanto tempo ([docs/dados.md](docs/dados.md))
 - [x] **Limpeza**: as tabelas de conta de antes da separação entre pessoa e organização saem do banco (migração V5), depois da validação em produção
 
-### Fase 5 · Auditoria e administração &nbsp;`planejada`
+### Fase 5 · Auditoria e administração &nbsp;`em especificação`
 
-Saber quem fez o quê, visível só para o superadmin.
+Saber quem fez o quê. O proprietário vê a atividade da própria organização, em linguagem de negócio; o superadmin vê a plataforma inteira, com os registros técnicos. Especificação: [spec 003](docs/specs/003-auditoria-e-administracao/spec.md).
 
-- [ ] **Histórico de alterações com Hibernate Envers**: quem mudou, quando e qual era o valor anterior
-- [ ] **Eventos de segurança**: logins, falhas, sessões revogadas e as ações do próprio superadmin
-- [ ] **Registro de consumo de IA**: tokens, custo e latência por organização e por funcionalidade
-- [ ] Registros só de acréscimo, com retenção definida e dados sensíveis mascarados
-- [ ] **Console do superadmin** para consultar tudo isso
+- [x] **Spec 003**: requisitos, plano e tarefas, com retenção de 5 anos e a atividade da organização para o proprietário
+- [ ] **Histórico de alterações com Hibernate Envers**: quem mudou, quando e qual era o valor anterior, sem credenciais
+- [ ] **Eventos de segurança**: logins, falhas, bloqueios, sessões revogadas, equipe e as ações do próprio superadmin
+- [ ] Registros **só de acréscimo**, protegidos no banco, guardados por **5 anos** e com os dados sensíveis mascarados
+- [ ] **Atividade da organização** para o proprietário: quem da equipe fez o quê, com o antes e o depois
+- [ ] **Console do superadmin**: eventos de segurança, atividade de cada organização e histórico de cada registro; as consultas dele também ficam registradas
+- [ ] **Registro de consumo de IA**: tokens, custo e latência por organização e por funcionalidade, pronto para a fase 7
+- [ ] **Exclusão de dados pessoais a pedido** (LGPD): nome e e-mail anonimizados na conta e no histórico
 
 ### Fase 6 · Produto &nbsp;`planejada`
 
