@@ -19,15 +19,15 @@ public record EventoNegociacao(Tipo tipo, MensagemResponse mensagem, NegociacaoR
         DIGITANDO
     }
 
-    static EventoNegociacao mensagem(MensagemResponse mensagem, NegociacaoResponse negociacao) {
+    public static EventoNegociacao mensagem(MensagemResponse mensagem, NegociacaoResponse negociacao) {
         return new EventoNegociacao(Tipo.MENSAGEM, mensagem, negociacao, mensagem.tipoRemetente());
     }
 
-    static EventoNegociacao status(NegociacaoResponse negociacao) {
+    public static EventoNegociacao status(NegociacaoResponse negociacao) {
         return new EventoNegociacao(Tipo.STATUS, null, negociacao, null);
     }
 
-    static EventoNegociacao digitando(TipoRemetente remetente) {
+    public static EventoNegociacao digitando(TipoRemetente remetente) {
         return new EventoNegociacao(Tipo.DIGITANDO, null, null, remetente);
     }
 }
