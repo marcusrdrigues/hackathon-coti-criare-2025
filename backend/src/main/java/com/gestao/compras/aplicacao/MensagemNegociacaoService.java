@@ -69,13 +69,6 @@ public class MensagemNegociacaoService {
         return mensagemRepositorio.listarDaNegociacao(negociacaoId);
     }
 
-    @Transactional(readOnly = true)
-    public MensagemNegociacao buscarPorId(UUID id, UsuarioAutenticado usuario) {
-        MensagemNegociacao mensagem = buscarPorId(id);
-        negociacaoService.verificarParticipante(mensagem.getNegociacao(), usuario);
-        return mensagem;
-    }
-
     /** Sem checar quem pede: para uso interno do sistema, como os avisos em tempo real. */
     @Transactional(readOnly = true)
     public MensagemNegociacao buscarPorId(UUID id) {

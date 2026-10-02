@@ -67,13 +67,6 @@ public class NegociacaoController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Negociação de uma proposta", description = "Só a empresa e o fornecedor participantes")
-    @GetMapping("/proposta/{propostaId}")
-    public ResponseEntity<NegociacaoResponse> buscarPorProposta(@PathVariable UUID propostaId) {
-        return ResponseEntity.ok(negociacaoMapper.toResponse(
-                negociacaoService.buscarPorPropostaParaParticipante(propostaId, usuarioAtual.obter())));
-    }
-
     @Operation(summary = "Fechar negócio",
             description = "Perfil EMPRESA participante. Fecha a cotação e recusa as demais propostas")
     @PreAuthorize("hasRole('EMPRESA')")

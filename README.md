@@ -474,15 +474,11 @@ Legenda: 🌐 público · 🔑 qualquer usuário logado · 🏢 só empresa · �
 </details>
 
 <details>
-<summary><b>Empresas, fornecedores e perfis</b></summary>
+<summary><b>Cadastro de empresas e fornecedores</b></summary>
 
 | Método | Endpoint | Acesso | Descrição |
 |---|---|---|---|
-| `POST` | `/empresas` · `/fornecedores` | 🌐 | Cadastro |
-| `GET` | `/empresas/{id}` · `/fornecedores/{id}` | 🔑 | Consulta |
-| `PUT` | `/empresas/{id}` · `/fornecedores/{id}` | 🔑 o próprio | Atualiza o nome |
-| `DELETE` | `/empresas/{id}` · `/fornecedores/{id}` | 🔑 o próprio | Remove a conta |
-| `GET` | `/perfis` · `/perfis/{id}` · `/perfis/nome/{nome}` | 🔑 | Perfis (`EMPRESA` e `FORNECEDOR`) |
+| `POST` | `/empresas` · `/fornecedores` | 🌐 | Cadastro (os dados da conta voltam em `/auth/me`) |
 
 </details>
 
@@ -498,7 +494,6 @@ Legenda: 🌐 público · 🔑 qualquer usuário logado · 🏢 só empresa · �
 | `GET` | `/cotacoes/{id}` | 🔑 | Detalhe; empresas só veem as próprias |
 | `PUT` | `/cotacoes/{id}` | 🏢 dona | Edita (somente abertas) |
 | `PATCH` | `/cotacoes/{id}/cancelar` | 🏢 dona | Cancela |
-| `DELETE` | `/cotacoes/{id}` | 🏢 dona | Exclui (somente sem propostas) |
 
 </details>
 
@@ -511,8 +506,6 @@ Legenda: 🌐 público · 🔑 qualquer usuário logado · 🏢 só empresa · �
 | `GET` | `/propostas/minhas` | 🚚 | Propostas do fornecedor logado |
 | `GET` | `/propostas/{id}` | 🔑 autor ou empresa da cotação | Detalhe |
 | `GET` | `/propostas/cotacao/{cotacaoId}` | 🏢 dona | Propostas de uma cotação (menor valor primeiro) |
-| `GET` | `/propostas/cotacao/{cotacaoId}/count` | 🔑 | Quantidade de propostas |
-| `PUT` | `/propostas/{id}` | 🚚 autor | Edita, enquanto não analisada |
 | `PATCH` | `/propostas/{id}/recusar` | 🏢 dona da cotação | Recusa |
 | `DELETE` | `/propostas/{id}` | 🚚 autor | Retira, enquanto não aceita |
 
@@ -525,12 +518,12 @@ Legenda: 🌐 público · 🔑 qualquer usuário logado · 🏢 só empresa · �
 |---|---|---|---|
 | `POST` | `/negociacoes` | 🏢 dona da cotação | Aceita a proposta e abre a negociação (`{ "propostaId": "..." }`) |
 | `GET` | `/negociacoes/minhas` | 🔑 | Negociações do usuário logado, com `naoLidas` (mensagens da outra parte ainda não vistas) |
-| `GET` | `/negociacoes/{id}` · `/negociacoes/proposta/{propostaId}` | 🔑 participante | Detalhe (inclui `ultimaOferta`; `naoLidas` no `/{id}`) |
+| `GET` | `/negociacoes/{id}` | 🔑 participante | Detalhe, com `ultimaOferta` e `naoLidas` |
 | `PATCH` | `/negociacoes/{id}/leitura` | 🔑 participante | Marca como lido tudo o que a outra parte enviou até agora (`204`) |
 | `PATCH` | `/negociacoes/{id}/finalizar` | 🏢 participante | Fecha o negócio (`{ "valorFinal": 1350.00 }`) |
 | `PATCH` | `/negociacoes/{id}/cancelar` | 🏢 participante | Encerra sem acordo |
 | `POST` | `/mensagens` | 🔑 participante | Mensagem e/ou contraproposta; o remetente vem do token |
-| `GET` | `/mensagens/negociacao/{negociacaoId}` · `/mensagens/{id}` | 🔑 participante | Histórico em ordem cronológica |
+| `GET` | `/mensagens/negociacao/{negociacaoId}` | 🔑 participante | Histórico em ordem cronológica |
 
 </details>
 

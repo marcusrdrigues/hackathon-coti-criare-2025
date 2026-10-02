@@ -21,7 +21,5 @@ public interface PropostaRepositorio {
 
     boolean existeDoFornecedorNaCotacao(UUID fornecedorId, UUID cotacaoId);
 
-    long contarDaCotacao(UUID cotacaoId);
-
     void excluir(Proposta proposta);
 }

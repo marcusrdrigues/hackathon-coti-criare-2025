@@ -15,6 +15,7 @@ Cada passo é entregue com o CI verde (testes, ponta a ponta e quality gate) e c
 - [x] Código nos módulos `identidade`, `compras`, `painel`, `temporeal`, `demonstracao` e `compartilhado`, cada um com `dominio`, `aplicacao` e `infraestrutura`
 - [x] Portas e adaptadores: persistência, token, senha, canal de tempo real e limpeza da demo
 - [x] Teste que verifica módulos (Spring Modulith) e camadas (ArchUnit)
+- [x] Inventário da API: endpoints que nenhum cliente usa foram removidos, junto com o código por trás deles (OWASP API9)
 - [x] ADR 0013 e seção de arquitetura do README
 
 ## Passo 3 · Rastreio e logs (R6)

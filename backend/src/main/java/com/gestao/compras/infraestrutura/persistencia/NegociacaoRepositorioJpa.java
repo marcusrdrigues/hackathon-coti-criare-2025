@@ -27,11 +27,6 @@ class NegociacaoRepositorioJpa implements NegociacaoRepositorio {
     }
 
     @Override
-    public Optional<Negociacao> buscarPorProposta(UUID propostaId) {
-        return jpa.findByPropostaId(propostaId);
-    }
-
-    @Override
     public boolean existeParaProposta(UUID propostaId) {
         return jpa.existsByPropostaId(propostaId);
     }

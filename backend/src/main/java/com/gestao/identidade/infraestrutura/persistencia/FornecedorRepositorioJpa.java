@@ -5,7 +5,6 @@ import com.gestao.identidade.dominio.Fornecedor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,11 +31,6 @@ class FornecedorRepositorioJpa implements FornecedorRepositorio {
     }
 
     @Override
-    public List<Fornecedor> listarTodos() {
-        return jpa.findAll();
-    }
-
-    @Override
     public boolean existeComEmail(String email) {
         return jpa.existsByEmail(email);
     }
@@ -44,10 +38,5 @@ class FornecedorRepositorioJpa implements FornecedorRepositorio {
     @Override
     public boolean existeComCnpj(String cnpj) {
         return jpa.existsByCnpj(cnpj);
-    }
-
-    @Override
-    public void excluir(Fornecedor fornecedor) {
-        jpa.delete(fornecedor);
     }
 }

@@ -34,23 +34,8 @@ class CotacaoRepositorioJpa implements CotacaoRepositorio {
     }
 
     @Override
-    public List<Cotacao> listarDaEmpresaPorStatus(UUID empresaId, StatusCotacao status) {
-        return jpa.daEmpresaPorStatus(empresaId, status);
-    }
-
-    @Override
-    public List<Cotacao> listarPorStatus(StatusCotacao status) {
-        return jpa.porStatus(status);
-    }
-
-    @Override
     public List<Cotacao> listarAbertasVigentes(LocalDateTime agora) {
         return jpa.vigentesPorStatus(StatusCotacao.ABERTA, agora);
-    }
-
-    @Override
-    public void excluir(Cotacao cotacao) {
-        jpa.delete(cotacao);
     }
 
     @Override

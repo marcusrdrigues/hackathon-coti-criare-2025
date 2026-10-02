@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -50,25 +49,5 @@ public class FornecedorService {
     public Fornecedor buscarPorEmail(String email) {
         return fornecedorRepositorio.buscarPorEmail(Documentos.normalizarEmail(email))
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Fornecedor não encontrado!"));
-    }
-
-    @Transactional
-    public Fornecedor atualizarFornecedor(UUID id, String nomeCompleto) {
-        Fornecedor fornecedor = buscarPorId(id);
-        if (nomeCompleto != null && !nomeCompleto.isBlank()) {
-            fornecedor.setNomeCompleto(nomeCompleto.trim());
-        }
-        return fornecedorRepositorio.salvar(fornecedor);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Fornecedor> listarTodos() {
-        return fornecedorRepositorio.listarTodos();
-    }
-
-    @Transactional
-    public void deletarFornecedor(UUID id) {
-        Fornecedor fornecedor = buscarPorId(id);
-        fornecedorRepositorio.excluir(fornecedor);
     }
 }

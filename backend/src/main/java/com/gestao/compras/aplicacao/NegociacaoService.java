@@ -100,14 +100,6 @@ public class NegociacaoService {
     }
 
     @Transactional(readOnly = true)
-    public Negociacao buscarPorPropostaParaParticipante(UUID propostaId, UsuarioAutenticado usuario) {
-        Negociacao negociacao = negociacaoRepositorio.buscarPorProposta(propostaId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Negociação não encontrada!"));
-        verificarParticipante(negociacao, usuario);
-        return negociacao;
-    }
-
-    @Transactional(readOnly = true)
     public List<Negociacao> listarDoUsuario(UsuarioAutenticado usuario) {
         return usuario.ehEmpresa()
                 ? negociacaoRepositorio.listarDaEmpresa(usuario.id())

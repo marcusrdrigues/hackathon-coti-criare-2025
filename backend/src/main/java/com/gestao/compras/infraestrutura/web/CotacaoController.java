@@ -91,14 +91,6 @@ public class CotacaoController {
         return ResponseEntity.ok(cotacaoMapper.toResponse(cotacaoService.cancelarCotacao(id, usuarioAtual.obter().id())));
     }
 
-    @Operation(summary = "Excluir cotação", description = "Perfil EMPRESA, dona da cotação. Só cotações sem propostas")
-    @PreAuthorize("hasRole('EMPRESA')")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarCotacao(@Parameter(description = "ID da cotação") @PathVariable UUID id) {
-        cotacaoService.deletarCotacao(id, usuarioAtual.obter().id());
-        return ResponseEntity.noContent().build();
-    }
-
     private List<CotacaoResponse> paraResposta(List<Cotacao> cotacoes) {
         return cotacoes.stream().map(cotacaoMapper::toResponse).toList();
     }

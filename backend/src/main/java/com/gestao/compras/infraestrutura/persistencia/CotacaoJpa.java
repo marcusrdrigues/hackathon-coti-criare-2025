@@ -16,12 +16,6 @@ interface CotacaoJpa extends JpaRepository<Cotacao, UUID> {
     @Query("SELECT c FROM Cotacao c WHERE c.empresa.id = :empresaId ORDER BY c.dataCriacao DESC")
     List<Cotacao> daEmpresa(@Param("empresaId") UUID empresaId);
 
-    @Query("SELECT c FROM Cotacao c WHERE c.empresa.id = :empresaId AND c.status = :status ORDER BY c.dataCriacao DESC")
-    List<Cotacao> daEmpresaPorStatus(@Param("empresaId") UUID empresaId, @Param("status") StatusCotacao status);
-
-    @Query("SELECT c FROM Cotacao c WHERE c.status = :status ORDER BY c.dataCriacao DESC")
-    List<Cotacao> porStatus(@Param("status") StatusCotacao status);
-
     @Query("""
             SELECT c FROM Cotacao c
             WHERE c.status = :status

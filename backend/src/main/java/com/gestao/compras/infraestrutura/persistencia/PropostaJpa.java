@@ -18,6 +18,4 @@ interface PropostaJpa extends JpaRepository<Proposta, UUID> {
     List<Proposta> doFornecedor(@Param("fornecedorId") UUID fornecedorId);
 
     boolean existsByFornecedorIdAndCotacaoId(UUID fornecedorId, UUID cotacaoId);
-
-    long countByCotacaoId(UUID cotacaoId);
 }

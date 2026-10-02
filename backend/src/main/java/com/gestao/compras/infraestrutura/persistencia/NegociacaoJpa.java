@@ -6,13 +6,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 /** Spring Data para as negociações. */
 interface NegociacaoJpa extends JpaRepository<Negociacao, UUID> {
-
-    Optional<Negociacao> findByPropostaId(UUID propostaId);
 
     boolean existsByPropostaId(UUID propostaId);
 

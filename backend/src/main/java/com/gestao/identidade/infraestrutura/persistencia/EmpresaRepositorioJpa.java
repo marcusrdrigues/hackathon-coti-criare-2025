@@ -5,7 +5,6 @@ import com.gestao.identidade.dominio.Empresa;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,11 +31,6 @@ class EmpresaRepositorioJpa implements EmpresaRepositorio {
     }
 
     @Override
-    public List<Empresa> listarTodos() {
-        return jpa.findAll();
-    }
-
-    @Override
     public boolean existeComEmail(String email) {
         return jpa.existsByEmail(email);
     }
@@ -44,11 +38,6 @@ class EmpresaRepositorioJpa implements EmpresaRepositorio {
     @Override
     public boolean existeComCnpj(String cnpj) {
         return jpa.existsByCnpj(cnpj);
-    }
-
-    @Override
-    public void excluir(Empresa empresa) {
-        jpa.delete(empresa);
     }
 
     @Override

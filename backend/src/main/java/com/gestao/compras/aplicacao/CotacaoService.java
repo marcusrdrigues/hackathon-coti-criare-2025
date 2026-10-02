@@ -82,17 +82,6 @@ public class CotacaoService {
         return cotacaoRepositorio.listarAbertasVigentes(LocalDateTime.now());
     }
 
-    @Transactional(readOnly = true)
-    public List<Cotacao> listarPorStatus(StatusCotacao status) {
-        return cotacaoRepositorio.listarPorStatus(status);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Cotacao> listarPorEmpresaEStatus(UUID empresaId, StatusCotacao status) {
-        return cotacaoRepositorio.listarDaEmpresaPorStatus(empresaId, status);
-    }
-
-
     @Transactional
     public Cotacao atualizarCotacao(UUID id, UUID empresaId, Cotacao cotacaoAtualizada) {
         Cotacao cotacao = buscarDaEmpresa(id, empresaId);
@@ -137,16 +126,6 @@ public class CotacaoService {
         cotacao.setStatus(StatusCotacao.CANCELADA);
         return cotacaoRepositorio.salvar(cotacao);
     }
-
-    @Transactional
-    public void deletarCotacao(UUID id, UUID empresaId) {
-        Cotacao cotacao = buscarDaEmpresa(id, empresaId);
-        if (propostaRepositorio.contarDaCotacao(id) > 0) {
-            throw new RegraDeNegocioException("Cotações que já receberam propostas não podem ser excluídas. Cancele-a.");
-        }
-        cotacaoRepositorio.excluir(cotacao);
-    }
-
 
     private void verificarDona(Cotacao cotacao, UUID empresaId) {
         if (!cotacao.getEmpresa().getId().equals(empresaId)) {

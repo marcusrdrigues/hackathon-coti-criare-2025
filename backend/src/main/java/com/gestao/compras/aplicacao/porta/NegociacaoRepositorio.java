@@ -13,8 +13,6 @@ public interface NegociacaoRepositorio {
 
     Optional<Negociacao> buscarPorId(UUID id);
 
-    Optional<Negociacao> buscarPorProposta(UUID propostaId);
-
     boolean existeParaProposta(UUID propostaId);
 
     List<Negociacao> listarDaEmpresa(UUID empresaId);

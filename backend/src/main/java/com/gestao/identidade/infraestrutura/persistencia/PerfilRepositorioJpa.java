@@ -5,9 +5,7 @@ import com.gestao.identidade.dominio.Perfil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 /** Adaptador: implementa a porta dos perfis com o Spring Data JPA. */
 @Repository
@@ -22,18 +20,8 @@ class PerfilRepositorioJpa implements PerfilRepositorio {
     }
 
     @Override
-    public Optional<Perfil> buscarPorId(UUID id) {
-        return jpa.findById(id);
-    }
-
-    @Override
     public Optional<Perfil> buscarPorNome(String nome) {
         return jpa.findByNome(nome);
-    }
-
-    @Override
-    public List<Perfil> listarTodos() {
-        return jpa.findAll();
     }
 
     @Override

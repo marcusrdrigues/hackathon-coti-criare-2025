@@ -1,6 +1,5 @@
 package com.gestao.identidade.infraestrutura.seguranca;
 
-import com.gestao.compartilhado.dominio.AcessoNegadoException;
 import com.gestao.compartilhado.dominio.NaoAutenticadoException;
 import com.gestao.identidade.aplicacao.UsuarioAutenticado;
 import com.gestao.identidade.dominio.TipoUsuario;
@@ -32,14 +31,5 @@ public class UsuarioAtual {
         return new UsuarioAutenticado(
                 UUID.fromString(jwt.getSubject()),
                 TipoUsuario.valueOf(jwt.getClaimAsString(EmissorDeTokenJwt.CLAIM_TIPO)));
-    }
-
-    /** Garante que o usuário só altere o próprio cadastro. */
-    public UsuarioAutenticado exigirMesmoUsuario(UUID id) {
-        UsuarioAutenticado atual = obter();
-        if (!atual.id().equals(id)) {
-            throw new AcessoNegadoException("Você só pode alterar o seu próprio cadastro.");
-        }
-        return atual;
     }
 }

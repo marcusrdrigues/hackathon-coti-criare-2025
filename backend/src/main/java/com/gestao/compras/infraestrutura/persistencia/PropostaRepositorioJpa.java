@@ -42,11 +42,6 @@ class PropostaRepositorioJpa implements PropostaRepositorio {
     }
 
     @Override
-    public long contarDaCotacao(UUID cotacaoId) {
-        return jpa.countByCotacaoId(cotacaoId);
-    }
-
-    @Override
     public void excluir(Proposta proposta) {
         jpa.delete(proposta);
     }

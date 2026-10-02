@@ -43,10 +43,4 @@ public class MensagemNegociacaoController {
                 .map(mensagemMapper::toResponse)
                 .toList());
     }
-
-    @Operation(summary = "Buscar mensagem", description = "Só para os participantes da negociação")
-    @GetMapping("/{id}")
-    public ResponseEntity<MensagemResponse> buscarPorId(@PathVariable UUID id) {
-        return ResponseEntity.ok(mensagemMapper.toResponse(mensagemService.buscarPorId(id, usuarioAtual.obter())));
-    }
 }

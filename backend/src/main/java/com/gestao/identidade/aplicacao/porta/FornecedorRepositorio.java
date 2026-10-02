@@ -2,7 +2,6 @@ package com.gestao.identidade.aplicacao.porta;
 
 import com.gestao.identidade.dominio.Fornecedor;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,11 +14,7 @@ public interface FornecedorRepositorio {
 
     Optional<Fornecedor> buscarPorEmail(String email);
 
-    List<Fornecedor> listarTodos();
-
     boolean existeComEmail(String email);
 
     boolean existeComCnpj(String cnpj);
-
-    void excluir(Fornecedor fornecedor);
 }

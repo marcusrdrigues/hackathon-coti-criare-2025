@@ -67,23 +67,6 @@ public class PropostaController {
         return ResponseEntity.ok(paraResposta(propostaService.listarPorCotacao(cotacaoId, usuarioAtual.obter().id())));
     }
 
-    @Operation(summary = "Quantidade de propostas de uma cotação")
-    @GetMapping("/cotacao/{cotacaoId}/count")
-    public ResponseEntity<Long> contarPropostasPorCotacao(@PathVariable UUID cotacaoId) {
-        return ResponseEntity.ok(propostaService.contarPropostasPorCotacao(cotacaoId));
-    }
-
-    @Operation(summary = "Editar proposta", description = "Perfil FORNECEDOR, autor. Só enquanto não foi analisada")
-    @PreAuthorize("hasRole('FORNECEDOR')")
-    @PutMapping("/{id}")
-    public ResponseEntity<PropostaResponse> atualizarProposta(
-            @Parameter(description = "ID da proposta") @PathVariable UUID id,
-            @Valid @RequestBody PropostaRequest request) {
-        Proposta proposta = propostaService.atualizarProposta(
-                id, usuarioAtual.obter().id(), propostaMapper.toEntity(request));
-        return ResponseEntity.ok(propostaMapper.toResponse(proposta));
-    }
-
     @Operation(summary = "Recusar proposta", description = "Perfil EMPRESA, dona da cotação")
     @PreAuthorize("hasRole('EMPRESA')")
     @PatchMapping("/{id}/recusar")

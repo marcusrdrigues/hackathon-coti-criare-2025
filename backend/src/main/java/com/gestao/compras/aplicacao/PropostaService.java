@@ -129,29 +129,6 @@ public class PropostaService {
         return propostaRepositorio.salvar(proposta);
     }
 
-    @Transactional
-    public Proposta atualizarProposta(UUID id, UUID fornecedorId, Proposta propostaAtualizada) {
-        Proposta proposta = buscarPorId(id);
-        verificarAutor(proposta, fornecedorId);
-
-        if (proposta.getStatus() != StatusProposta.ENVIADA) {
-            throw new RegraDeNegocioException("Só é possível editar propostas que ainda não foram analisadas!");
-        }
-        if (proposta.getCotacao().getStatus() != StatusCotacao.ABERTA) {
-            throw new RegraDeNegocioException("Cotação não está mais aberta para propostas!");
-        }
-
-        proposta.setValor(propostaAtualizada.getValor());
-        proposta.setDescricao(propostaAtualizada.getDescricao());
-
-        return propostaRepositorio.salvar(proposta);
-    }
-
-    @Transactional(readOnly = true)
-    public long contarPropostasPorCotacao(UUID cotacaoId) {
-        return propostaRepositorio.contarDaCotacao(cotacaoId);
-    }
-
     /** O fornecedor pode retirar a proposta enquanto ela não foi aceita. */
     @Transactional
     public void deletarProposta(UUID id, UUID fornecedorId) {
