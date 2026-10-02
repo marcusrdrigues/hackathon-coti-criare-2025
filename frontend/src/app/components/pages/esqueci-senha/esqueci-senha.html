@@ -1,7 +1,7 @@
 <app-layout-acesso>
   @if (enviadoPara(); as email) {
     <h1 class="titulo">Confira seu e-mail</h1>
-    <p class="subtitulo" role="status">
+    <p class="mensagem" role="status">
       Se houver uma conta com <strong>{{ email }}</strong>, enviamos um link para você criar uma senha nova.
       Ele vale por 30 minutos.
     </p>
