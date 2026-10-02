@@ -28,6 +28,6 @@ Este repositório é público: as specs descrevem comportamento e decisões, nun
 
 | # | Spec | Status |
 |---|---|---|
-| [001](001-fundacao-da-arquitetura/spec.md) | Fundação da arquitetura: módulos, identidade com organizações, autorização, observabilidade e padrões de API | Em revisão |
+| [001](001-fundacao-da-arquitetura/spec.md) | Fundação da arquitetura: módulos, identidade com organizações, autorização, observabilidade e padrões de API | Aprovada · em implementação |
 
 Modelo para uma spec nova: [template.md](template.md).

@@ -1,6 +1,6 @@
 # 001 · Fundação da arquitetura
 
-- **Status:** Em revisão
+- **Status:** Aprovada
 - **Data:** 2026-10-01
 - **Plano:** [plan.md](plan.md) · **Tarefas:** [tasks.md](tasks.md)
 
@@ -86,7 +86,8 @@ Uma **organização** é a empresa compradora ou o fornecedor, com razão social
 
 **Critérios de aceite**
 
-- **Dado** o back-end, **então** o código fica organizado por módulo de negócio (identidade, cotação, proposta, negociação, tempo real, demonstração) mais uma parte compartilhada.
+- **Dado** o back-end, **então** o código fica organizado por módulo de negócio (identidade, compras, painel, tempo real, demonstração) mais uma parte compartilhada, cada um com as camadas da Clean Architecture (domínio, aplicação e infraestrutura).
+- **Dado** as camadas de um módulo, **então** as dependências apontam para dentro: o domínio não conhece aplicação nem infraestrutura, e a aplicação fala com o mundo externo por portas (interfaces). Um teste falha se essa regra for quebrada.
 - **Dado** um módulo, **quando** ele usa outro, **então** só usa o que o outro expõe publicamente ou reage aos eventos dele. Um teste falha se essa regra for quebrada.
 - **Dado** a reorganização, **então** nenhum comportamento muda: todos os testes existentes continuam passando.
 
@@ -121,9 +122,12 @@ Uma **organização** é a empresa compradora ou o fornecedor, com razão social
 - **Qualidade:** o quality gate do SonarCloud continua passando, com pelo menos 80% de cobertura no código novo.
 - **Entrega:** em passos pequenos, cada um com o CI verde e o roadmap atualizado.
 
-## Decisões em aberto
+## Decisões tomadas
 
-1. **Nome dos tipos de organização.** Manter **Empresa** e **Fornecedor**, que já são a linguagem das telas e da API, em vez de termos novos como "compradora" e "fornecedora". *Recomendação: manter.*
-2. **404 para recurso de outra organização** em vez do 403 de hoje. *Recomendação: 404.* Evita que alguém descubra ids válidos por tentativa.
-3. **Convite por link** que o proprietário repassa, até existir envio de e-mail. *Recomendação: link.* O fluxo é o mesmo que o e-mail vai usar depois.
-4. **Problem Details** muda o formato dos erros da API. Hoje o único cliente é o nosso front-end, que será ajustado no mesmo passo. *Recomendação: adotar agora*, enquanto é barato.
+Resolvidas na revisão da spec, em 2026-10-01:
+
+1. **Os tipos de organização continuam se chamando Empresa e Fornecedor**, a linguagem que as telas e a API já usam.
+2. **Recurso de outra organização responde 404**, igual a um id inexistente, para não revelar que o id é válido.
+3. **Convite por link** que o proprietário repassa. Envio de e-mail não faz parte do plano.
+4. **Erros no formato Problem Details (RFC 9457)**, com o front-end ajustado no mesmo passo.
+5. **Monólito modular, não microserviços.** Os módulos seguem a Clean Architecture e ficam prontos para virar serviço; a primeira extração, se os números justificarem, é a IA ([ADR 0013](../../adr/0013-monolito-modular-com-clean-architecture.md)).

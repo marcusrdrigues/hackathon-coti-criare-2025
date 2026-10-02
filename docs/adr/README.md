@@ -18,5 +18,6 @@ Uma decisão registrada não se edita. Se ela mudar, um ADR novo a substitui, e 
 | [0010](0010-design-tokens-e-tema-do-sistema.md) | Design tokens e tema que segue o sistema | Aceita |
 | [0011](0011-componentes-proprios-no-lugar-do-bootstrap.md) | Componentes próprios no lugar do Bootstrap | Aceita |
 | [0012](0012-tempo-real-com-websocket-e-stomp.md) | Tempo real com WebSocket e STOMP | Aceita |
+| [0013](0013-monolito-modular-com-clean-architecture.md) | Monólito modular com Clean Architecture, verificado por teste | Aceita |
 
 Modelo para um ADR novo: [template.md](template.md).

@@ -14,36 +14,44 @@ Como a [spec 001](spec.md) vira código. As decisões estruturais ganham ADR no 
 
 ## Módulos (R5)
 
-O back-end vira um **monólito modular**: um único deploy, com módulos de negócio de fronteiras explícitas, verificadas pelo **Spring Modulith** num teste (`ApplicationModules.of(...).verify()`). A compatibilidade com o Spring Boot 4 é conferida no passo 2. Se houver problema, as mesmas regras viram testes do ArchUnit.
+O back-end vira um **monólito modular**: um único deploy, com módulos de negócio de fronteiras explícitas. Dentro de cada módulo, as camadas da **Clean Architecture**. O detalhamento e as alternativas estão no [ADR 0013](../../adr/0013-monolito-modular-com-clean-architecture.md).
 
 ```mermaid
 flowchart LR
-    demonstracao --> cotacao & proposta & negociacao & identidade
-    painel --> cotacao & proposta & negociacao
-    temporeal --> negociacao & proposta
-    negociacao --> proposta --> cotacao
-    cotacao & proposta & negociacao & painel & temporeal --> identidade
-    identidade & cotacao & proposta & negociacao & painel & temporeal & demonstracao --> compartilhado
+    demonstracao --> compras & identidade
+    painel --> compras & identidade
+    temporeal --> compras & identidade
+    compras --> identidade
+    identidade & compras & painel & temporeal & demonstracao --> compartilhado
 ```
 
 | Módulo | Responsabilidade |
 |---|---|
-| `identidade` | Usuários, organizações, equipe, login, tokens, superadmin |
-| `cotacao` | Cotações e categorias |
-| `proposta` | Propostas de fornecedores |
-| `negociacao` | Negociação e mensagens |
-| `temporeal` | WebSocket: reage a eventos dos outros módulos |
+| `identidade` | Contas, login, sessões e segurança; organizações, equipe e superadmin nos próximos passos |
+| `compras` | Cotações, propostas, negociações e mensagens |
 | `painel` | Números dos dashboards: só leitura, consultas próprias (o primeiro passo de CQRS, no mesmo banco) |
+| `temporeal` | WebSocket: reage aos eventos de `compras` |
 | `demonstracao` | Contas e dados da demo pública |
-| `compartilhado` | Erros, configuração web, utilitários (CNPJ, e-mail) |
+| `compartilhado` | Exceções de negócio, validação de documentos e configuração web comum |
 
-Regras:
+**Por que cotação, proposta e negociação ficaram juntas:** separadas, criavam dependência circular, e o motivo é de negócio. Abrir uma negociação aceita a proposta e muda a cotação na mesma transação; fechar o negócio encerra a cotação e recusa as outras propostas. São partes do mesmo contexto.
 
-- O pacote raiz de cada módulo é a sua **API pública** (serviços, eventos, entidades que outros referenciam). Subpacotes (`web`, `dados`, `interno`) são **internos**.
-- Um módulo só chama a API pública de outro ou reage aos eventos dele. Repositórios nunca são usados fora do próprio módulo.
-- **Concessão consciente:** as associações JPA entre módulos (negociação → proposta → cotação) continuam, para não reescrever as consultas agora. Cada uma fica registrada no ADR e pode virar referência por id quando um módulo precisar se separar.
+Camadas de cada módulo:
 
-ADR: **0013 · Monólito modular com Spring Modulith**.
+```text
+modulo/
+├── dominio/          entidades, status, eventos (não conhece as camadas de fora)
+├── aplicacao/        casos de uso e mapeadores
+│   ├── dto/          entradas e saídas
+│   └── porta/        interfaces para o que é externo (persistência, token, senha, canal)
+└── infraestrutura/   adaptadores: web (REST), persistencia (Spring Data/JDBC), seguranca
+```
+
+Regras, todas verificadas em `ArquiteturaTest`:
+
+- **Entre módulos (Spring Modulith):** sem ciclos, e um módulo só usa o que o outro expõe como interface nomeada (`dominio`, `aplicacao`, `dto` e, na identidade, `seguranca`). Portas e infraestrutura são privadas.
+- **Entre camadas (ArchUnit):** o domínio não depende de aplicação nem de infraestrutura; domínio e aplicação não conhecem web, Spring Data, Spring Security nem mensageria.
+- **Concessão consciente:** as entidades levam anotações do JPA, e as associações entre módulos (cotação → empresa) continuam. Separar modelo de domínio e de persistência fica para quando um módulo precisar de outro banco.
 
 ## Rastreio e logs (R6)
 

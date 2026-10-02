@@ -224,18 +224,13 @@ hackathon-coti-criare-2025/
 │   ├── scripts/
 │   │   └── smoke-test-api.sh    Percorre o fluxo completo via HTTP
 │   ├── src/main/resources/db/migration/   Esquema do banco versionado (Flyway)
-│   └── src/main/java/com/gestao/
-│       ├── configurations/      CORS, Swagger, BCrypt, perfis iniciais, dados de demonstração
-│       ├── controllers/         Endpoints REST (/api/v1/...)
-│       ├── dtos/                Records de entrada e saída, com Bean Validation
-│       ├── entities/            Entidades JPA
-│       ├── enums/               Status e categorias
-│       ├── exceptions/          Exceções de negócio + GlobalExceptionHandler
-│       ├── mappers/             Entidade ⇄ DTO
-│       ├── repositories/        Spring Data JPA (+ projeções para o dashboard)
-│       ├── security/            Spring Security, JWT, refresh token e limite de tentativas
-│       ├── services/            Regras de negócio, com @Transactional
-│       └── utils/               Validação de CNPJ e normalização de e-mail
+│   └── src/main/java/com/gestao/   Um módulo por pasta, cada um com dominio · aplicacao · infraestrutura
+│       ├── identidade/          Contas, login, sessões (JWT + refresh token) e segurança da API
+│       ├── compras/             Cotações, propostas, negociações e mensagens
+│       ├── painel/              Números dos dashboards (só leitura)
+│       ├── temporeal/           WebSocket/STOMP: eventos de compras ao vivo
+│       ├── demonstracao/        Contas e dados da demo pública
+│       └── compartilhado/       Exceções de negócio, validação de CNPJ, CORS e Swagger
 │
 └── frontend/                    SPA · Angular 21 · CSS próprio
     ├── vercel.json              Deploy na Vercel; repassa /api/* para a API
@@ -255,6 +250,35 @@ hackathon-coti-criare-2025/
         │   └── shared/          Estrutura (barra lateral e abas), avisos, telas de acesso, seletor de tema
         └── ui/                  Componentes globais: ícones, seletor, menu, segmentado, painel, confirmação, status
 ```
+
+### Módulos e camadas
+
+O back-end é um **monólito modular**: um único deploy, dividido em módulos de negócio com fronteiras verificadas por teste. Cada módulo segue a **Clean Architecture**, com as dependências sempre apontando para dentro ([ADR 0013](docs/adr/0013-monolito-modular-com-clean-architecture.md)).
+
+```mermaid
+flowchart LR
+    demonstracao --> compras & identidade
+    painel --> compras & identidade
+    temporeal --> compras & identidade
+    compras --> identidade
+    identidade & compras & painel & temporeal & demonstracao --> compartilhado
+```
+
+```text
+modulo/
+├── dominio/          Entidades, status e eventos de domínio
+├── aplicacao/        Casos de uso e mapeadores
+│   ├── dto/          Entradas e saídas, com Bean Validation
+│   └── porta/        Interfaces para o que é externo: persistência, token, senha, tempo real
+└── infraestrutura/   Adaptadores: REST, Spring Data JPA/JDBC, segurança, STOMP
+```
+
+- **Entre módulos:** um módulo só usa o que o outro expõe (domínio, casos de uso e DTOs) e nunca os repositórios ou a infraestrutura dele. Não há dependência circular. Quem confere é o **Spring Modulith**.
+- **Entre camadas:** o domínio não conhece aplicação nem infraestrutura, e a aplicação não conhece web, Spring Data nem Spring Security. Ela fala com o mundo externo por **portas**, implementadas por **adaptadores**. Quem confere é o **ArchUnit**.
+- **CQRS no mesmo banco:** o módulo `painel` só lê, com consultas próprias, sem passar pelas regras de escrita.
+- **Pronto para virar serviço:** como os módulos só conversam pela API uns dos outros, um deles pode ser extraído sem reescrever o resto. O primeiro candidato é a IA, se os números justificarem.
+
+As duas verificações estão em [`ArquiteturaTest`](backend/src/test/java/com/gestao/ArquiteturaTest.java): quebrar uma regra quebra o build.
 
 ### Modelo de dados
 
@@ -590,8 +614,10 @@ O **GitHub Actions** (`.github/workflows/ci.yml`) roda a cada push: compila e te
 As decisões maiores têm um registro próprio, com contexto, alternativas e consequências, em [docs/adr](docs/adr/README.md).
 
 - **Monorepo** com back-end e front-end, unificado a partir dos repositórios originais com o histórico preservado.
-- **Camadas bem separadas no back-end** (controller → service → repository) com **DTOs em `record`**: a API nunca expõe entidades JPA nem a senha.
-- **Regras de negócio nos services com `@Transactional`**: operações que mexem em várias entidades (fechar negócio = negociação + cotação + outras propostas) são gravadas juntas ou não são gravadas.
+- **Monólito modular com Clean Architecture**, verificado por teste, em vez de microserviços: transações locais onde o negócio exige (fechar negócio mexe em negociação, cotação e propostas de uma vez), com módulos prontos para virar serviço quando houver motivo ([ADR 0013](docs/adr/0013-monolito-modular-com-clean-architecture.md)).
+- **Portas e adaptadores**: os casos de uso dependem de interfaces (repositórios, emissor de token, hash de senha, canal de tempo real). Trocar o banco ou o provedor não mexe nas regras.
+- **DTOs em `record`**: a API nunca expõe entidades JPA nem a senha.
+- **Regras de negócio nos casos de uso com `@Transactional`**: operações que mexem em várias entidades (fechar negócio = negociação + cotação + outras propostas) são gravadas juntas ou não são gravadas.
 - **Status por `enum`** no lugar de texto livre, para que transições inválidas sejam barradas no código.
 - **Validação em duas camadas**: Bean Validation nos DTOs para formato, e services para regras que dependem do banco (duplicidade, prazo, status).
 - **Tratamento global de erros** (`@RestControllerAdvice`), devolvendo sempre o mesmo formato JSON que o front-end exibe.
@@ -648,7 +674,7 @@ A negociação acontece ao vivo, sem recarregar a página.
 A base que as próximas fases exigem, feita antes delas. Especificação: [spec 001](docs/specs/001-fundacao-da-arquitetura/spec.md).
 
 - [x] **Spec-Driven Development**: processo e modelo de especificação em [`docs/specs/`](docs/specs/README.md)
-- [ ] **Monólito modular**: código organizado por módulo de negócio, com as fronteiras verificadas por teste (Spring Modulith)
+- [x] **Monólito modular com Clean Architecture**: módulos de negócio com domínio, aplicação e infraestrutura, portas e adaptadores, e fronteiras verificadas por teste (Spring Modulith + ArchUnit)
 - [ ] **Rastreio por requisição** e logs estruturados, sem dados sensíveis
 - [ ] **Pessoas e organizações**: várias pessoas por empresa ou fornecedor, com papéis, e registro de quem fez cada ação
 - [ ] **Autorização por organização**, com teste de isolamento em todas as rotas e trava para rotas novas

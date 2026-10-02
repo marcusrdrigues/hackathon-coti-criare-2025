@@ -7,14 +7,15 @@ Cada passo é entregue com o CI verde (testes, ponta a ponta e quality gate) e c
 - [x] Processo de SDD documentado em [`docs/specs/`](../README.md)
 - [x] Spec, plano e tarefas da fundação
 - [x] Roadmap do README reorganizado em fases
-- [ ] Decisões em aberto da spec resolvidas
+- [x] Decisões em aberto da spec resolvidas
 
 ## Passo 2 · Módulos (R5)
 
-- [ ] Conferir o Spring Modulith com o Spring Boot 4 (ou cair para ArchUnit)
-- [ ] Mover o código para os módulos `identidade`, `cotacao`, `proposta`, `negociacao`, `temporeal`, `painel`, `demonstracao` e `compartilhado`
-- [ ] Teste que verifica as fronteiras entre módulos
-- [ ] ADR 0013 e seção de arquitetura do README
+- [x] Spring Modulith compatível com o Spring Boot 4
+- [x] Código nos módulos `identidade`, `compras`, `painel`, `temporeal`, `demonstracao` e `compartilhado`, cada um com `dominio`, `aplicacao` e `infraestrutura`
+- [x] Portas e adaptadores: persistência, token, senha, canal de tempo real e limpeza da demo
+- [x] Teste que verifica módulos (Spring Modulith) e camadas (ArchUnit)
+- [x] ADR 0013 e seção de arquitetura do README
 
 ## Passo 3 · Rastreio e logs (R6)
 
