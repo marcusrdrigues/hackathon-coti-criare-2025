@@ -17,8 +17,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * A migração V3 (pessoas e organizações) sobre dados no formato antigo, num PostgreSQL real.
- * O banco é levado até a V2, recebe uma empresa, um fornecedor e um negócio inteiro
- * gravados como a versão anterior gravava, e então a V3 é aplicada.
+ * O banco é levado até a V2, fica com as restrições nomeadas como o Hibernate nomeia (o banco
+ * de produção nasceu dele, antes do Flyway), recebe uma empresa, um fornecedor e um negócio
+ * inteiro gravados como a versão anterior gravava, e então as V2.1 e V3 são aplicadas.
  */
 @Testcontainers(disabledWithoutDocker = true)
 class MigracaoPessoasEOrganizacoesTest {
@@ -44,6 +45,7 @@ class MigracaoPessoasEOrganizacoesTest {
         jdbc = new JdbcTemplate(banco);
 
         flyway(banco, "2").migrate();
+        nomearComoOHibernate();
         gravarNoFormatoAntigo();
         flyway(banco, "3").migrate();
     }
@@ -121,7 +123,29 @@ class MigracaoPessoasEOrganizacoesTest {
                 "fk_refresh_token_usuario>tb_usuario"), destinos);
     }
 
+    @Test
+    void nenhumaChaveApontaMaisParaAsContasAntigas() {
+        List<String> antigas = jdbc.queryForList("""
+                select tc.constraint_name
+                from information_schema.table_constraints tc
+                join information_schema.constraint_column_usage ccu on ccu.constraint_name = tc.constraint_name
+                where tc.constraint_type = 'FOREIGN KEY' and ccu.table_name in ('tb_empresa', 'tb_fornecedor')
+                  and tc.table_name not in ('tb_empresa', 'tb_fornecedor')
+                """, String.class);
+        assertEquals(List.of(), antigas);
+    }
+
     // ---------------------------------------------------------------- apoio
+
+    /** Os nomes que o Hibernate gera: "FK" + hash para as chaves e "tabela_coluna_check" para as checagens. */
+    private static void nomearComoOHibernate() {
+        jdbc.execute("alter table tb_cotacao rename constraint fk_cotacao_empresa to fk8x1m2c3o4t5a6c7a8o9");
+        jdbc.execute("alter table tb_proposta rename constraint fk_proposta_fornecedor to fkp1r2o3p4o5s6t7a8");
+        jdbc.execute("alter table tb_negociacao rename constraint fk_negociacao_empresa to fkn1e2g3e4m5p6");
+        jdbc.execute("alter table tb_negociacao rename constraint fk_negociacao_fornecedor to fkn1e2g3f4o5r6");
+        jdbc.execute("alter table tb_refresh_token rename constraint ck_refresh_token_tipo "
+                + "to tb_refresh_token_tipo_usuario_check");
+    }
 
     private static Flyway flyway(DriverManagerDataSource banco, String versao) {
         return Flyway.configure().dataSource(banco).locations("classpath:db/migration").target(versao).load();

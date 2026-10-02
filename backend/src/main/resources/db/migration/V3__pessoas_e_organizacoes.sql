@@ -14,6 +14,9 @@
 --
 -- tb_empresa, tb_fornecedor e tb_perfil deixam de ser usadas e só saem numa
 -- migração futura, depois de a versão nova estar validada em produção.
+--
+-- As chaves estrangeiras antigas (para tb_empresa e tb_fornecedor) já foram
+-- removidas pela V2.1, que as encontra pelo que ligam, e não pelo nome.
 -- =====================================================================
 
 CREATE TABLE tb_organizacao (
@@ -60,12 +63,16 @@ CREATE INDEX idx_membro_organizacao ON tb_membro (organizacao_id);
 -- Dados: empresas e fornecedores viram organizações com o proprietário
 -- ---------------------------------------------------------------------
 
+-- Tamanhos e máscara tratados também aqui: o banco de produção foi criado pelo
+-- Hibernate, com colunas mais largas que as da V1
 INSERT INTO tb_organizacao (id, tipo, razao_social, cnpj, criada_em)
-SELECT id, 'EMPRESA', nome, REPLACE(REPLACE(REPLACE(cnpj, '.', ''), '/', ''), '-', ''), CURRENT_TIMESTAMP
+SELECT id, 'EMPRESA', SUBSTRING(nome, 1, 200), REPLACE(REPLACE(REPLACE(cnpj, '.', ''), '/', ''), '-', ''),
+       CURRENT_TIMESTAMP
 FROM tb_empresa;
 
 INSERT INTO tb_organizacao (id, tipo, razao_social, cnpj, criada_em)
-SELECT id, 'FORNECEDOR', nome, cnpj, CURRENT_TIMESTAMP
+SELECT id, 'FORNECEDOR', SUBSTRING(nome, 1, 200), REPLACE(REPLACE(REPLACE(cnpj, '.', ''), '/', ''), '-', ''),
+       CURRENT_TIMESTAMP
 FROM tb_fornecedor;
 
 -- O nome da pessoa começa igual ao da organização; ela pode corrigir depois.
@@ -76,7 +83,7 @@ SELECT id, SUBSTRING(nome, 1, 150), LOWER(TRIM(email)), senha, FALSE, CURRENT_TI
 FROM tb_empresa;
 
 INSERT INTO tb_usuario (id, nome, email, senha_hash, superadmin, criado_em)
-SELECT id, nome, LOWER(TRIM(email)), senha, FALSE, CURRENT_TIMESTAMP
+SELECT id, SUBSTRING(nome, 1, 150), LOWER(TRIM(email)), senha, FALSE, CURRENT_TIMESTAMP
 FROM tb_fornecedor;
 
 INSERT INTO tb_membro (id, usuario_id, organizacao_id, papel, criado_em)
@@ -88,16 +95,9 @@ FROM tb_organizacao;
 -- (as colunas empresa_id e fornecedor_id mantêm o nome)
 -- ---------------------------------------------------------------------
 
-ALTER TABLE tb_cotacao DROP CONSTRAINT fk_cotacao_empresa;
 ALTER TABLE tb_cotacao ADD CONSTRAINT fk_cotacao_empresa FOREIGN KEY (empresa_id) REFERENCES tb_organizacao (id);
-
-ALTER TABLE tb_proposta DROP CONSTRAINT fk_proposta_fornecedor;
 ALTER TABLE tb_proposta ADD CONSTRAINT fk_proposta_fornecedor FOREIGN KEY (fornecedor_id) REFERENCES tb_organizacao (id);
-
-ALTER TABLE tb_negociacao DROP CONSTRAINT fk_negociacao_empresa;
 ALTER TABLE tb_negociacao ADD CONSTRAINT fk_negociacao_empresa FOREIGN KEY (empresa_id) REFERENCES tb_organizacao (id);
-
-ALTER TABLE tb_negociacao DROP CONSTRAINT fk_negociacao_fornecedor;
 ALTER TABLE tb_negociacao ADD CONSTRAINT fk_negociacao_fornecedor FOREIGN KEY (fornecedor_id) REFERENCES tb_organizacao (id);
 
 -- ---------------------------------------------------------------------
@@ -121,7 +121,9 @@ ALTER TABLE tb_mensagem_negociacao ADD CONSTRAINT fk_mensagem_remetente FOREIGN 
 -- Sessões: o token novo carrega organização e papel, então todos entram de novo
 -- ---------------------------------------------------------------------
 
+-- O nome da restrição só é este nos bancos criados pela V1; no PostgreSQL, uma
+-- restrição de outro nome sobre a coluna sai junto com ela.
 DELETE FROM tb_refresh_token;
-ALTER TABLE tb_refresh_token DROP CONSTRAINT ck_refresh_token_tipo;
+ALTER TABLE tb_refresh_token DROP CONSTRAINT IF EXISTS ck_refresh_token_tipo;
 ALTER TABLE tb_refresh_token DROP COLUMN tipo_usuario;
 ALTER TABLE tb_refresh_token ADD CONSTRAINT fk_refresh_token_usuario FOREIGN KEY (usuario_id) REFERENCES tb_usuario (id);
