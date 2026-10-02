@@ -122,9 +122,10 @@ class EquipeApiTest {
                 .andExpect(jsonPath("$.message").value(containsString("já foi usado")));
 
         String vencido = convidar("Carla Dias", "carla@criare.com");
+        // Grava o convite, vence-o direto no banco e esquece a cópia que o Hibernate tinha na memória
+        entityManager.flush();
         jdbc.update("UPDATE tb_convite SET expira_em = ? WHERE email = 'carla@criare.com'",
                 Timestamp.valueOf(LocalDateTime.now().minusMinutes(1)));
-        // O convite ainda estava na memória do Hibernate, com a validade antiga
         entityManager.clear();
         aceitar(vencido, "Carla Dias")
                 .andExpect(status().isNotFound())
