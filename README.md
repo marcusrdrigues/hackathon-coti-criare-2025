@@ -97,7 +97,7 @@ sequenceDiagram
 | **Cotações** | Lista com filtro por situação (com contagem), busca, quantidade de propostas e menor oferta |
 | **Detalhe da cotação** | Requisitos e as propostas **da menor para a maior**, com destaque para o menor valor; ações de **negociar**, **recusar** e **cancelar** a cotação, sempre com confirmação |
 | **Negociações** | Todas as conversas com fornecedores, em andamento primeiro |
-| **Sala de negociação** | Conversa no estilo de mensagens, com cada oferta destacada; a evolução do valor no topo (proposta inicial → última oferta); **fechar o negócio** pela última oferta ou **encerrar sem acordo** |
+| **Sala de negociação** | Conversa no estilo de mensagens, com cada oferta destacada; a evolução do valor no topo (proposta inicial → última oferta); a **oferta na mesa** fixa acima do campo de mensagem, com **fazer contraproposta** e **fechar por R$ …**; uma oferta nova abre num cartão que compara o valor com o da mesa. **Encerrar sem acordo** fica nos detalhes e no menu "Mais ações", sempre com confirmação |
 
 ### 🚚 Fornecedor
 
@@ -107,7 +107,7 @@ sequenceDiagram
 | **Mural** | Cotações abertas e dentro do prazo, com busca, filtro por categoria, marcação de "Novo" e aviso de prazo curto; a proposta é enviada num painel lateral |
 | **Propostas · Em andamento** | Propostas aguardando análise e negociações ativas (com atalho para responder). Propostas ainda não analisadas podem ser retiradas |
 | **Propostas · Histórico** | Propostas vencidas e perdidas, com o motivo (fechou com outro fornecedor, cotação cancelada, negociação sem acordo…) e total em negócios fechados |
-| **Negociações** | Mesma sala da empresa: envia mensagens, contrapropostas e pode **aceitar** a última oferta da empresa |
+| **Negociações** | Mesma sala da empresa: envia mensagens, faz ofertas pelo cartão de oferta e pode **aceitar R$ …** a última oferta da empresa |
 
 ### 🔧 Em todas as telas
 
@@ -231,7 +231,8 @@ hackathon-coti-criare-2025/
 │   ├── docker-compose.yml       PostgreSQL 16 + API
 │   ├── scripts/
 │   │   └── smoke-test-api.sh    Percorre o fluxo completo via HTTP
-│   ├── src/main/resources/db/migration/   Esquema do banco versionado (Flyway)
+│   ├── src/main/resources/db/migration/   Esquema do banco versionado (Flyway, em SQL)
+│   ├── src/main/java/db/migration/        Migração que precisa de código (V2_1)
 │   └── src/main/java/com/gestao/   Um módulo por pasta, cada um com dominio · aplicacao · infraestrutura
 │       ├── identidade/          Organizações, pessoas e papéis, cadastro, login, sessões (JWT + refresh token) e segurança da API
 │       ├── compras/             Cotações, propostas, negociações e mensagens
@@ -252,7 +253,7 @@ hackathon-coti-criare-2025/
         │   ├── auth.interceptor.ts  Envia o token e renova a sessão quando ele vence
         │   ├── models.ts        Tipos espelhando os DTOs da API
         │   ├── services/        Um service por recurso da API + sessão + avisos
-        │   └── utils/           Máscara de CNPJ, status, mensagens de erro
+        │   └── utils/           Máscara de CNPJ, status, mensagens de erro, comparação de ofertas
         ├── components/
         │   ├── pages/           Uma pasta por tela
         │   └── shared/          Estrutura (barra lateral e abas), avisos, telas de acesso, seletor de tema
@@ -372,7 +373,7 @@ erDiagram
     }
 ```
 
-As tabelas antigas (`tb_empresa`, `tb_fornecedor` e `tb_perfil`) ficam no banco, sem uso, até a migração V4, depois da validação em produção.
+As tabelas antigas (`tb_empresa`, `tb_fornecedor` e `tb_perfil`) ficam no banco, sem uso, até a migração V5, depois da validação em produção. Antes disso, a V2_1 (escrita em Java) solta as chaves estrangeiras que apontavam para elas, porque o banco de produção nasceu do Hibernate e os nomes dessas chaves não são os do script.
 
 ---
 
@@ -663,7 +664,7 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | `SegurancaApiTest` | Pela camada HTTP: cadastro público (201, 409 e validação por campo), formato de `/auth/me`, 401 sem token e com token inválido, rotas públicas, cookie `HttpOnly`/`SameSite`, 403 por perfil, 404 para recurso de outra organização, identidade vinda do token, refresh pelo cookie, logout e CORS |
 | `TempoRealIntegrationTest` | WebSocket de verdade (STOMP): conexão sem token ou com token inválido recusada, mensagem e aviso entregues na hora (o aviso chega a toda a equipe da organização), conexão encerrada quando a pessoa sai da equipe, "digitando…" e quem não participa não consegue assinar a negociação |
 | `MigracoesPostgresTest` | Num PostgreSQL 16 real (Testcontainers): o Flyway aplica as migrações, o Hibernate valida o esquema e todas as tabelas existem |
-| `MigracaoPessoasEOrganizacoesTest` | A migração V3 sobre dados no formato antigo, num PostgreSQL real: empresas e fornecedores viram organizações com o mesmo id, cada conta vira uma pessoa proprietária com a mesma senha, o negócio ganha autoria, as chaves apontam para as tabelas novas e as sessões antigas são encerradas |
+| `MigracaoPessoasEOrganizacoesTest` | As migrações V2_1 e V3 sobre dados no formato antigo, com as chaves nomeadas como o Hibernate nomeia, num PostgreSQL real: empresas e fornecedores viram organizações com o mesmo id, cada conta vira uma pessoa proprietária com a mesma senha, o negócio ganha autoria, nenhuma chave aponta mais para as tabelas antigas, as chaves novas apontam para as tabelas novas e as sessões antigas são encerradas |
 | `FluxoCotacaoPostgresTest` e `AutenticacaoPostgresTest` | Os mesmos cenários das duas suítes acima, agora no PostgreSQL real, para pegar diferenças que o H2 esconde |
 | `DemonstracaoApiTest` | Login de demonstração em um clique, health check e reset diário dos dados de exemplo |
 | `EquipeApiTest` | Convidar, consultar e aceitar o convite (já logado como membro), link usado, vencido, cancelado ou adulterado sem criar conta, convite novo substituindo o anterior, e-mail já cadastrado, membro sem permissão de convidar ou remover, remoção revogando as sessões e mantendo o nome no histórico |
@@ -674,7 +675,7 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | `GlobalExceptionHandlerTest` | Respostas de erro difíceis de provocar pela API: erro inesperado sem detalhes internos, violação de integridade, acesso negado por perfil e bloqueio de login com `Retry-After` |
 | `smoke-test-api.sh` | Contra a API real com PostgreSQL: login (inclusive de um membro da equipe), proteção das rotas, CORS, validações, regras de perfil e de posse, cotação → proposta → negociação → mensagens → fechamento, dashboards, refresh com rotação e reuso, logout e força bruta |
 | Playwright (`frontend/e2e`) | No navegador, com API e banco reais: empresa e fornecedor negociam do começo ao fim (publicar, propor pelo painel do mural, contraproposta pelo cartão de oferta, aceitar, fechar com confirmação), vendo um ao outro **ao vivo** (proposta e aviso chegando à empresa, contador de não lidas do fornecedor e atalho do aviso, "digitando…", aceite e fechamento sem recarregar), a proprietária convida, a pessoa aceita pelo link num outro navegador, trabalha como membro e perde o acesso ao ser removida, rota protegida, login com erro, cadastro com validação de CNPJ, sessão após F5, sair, barra lateral recolhida e lembrada, e tema claro/escuro. As telas de acesso rodam também num celular emulado |
-| Front-end | Interceptor (token, renovação automática e expiração), guards por perfil, tema claro/escuro, seletor (teclado e busca por letra), controle segmentado, confirmação, máscara de CNPJ e componente raiz |
+| Front-end | Interceptor (token, renovação automática e expiração), guards por perfil, tema claro/escuro, seletor (teclado e busca por letra), controle segmentado, confirmação, máscara de CNPJ, comparação de ofertas e componente raiz |
 
 O **GitHub Actions** (`.github/workflows/ci.yml`) roda a cada push: compila e testa o back-end (inclusive contra PostgreSQL com Testcontainers), sobe a API com PostgreSQL e executa o teste de fumaça, faz o build de produção e os testes do front-end, e roda os testes ponta a ponta com Playwright. O **CodeQL** procura vulnerabilidades no código Java e TypeScript, e o **Dependabot** abre PRs semanais com as atualizações de dependências.
 
