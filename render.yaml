@@ -31,3 +31,5 @@ services:
         value: "true"
       - key: DB_POOL_SIZE
         value: "5"
+      - key: LOGGING_STRUCTURED_FORMAT_CONSOLE
+        value: ecs # logs em JSON, com o traceId de cada requisição

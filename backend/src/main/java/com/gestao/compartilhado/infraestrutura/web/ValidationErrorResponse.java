@@ -25,6 +25,10 @@ public class ValidationErrorResponse {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime timestamp;
 
+    @Schema(description = "Identificador de rastreio da requisição, o mesmo dos logs e do cabeçalho X-Trace-Id",
+            example = "4bf92f3577b34da6a3ce929d0e0e4736")
+    private String traceId;
+
     @Schema(description = "Mapa de erros de validação por campo",
             example = "{\"email\": \"Email é obrigatório\", \"senha\": \"Senha deve ter no mínimo 6 caracteres\"}")
     private Map<String, String> errors;

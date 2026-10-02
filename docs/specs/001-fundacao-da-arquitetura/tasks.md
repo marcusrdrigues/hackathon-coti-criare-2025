@@ -22,10 +22,11 @@ Cada passo é entregue com o CI verde (testes, ponta a ponta e quality gate) e c
 
 ## Passo 3 · Rastreio e logs (R6)
 
-- [ ] `traceId` em todos os logs da requisição e no cabeçalho `X-Trace-Id`
-- [ ] Logs em JSON no perfil de produção
-- [ ] Teste que garante que os logs não trazem senha, token, e-mail completo nem conteúdo de negociação
-- [ ] ADR 0014
+- [x] `traceId` (OpenTelemetry) em todos os logs da requisição, no cabeçalho `X-Trace-Id` e no corpo dos erros
+- [x] Front-end mostra o começo do código de rastreio quando a falha é do servidor
+- [x] Logs em JSON (ECS) em produção, conferidos no CI
+- [x] Teste que garante que os logs não trazem senha, token, e-mail completo nem conteúdo de negociação
+- [x] ADR 0014
 
 ## Passo 4 · Pessoas e organizações (R1)
 

@@ -201,6 +201,8 @@ sequenceDiagram
 | **Autorização por posse** | Os services conferem o dono de cada recurso | Empresa só vê e altera as próprias cotações; fornecedor não vê o lance do concorrente; negociação só para os dois participantes |
 | **Identidade** | Quem é o usuário vem **sempre do token**, nunca de um ID enviado no corpo | Ninguém consegue agir em nome de outra empresa trocando um ID |
 | **Chave de assinatura** | Lida da variável `JWT_SECRET`; sem ela, a API gera uma chave aleatória e avisa no log | Nenhum segredo fica no código |
+| **Rastreio** | Cada requisição tem um `traceId` (OpenTelemetry), que aparece em todas as linhas de log dela, no cabeçalho `X-Trace-Id` e no corpo dos erros. O front mostra o começo dele quando algo falha no servidor | Uma reclamação vira uma busca nos logs, sem expor detalhes do erro a quem usa |
+| **Logs** | Em JSON (formato ECS) em produção; nunca registram senha, token, e-mail completo nem o conteúdo de propostas e mensagens. Um teste confere | Log é um destino a mais para dado vazar, e o sigilo comercial da negociação vale ali também |
 
 O Swagger já vem com o botão **Authorize**: faça o login em `/api/v1/auth/login` e cole o `accessToken`.
 
@@ -411,6 +413,8 @@ Depois é só rodar o front-end como no passo 3.
 | `JWT_COOKIE_SECURE` | `false` | `true` em produção (HTTPS): o cookie só trafega por conexão segura |
 | `DB_POOL_SIZE` | `10` | Máximo de conexões com o banco |
 | `DEMO_RESET_CRON` | `0 0 4 * * *` | Profile `demo`: quando os dados de exemplo voltam ao estado inicial (horário de Brasília) |
+| `LOGGING_STRUCTURED_FORMAT_CONSOLE` | — (texto) | `ecs` grava os logs em JSON, com o `traceId` de cada requisição (usado em produção) |
+| `MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT` | — (não exporta) | Endereço de um coletor OpenTelemetry (OTLP/HTTP) para receber os traces |
 
 Se a API rodar em outra porta ou servidor, ajuste a URL em `frontend/src/environments/environment.development.ts`.
 
@@ -540,8 +544,15 @@ Conexão STOMP em `/ws` (em produção, `wss://portal-criare-api.onrender.com/ws
 ### Formato dos erros
 
 ```json
-{ "status": 400, "message": "Você já enviou uma proposta para esta cotação!", "timestamp": "2025-12-20T14:30:00" }
+{
+  "status": 400,
+  "message": "Você já enviou uma proposta para esta cotação!",
+  "timestamp": "2025-12-20T14:30:00",
+  "traceId": "4bf92f3577b34da6a3ce929d0e0e4736"
+}
 ```
+
+O `traceId` é o mesmo do cabeçalho `X-Trace-Id` e das linhas de log daquela requisição.
 
 Erros de validação trazem também o campo de cada problema:
 
@@ -550,6 +561,7 @@ Erros de validação trazem também o campo de cada problema:
   "status": 400,
   "message": "Erro de validação nos campos",
   "timestamp": "2025-12-20T14:30:00",
+  "traceId": "0af7651916cd43dd8448eb211c80319c",
   "errors": { "email": "Email inválido", "senha": "Senha deve ter letras e números" }
 }
 ```
@@ -562,7 +574,7 @@ Erros de validação trazem também o campo de cada problema:
 | `404` | Registro ou endpoint inexistente |
 | `409` | E-mail ou CNPJ já cadastrado |
 | `429` | Login bloqueado por excesso de tentativas (veja o header `Retry-After`) |
-| `500` | Erro inesperado (detalhes só no log do servidor) |
+| `500` | Erro inesperado (detalhes só no log do servidor, achados pelo `traceId`) |
 
 ---
 
@@ -597,6 +609,7 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | `DemonstracaoApiTest` | Login de demonstração em um clique, health check e reset diário dos dados de exemplo |
 | `ArquiteturaTest` | A arquitetura como teste: módulos sem ciclos e usando só a API uns dos outros (Spring Modulith), e camadas da Clean Architecture com as dependências apontando para dentro (ArchUnit) |
 | `DocumentosTest` | Validação de CNPJ e normalização de dados |
+| `RastreioELogsTest` | Toda resposta com `X-Trace-Id`, o mesmo id no corpo dos erros (inclusive os do Spring Security), id enviado pelo cliente ignorado, e um fluxo inteiro (cadastro, senha errada, proposta, mensagem) sem senha, token, e-mail ou conteúdo sigiloso nos logs |
 | `GlobalExceptionHandlerTest` | Respostas de erro difíceis de provocar pela API: erro inesperado sem detalhes internos, violação de integridade, acesso negado por perfil e bloqueio de login com `Retry-After` |
 | `smoke-test-api.sh` | Contra a API real com PostgreSQL: login, proteção das rotas, CORS, validações, regras de perfil e de posse, cotação → proposta → negociação → mensagens → fechamento, dashboards, refresh com rotação e reuso, logout e força bruta |
 | Playwright (`frontend/e2e`) | No navegador, com API e banco reais: empresa e fornecedor negociam do começo ao fim (publicar, propor pelo painel do mural, contraproposta, aceitar, fechar com confirmação), vendo um ao outro **ao vivo** (proposta e aviso chegando à empresa, contador de não lidas do fornecedor e atalho do aviso, "digitando…", aceite e fechamento sem recarregar), rota protegida, login com erro, cadastro com validação de CNPJ, sessão após F5, sair e tema claro/escuro. As telas de acesso rodam também num celular emulado |
@@ -672,7 +685,7 @@ A base que as próximas fases exigem, feita antes delas. Especificação: [spec 
 
 - [x] **Spec-Driven Development**: processo e modelo de especificação em [`docs/specs/`](docs/specs/README.md)
 - [x] **Monólito modular com Clean Architecture**: módulos de negócio com domínio, aplicação e infraestrutura, portas e adaptadores, e fronteiras verificadas por teste (Spring Modulith + ArchUnit)
-- [ ] **Rastreio por requisição** e logs estruturados, sem dados sensíveis
+- [x] **Rastreio por requisição** (OpenTelemetry) e logs em JSON, sem dados sensíveis, verificados por teste
 - [ ] **Pessoas e organizações**: várias pessoas por empresa ou fornecedor, com papéis, e registro de quem fez cada ação
 - [ ] **Autorização por organização**, com teste de isolamento em todas as rotas e trava para rotas novas
 - [ ] **Equipe**: convite por link de uso único e gestão de membros

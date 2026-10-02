@@ -97,7 +97,8 @@ jobs:
 
       - name: Subir a API com dados de demonstração (PostgreSQL)
         run: |
-          nohup java -jar target/Gestao-*.jar --spring.profiles.active=demo > api.log 2>&1 &
+          # Logs em JSON, como em produção, para conferir o formato e o rastreio depois do teste de fumaça
+          LOGGING_STRUCTURED_FORMAT_CONSOLE=ecs nohup java -jar target/Gestao-*.jar --spring.profiles.active=demo > api.log 2>&1 &
           for i in $(seq 1 60); do
             curl -sf http://localhost:8085/actuator/health > /dev/null && exit 0
             sleep 2
@@ -108,6 +109,29 @@ jobs:
 
       - name: Teste de fumaça da API
         run: ./scripts/smoke-test-api.sh
+
+      - name: Logs em JSON e rastreio
+        run: |
+          # Toda resposta devolve o identificador de rastreio
+          curl -sI http://localhost:8085/api/v1/cotacoes/categorias | grep -iq '^x-trace-id: [0-9a-f]\{32\}' \
+            || { echo "::error title=Rastreio::A resposta não trouxe o cabeçalho X-Trace-Id"; exit 1; }
+          python3 - <<'PY'
+          import json, sys
+          linhas = [l for l in open('api.log', encoding='utf-8') if l.strip()]
+          registros, outras = [], []
+          for l in linhas:
+              try:
+                  registros.append(json.loads(l))
+              except ValueError:
+                  outras.append(l)
+          com_rastreio = [r for r in registros if r.get('traceId')]
+          print(f'::notice title=Logs em JSON::{len(registros)} linhas em JSON, {len(com_rastreio)} com traceId')
+          if not registros or not com_rastreio:
+              print('::error title=Logs::Os logs deveriam sair em JSON e as requisições deveriam ter traceId')
+              sys.exit(1)
+          if len(outras) > 5:
+              print(f'::warning title=Logs::{len(outras)} linhas fora do JSON (ex.: banner): {outras[0][:120]}')
+          PY
 
       - name: Log da API em caso de falha
         if: failure()
@@ -251,7 +275,8 @@ jobs:
       - name: Subir a API com dados de demonstração (PostgreSQL)
         working-directory: backend
         run: |
-          nohup java -jar target/Gestao-*.jar --spring.profiles.active=demo > api.log 2>&1 &
+          # Logs em JSON, como em produção, para conferir o formato e o rastreio depois do teste de fumaça
+          LOGGING_STRUCTURED_FORMAT_CONSOLE=ecs nohup java -jar target/Gestao-*.jar --spring.profiles.active=demo > api.log 2>&1 &
           for i in $(seq 1 60); do
             curl -sf http://localhost:8085/actuator/health > /dev/null && exit 0
             sleep 2

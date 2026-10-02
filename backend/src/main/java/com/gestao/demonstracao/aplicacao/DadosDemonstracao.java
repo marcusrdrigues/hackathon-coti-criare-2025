@@ -1,5 +1,6 @@
 package com.gestao.demonstracao.aplicacao;
 
+import com.gestao.compartilhado.dominio.Mascaras;
 import com.gestao.compras.aplicacao.CotacaoService;
 import com.gestao.compras.aplicacao.MensagemNegociacaoService;
 import com.gestao.compras.aplicacao.NegociacaoService;
@@ -149,7 +150,8 @@ public class DadosDemonstracao implements CommandLineRunner {
                 "Papel A4, toners, pastas e itens de papelaria para 3 setores administrativos.",
                 CategoriaCotacao.SUPRIMENTOS, null, 9), hospital.getId());
 
-        log.info("Dados de demonstração criados. Logins: {} / {} (senha: {})", EMAIL_EMPRESA, EMAIL_FORNECEDOR, SENHA_DEMO);
+        log.info("Dados de demonstração criados. Contas de exemplo: {} e {}.",
+                Mascaras.email(EMAIL_EMPRESA), Mascaras.email(EMAIL_FORNECEDOR));
     }
 
     private Empresa empresa(String nome, String cnpj, String email) {

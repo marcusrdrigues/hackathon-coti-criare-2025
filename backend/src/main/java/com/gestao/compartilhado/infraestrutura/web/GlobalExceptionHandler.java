@@ -80,7 +80,8 @@ public class GlobalExceptionHandler {
         }
         log.warn("Erro de validação nos campos {}", erros.keySet());
         return ResponseEntity.badRequest().body(new ValidationErrorResponse(
-                HttpStatus.BAD_REQUEST.value(), "Erro de validação nos campos", LocalDateTime.now(), erros));
+                HttpStatus.BAD_REQUEST.value(), "Erro de validação nos campos", LocalDateTime.now(), Rastreio.idAtual(),
+                erros));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -127,6 +128,6 @@ public class GlobalExceptionHandler {
     }
 
     private static ErrorResponse corpo(HttpStatus status, String mensagem) {
-        return new ErrorResponse(status.value(), mensagem, LocalDateTime.now());
+        return new ErrorResponse(status.value(), mensagem, LocalDateTime.now(), Rastreio.idAtual());
     }
 }

@@ -19,5 +19,6 @@ Uma decisão registrada não se edita. Se ela mudar, um ADR novo a substitui, e 
 | [0011](0011-componentes-proprios-no-lugar-do-bootstrap.md) | Componentes próprios no lugar do Bootstrap | Aceita |
 | [0012](0012-tempo-real-com-websocket-e-stomp.md) | Tempo real com WebSocket e STOMP | Aceita |
 | [0013](0013-monolito-modular-com-clean-architecture.md) | Monólito modular com Clean Architecture, verificado por teste | Aceita |
+| [0014](0014-rastreio-por-requisicao-e-logs-estruturados.md) | Rastreio por requisição e logs estruturados, sem dados sensíveis | Aceita |
 
 Modelo para um ADR novo: [template.md](template.md).

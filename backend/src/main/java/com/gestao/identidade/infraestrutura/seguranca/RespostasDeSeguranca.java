@@ -1,5 +1,6 @@
 package com.gestao.identidade.infraestrutura.seguranca;
 
+import com.gestao.compartilhado.infraestrutura.web.Rastreio;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
@@ -44,7 +45,10 @@ public class RespostasDeSeguranca implements AuthenticationEntryPoint, AccessDen
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         String agora = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
-        response.getWriter().write(
-                "{\"status\":" + status.value() + ",\"message\":\"" + mensagem + "\",\"timestamp\":\"" + agora + "\"}");
+        String rastreio = Rastreio.idAtual();
+        response.getWriter().write("{\"status\":" + status.value()
+                + ",\"message\":\"" + mensagem
+                + "\",\"timestamp\":\"" + agora
+                + "\",\"traceId\":" + (rastreio == null ? "null" : "\"" + rastreio + "\"") + "}");
     }
 }
