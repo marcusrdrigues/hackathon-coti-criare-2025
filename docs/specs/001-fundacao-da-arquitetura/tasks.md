@@ -72,5 +72,5 @@ Cada passo é entregue com o CI verde (testes, ponta a ponta e quality gate) e c
 
 ## Passo 10 · Fechamento
 
-- [ ] Migração V5 removendo as tabelas antigas, depois da validação em produção
-- [ ] Spec marcada como concluída e fase 4 fechada no README
+- [x] Migração V5 removendo as tabelas antigas, depois da validação em produção
+- [x] Spec marcada como concluída e fase 4 fechada no README

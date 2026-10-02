@@ -383,7 +383,7 @@ erDiagram
     }
 ```
 
-As tabelas antigas (`tb_empresa`, `tb_fornecedor` e `tb_perfil`) ficam no banco, sem uso, até a migração V5, depois da validação em produção. Antes disso, a V2_1 (escrita em Java) solta as chaves estrangeiras que apontavam para elas, porque o banco de produção nasceu do Hibernate e os nomes dessas chaves não são os do script.
+As tabelas antigas (`tb_empresa`, `tb_fornecedor` e `tb_perfil`) ficaram no banco, sem uso, até a versão nova ser validada em produção, e saíram na migração V5. Antes disso, a V2_1 (escrita em Java) soltou as chaves estrangeiras que apontavam para elas, porque o banco de produção nasceu do Hibernate e os nomes dessas chaves não são os do script.
 
 ---
 
@@ -703,7 +703,7 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | `SegurancaApiTest` | Pela camada HTTP: cadastro público (201, 409 e validação por campo), formato de `/auth/me`, 401 sem token e com token inválido, rotas públicas, cookie `HttpOnly`/`SameSite`, 403 por perfil, 404 para recurso de outra organização, identidade vinda do token, refresh pelo cookie, logout e CORS |
 | `TempoRealIntegrationTest` | WebSocket de verdade (STOMP): conexão sem token ou com token inválido recusada, mensagem e aviso entregues na hora (o aviso chega a toda a equipe da organização), conexão encerrada quando a pessoa sai da equipe, "digitando…" e quem não participa não consegue assinar a negociação |
 | `MigracoesPostgresTest` | Num PostgreSQL 16 real (Testcontainers): o Flyway aplica as migrações, o Hibernate valida o esquema e todas as tabelas existem |
-| `MigracaoPessoasEOrganizacoesTest` | As migrações V2_1 e V3 sobre dados no formato antigo, com as chaves nomeadas como o Hibernate nomeia, num PostgreSQL real: empresas e fornecedores viram organizações com o mesmo id, cada conta vira uma pessoa proprietária com a mesma senha, o negócio ganha autoria, nenhuma chave aponta mais para as tabelas antigas, as chaves novas apontam para as tabelas novas e as sessões antigas são encerradas |
+| `MigracaoPessoasEOrganizacoesTest` | As migrações V2_1, V3 e V5 sobre dados no formato antigo, com as chaves nomeadas como o Hibernate nomeia, num PostgreSQL real: empresas e fornecedores viram organizações com o mesmo id, cada conta vira uma pessoa proprietária com a mesma senha, o negócio ganha autoria, nenhuma chave aponta mais para as tabelas antigas, as chaves novas apontam para as tabelas novas, as sessões antigas são encerradas e, depois da V5, as tabelas antigas somem sem levar nenhum dado |
 | `FluxoCotacaoPostgresTest` e `AutenticacaoPostgresTest` | Os mesmos cenários das duas suítes acima, agora no PostgreSQL real, para pegar diferenças que o H2 esconde |
 | `DemonstracaoApiTest` | Login de demonstração em um clique (nunca como superadmin), health check e reset diário dos dados de exemplo, preservando o superadmin |
 | `AdministracaoApiTest` | Superadmin vindo da configuração: token sem organização, renovação, lista de organizações com os totais e sem dado pessoal, paginação (tamanho máximo, ordem permitida, página inválida), pessoa de organização barrada na área administrativa, superadmin barrado nas rotas das organizações, cadastro público que não cria superadmin, configuração vazia, senha nova, e-mail novo, senha curta e e-mail de uma conta existente |
@@ -781,7 +781,7 @@ A negociação acontece ao vivo, sem recarregar a página.
   - [x] Sala de negociação ao vivo: mensagens e ofertas sem recarregar, "digitando…" e indicador de conexão
   - [x] Mensagens não lidas (contador na navegação e na lista) e avisos de proposta nova, negociação aberta e negócio fechado
 
-### Fase 4 · Fundação da arquitetura &nbsp;`em andamento`
+### Fase 4 · Fundação da arquitetura &nbsp;`concluída`
 
 A base que as próximas fases exigem, feita antes delas. Especificação: [spec 001](docs/specs/001-fundacao-da-arquitetura/spec.md).
 
@@ -796,6 +796,7 @@ A base que as próximas fases exigem, feita antes delas. Especificação: [spec 
 - [x] **Superadmin**, criado só pela configuração do servidor, com área administrativa somente leitura
 - [x] **Paginação** no servidor, com os filtros, e erros no padrão **Problem Details** (RFC 9457) ([ADR 0020](docs/adr/0020-paginacao-e-problem-details.md))
 - [x] **Política de dados**: o que é sensível, onde cada dado pode aparecer (logs, auditoria, IA, demo) e por quanto tempo ([docs/dados.md](docs/dados.md))
+- [x] **Limpeza**: as tabelas de conta de antes da separação entre pessoa e organização saem do banco (migração V5), depois da validação em produção
 
 ### Fase 5 · Auditoria e administração &nbsp;`planejada`
 

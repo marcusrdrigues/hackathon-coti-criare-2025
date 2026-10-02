@@ -1,6 +1,6 @@
 # 001 · Fundação da arquitetura
 
-- **Status:** Aprovada
+- **Status:** Concluída
 - **Data:** 2026-10-01
 - **Plano:** [plan.md](plan.md) · **Tarefas:** [tasks.md](tasks.md)
 

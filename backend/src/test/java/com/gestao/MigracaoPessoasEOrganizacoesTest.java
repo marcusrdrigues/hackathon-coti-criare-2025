@@ -37,10 +37,11 @@ class MigracaoPessoasEOrganizacoesTest {
     static PostgreSQLContainer postgres = new PostgreSQLContainer(PostgresTestcontainersConfig.IMAGEM);
 
     private static JdbcTemplate jdbc;
+    private static DriverManagerDataSource banco;
 
     @BeforeAll
     static void migrarDadosAntigos() {
-        DriverManagerDataSource banco = new DriverManagerDataSource(
+        banco = new DriverManagerDataSource(
                 postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
         jdbc = new JdbcTemplate(banco);
 
@@ -133,6 +134,19 @@ class MigracaoPessoasEOrganizacoesTest {
                   and tc.table_name not in ('tb_empresa', 'tb_fornecedor')
                 """, String.class);
         assertEquals(List.of(), antigas);
+    }
+
+    @Test
+    void v5ApagaAsTabelasAntigasSemPerderNada() {
+        Flyway.configure().dataSource(banco).locations("classpath:db/migration").load().migrate();
+
+        List<String> antigas = jdbc.queryForList("""
+                select table_name from information_schema.tables
+                where table_schema = 'public' and table_name in ('tb_empresa', 'tb_fornecedor', 'tb_perfil')
+                """, String.class);
+        assertEquals(List.of(), antigas);
+        assertEquals(2, jdbc.queryForObject("select count(*) from tb_organizacao", Integer.class));
+        assertEquals(1, jdbc.queryForObject("select count(*) from tb_negociacao", Integer.class));
     }
 
     // ---------------------------------------------------------------- apoio
