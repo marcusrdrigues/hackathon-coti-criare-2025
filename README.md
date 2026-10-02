@@ -216,7 +216,7 @@ sequenceDiagram
 | **Identidade** | Quem é a pessoa e em nome de qual organização ela age vem **sempre do token**, nunca de um ID enviado no corpo | Ninguém consegue agir em nome de outra empresa trocando um ID |
 | **Chave de assinatura** | Lida da variável `JWT_SECRET`; sem ela, a API gera uma chave aleatória e avisa no log | Nenhum segredo fica no código |
 | **Rastreio** | Cada requisição tem um `traceId` (OpenTelemetry), que aparece em todas as linhas de log dela, no cabeçalho `X-Trace-Id` e no corpo dos erros. O front mostra o começo dele quando algo falha no servidor | Uma reclamação vira uma busca nos logs, sem expor detalhes do erro a quem usa |
-| **Logs** | Em JSON (formato ECS) em produção; nunca registram senha, token, e-mail completo nem o conteúdo de propostas e mensagens. Um teste confere | Log é um destino a mais para dado vazar, e o sigilo comercial da negociação vale ali também |
+| **Logs** | Em JSON (formato ECS) em produção; nunca registram senha, token, e-mail completo nem o conteúdo de propostas e mensagens. Um teste confere. A regra completa, por classe de dado e por destino, está na [política de dados](docs/dados.md) | Log é um destino a mais para dado vazar, e o sigilo comercial da negociação vale ali também |
 
 O Swagger já vem com o botão **Authorize**: faça o login em `/api/v1/auth/login` e cole o `accessToken`.
 
@@ -231,7 +231,7 @@ hackathon-coti-criare-2025/
 │   ├── workflows/codeql.yml     Análise de segurança do código (CodeQL)
 │   └── dependabot.yml           Atualização semanal de dependências
 ├── render.yaml                  Deploy da API no Render (Blueprint)
-├── docs/                        Deploy, gravação da demo e design system
+├── docs/                        Deploy, gravação da demo, design system e política de dados
 │   ├── adr/                     Registros das decisões de arquitetura
 │   └── specs/                   Especificações de cada fase (Spec-Driven Development)
 │
@@ -795,7 +795,7 @@ A base que as próximas fases exigem, feita antes delas. Especificação: [spec 
 - [x] **Experiência da negociação**: oferta com valor no botão, oferta na mesa, barra lateral recolhível e revisão da escrita ([spec 002](docs/specs/002-experiencia-da-negociacao/spec.md), [ADR 0019](docs/adr/0019-barra-lateral-encostada-e-recolhivel.md))
 - [x] **Superadmin**, criado só pela configuração do servidor, com área administrativa somente leitura
 - [x] **Paginação** no servidor, com os filtros, e erros no padrão **Problem Details** (RFC 9457) ([ADR 0020](docs/adr/0020-paginacao-e-problem-details.md))
-- [ ] **Política de dados**: o que é sensível e onde cada dado pode aparecer (logs, auditoria, IA, demo)
+- [x] **Política de dados**: o que é sensível, onde cada dado pode aparecer (logs, auditoria, IA, demo) e por quanto tempo ([docs/dados.md](docs/dados.md))
 
 ### Fase 5 · Auditoria e administração &nbsp;`planejada`
 

@@ -68,7 +68,7 @@ Cada passo é entregue com o CI verde (testes, ponta a ponta e quality gate) e c
 
 ## Passo 9 · Política de dados (R8)
 
-- [ ] `docs/dados.md` com a classificação e as regras por destino
+- [x] `docs/dados.md` com a classificação e as regras por destino
 
 ## Passo 10 · Fechamento
 

@@ -73,6 +73,12 @@ class EquipeApiTest {
     void conviteViraMembroJaLogado() throws Exception {
         String token = convidar("Bruno Costa", "Bruno@Criare.com");
 
+        // O banco guarda só o hash do token (docs/dados.md): quem lê o banco não usa o convite
+        entityManager.flush();
+        String guardado = jdbc.queryForObject("SELECT token_hash FROM tb_convite WHERE email = ?", String.class,
+                "bruno@criare.com");
+        assertThat(guardado).isNotEqualTo(token).doesNotContain(token).hasSize(64);
+
         // A lista de pendentes não mostra o token: ele só existe na criação
         enviar(get("/api/v1/equipe/convites"), proprietaria)
                 .andExpect(status().isOk())
