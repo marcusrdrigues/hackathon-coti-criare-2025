@@ -80,6 +80,17 @@
   color: var(--cor-erro-texto);
 }
 
+/* Ação destrutiva com cara de botão: fundo de erro suave e texto de erro */
+.botao-perigo {
+  background: var(--cor-erro-fundo);
+  color: var(--cor-erro-fundo-texto);
+}
+
+.botao-perigo:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--cor-erro-fundo) 82%, var(--cor-erro));
+  color: var(--cor-erro-fundo-texto);
+}
+
 .botao-pequeno {
   height: var(--altura-controle-pequeno);
   padding: 0 0.75rem;

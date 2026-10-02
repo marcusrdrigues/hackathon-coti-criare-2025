@@ -33,7 +33,7 @@
 
 .coluna-detalhes .ficha,
 .coluna-detalhes .requisitos,
-.coluna-detalhes .encerrar {
+.coluna-detalhes .acao-encerrar {
   margin-inline: var(--esp-5);
 }
 
@@ -315,40 +315,142 @@
   color: var(--cor-sucesso);
 }
 
-/* ---------- Decisão e campo de mensagem ---------- */
-.decisao {
+/* ---------- Oferta na mesa ---------- */
+.mesa {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--esp-2) var(--esp-4);
-  padding: var(--esp-3) var(--esp-4);
+  gap: var(--esp-3) var(--esp-4);
+  padding: var(--esp-3) var(--esp-5);
   border-top: 1px solid var(--cor-divisoria);
   background: var(--cor-superficie-2);
 }
 
-.decisao-texto {
+.mesa-texto {
+  display: grid;
+  gap: 0.0625rem;
+  min-width: 0;
+}
+
+.mesa-rotulo {
+  font-size: var(--texto-legenda);
+  font-weight: 600;
+  color: var(--cor-texto-2);
+}
+
+.mesa-linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--esp-2);
+}
+
+.mesa-valor {
+  font-size: var(--texto-destaque);
+  font-weight: 700;
+}
+
+.mesa-origem {
   font-size: var(--texto-pequeno);
   color: var(--cor-texto-2);
 }
 
-.decisao-texto strong {
-  margin-left: 0.25rem;
-  font-size: var(--texto-corpo);
-  color: var(--cor-texto);
-}
-
-.decisao-acoes {
+.mesa-acoes {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--esp-2);
 }
 
+/* ---------- Nova oferta ---------- */
+.nova-oferta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--esp-2);
+  width: min(calc(100% - 2 * var(--esp-4)), 34rem);
+  margin: var(--esp-3) auto var(--esp-1);
+  padding: var(--esp-4) var(--esp-5);
+  border: 1px solid var(--cor-divisoria);
+  border-radius: var(--raio-grande);
+  background: var(--cor-superficie);
+  box-shadow: var(--sombra-leve);
+  animation: surgir var(--duracao) var(--curva);
+}
+
+.nova-oferta-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nova-oferta-topo h2 {
+  font-size: var(--texto-destaque);
+}
+
+.nova-oferta .rotulo {
+  margin-top: var(--esp-1);
+}
+
+/* O valor é o protagonista: grande, com a moeda ao lado, como num app de pagamento */
+.valor-oferta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--esp-2);
+  padding: 0.25rem 0.875rem;
+  border: 1px solid var(--cor-borda-campo);
+  border-radius: var(--raio);
+  background: var(--cor-superficie);
+}
+
+.valor-oferta:focus-within {
+  border-color: var(--cor-marca-texto);
+  box-shadow: 0 0 0 3px var(--cor-marca-foco);
+}
+
+.valor-oferta-moeda {
+  font-size: var(--texto-titulo-3);
+  font-weight: 600;
+  color: var(--cor-texto-2);
+}
+
+.valor-oferta input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.25rem 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--cor-texto);
+  font-family: var(--fonte-titulo);
+  font-size: var(--texto-titulo-2);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.comparacao {
+  min-height: 1.2em;
+}
+
+.nova-oferta .botao-largo {
+  margin-top: var(--esp-2);
+}
+
+/* ---------- Campo de mensagem ---------- */
 .compositor {
   display: flex;
   align-items: flex-end;
   gap: var(--esp-2);
   padding: var(--esp-3) var(--esp-4);
   border-top: 1px solid var(--cor-divisoria);
+}
+
+.botao-oferta {
+  flex-shrink: 0;
+}
+
+.botao-oferta.ativa {
+  background: var(--cor-marca-suave);
+  color: var(--cor-marca-texto);
 }
 
 .campo-mensagem {
@@ -359,14 +461,6 @@
   border-radius: 1.25rem;
   resize: none;
   field-sizing: content;
-}
-
-.campo-valor {
-  flex: 0 0 9.5rem;
-}
-
-.campo-valor .entrada {
-  border-radius: 1.25rem;
 }
 
 .enviar {
@@ -415,9 +509,12 @@
   line-height: 1.55;
 }
 
-.encerrar {
-  margin-top: var(--esp-5);
-  padding-inline: 0;
+.acao-encerrar {
+  display: grid;
+  gap: var(--esp-2);
+  margin-top: var(--esp-6);
+  padding-top: var(--esp-4);
+  border-top: 1px solid var(--cor-divisoria);
 }
 
 /* ---------- Larguras ---------- */
@@ -452,17 +549,35 @@
     padding-inline: var(--esp-4);
   }
 
-  .compositor {
-    flex-wrap: wrap;
+  /* No celular, a oferta vira só o ícone (o nome continua para o leitor de tela) */
+  .botao-oferta {
+    width: var(--altura-controle);
+    padding: 0;
   }
 
-  .campo-mensagem {
-    flex-basis: calc(100% - var(--altura-controle) - var(--esp-2));
+  .rotulo-oferta {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
   }
 
-  .campo-valor {
-    order: 3;
-    flex: 1 1 100%;
+  .mesa {
+    padding-inline: var(--esp-4);
+  }
+
+  .nova-oferta {
+    padding: var(--esp-3) var(--esp-4);
+  }
+
+  .mesa-acoes {
+    width: 100%;
+  }
+
+  .mesa-acoes .botao {
+    flex: 1 1 auto;
   }
 }
 

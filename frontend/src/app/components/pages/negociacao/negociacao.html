@@ -45,7 +45,10 @@
     </div>
 
     @if (ehEmpresa() && emAndamento()) {
-      <button type="button" class="botao botao-destrutivo encerrar" (click)="encerrarSemAcordo()">Encerrar sem acordo</button>
+      <div class="acao-encerrar">
+        <button type="button" class="botao botao-perigo botao-largo" (click)="encerrarSemAcordo()">Encerrar sem acordo</button>
+        <p class="ajuda">A proposta é recusada e a cotação volta a ficar aberta para outros fornecedores.</p>
+      </div>
     }
   }
 </ng-template>
@@ -86,6 +89,15 @@
         <button type="button" class="botao botao-secundario botao-pequeno abrir-detalhes" (click)="detalhesAbertos.set(true)">
           Detalhes
         </button>
+        @if (ehEmpresa() && negociacao(); as n) {
+          <ui-menu rotulo="Mais ações" classeGatilho="botao botao-secundario botao-icone botao-pequeno">
+            <ui-icone gatilho nome="reticencias" [tamanho]="18" />
+            <a uiMenuItem [routerLink]="['/pages/detalhe-cotacao', n.cotacaoId]">Ver cotação</a>
+            @if (emAndamento()) {
+              <button type="button" uiMenuItem class="menu-item-destrutivo" (click)="encerrarSemAcordo()">Encerrar sem acordo</button>
+            }
+          </ui-menu>
+        }
       </header>
 
       @if (negociacao(); as n) {
@@ -124,7 +136,7 @@
                 <span class="hora">
                   <!-- Quem escreveu: a pessoa e a organização da outra parte, ou o colega do meu lado -->
                   @if (!ehDoMeuLado(m)) {
-                    {{ m.remetentePessoa }}, {{ m.remetenteNome }} ·
+                    {{ m.remetentePessoa === m.remetenteNome ? m.remetenteNome : m.remetentePessoa + ', ' + m.remetenteNome }} ·
                   } @else if (!ehMinha(m)) {
                     {{ m.remetentePessoa }} ·
                   }
@@ -152,19 +164,27 @@
         </p>
 
         @if (emAndamento()) {
-          <!-- Decisão sobre a oferta na mesa -->
-          @if (ehEmpresa() || ofertaDaOutraParte()) {
-            <div class="decisao">
-              <span class="decisao-texto">
-                {{ ofertaDaOutraParte() ? outraParte() + ' ofereceu' : 'Sua última oferta' }}
-                <strong class="numeros">{{ n.ultimaOferta | currency: 'BRL' }}</strong>
+          <!-- A oferta na mesa e a decisão sobre ela (spec 002, R3). Some enquanto a pessoa monta uma oferta nova,
+               que já mostra a comparação com ela -->
+          @if (!ofertaAberta()) {
+          <div class="mesa">
+            <div class="mesa-texto">
+              <span class="mesa-rotulo">Oferta na mesa</span>
+              <span class="mesa-linha">
+                <strong class="mesa-valor numeros">{{ n.ultimaOferta | currency: 'BRL' }}</strong>
+                <span class="mesa-origem">
+                  {{ ofertaDaOutraParte() ? 'de ' + outraParte() : 'sua, aguardando ' + outraParte() }}
+                </span>
               </span>
-              <span class="decisao-acoes">
+            </div>
+            @if (ofertaDaOutraParte() || ehEmpresa()) {
+              <div class="mesa-acoes">
                 @if (ofertaDaOutraParte()) {
-                  <button type="button" class="botao botao-secundario botao-pequeno" (click)="contrapropor()">Contrapropor</button>
+                  <button type="button" class="botao botao-secundario botao-pequeno" (click)="abrirOferta()">Fazer contraproposta</button>
                 }
                 @if (ehEmpresa()) {
-                  <button type="button" class="botao botao-primario botao-pequeno" (click)="fecharNegocio()">
+                  <button type="button" class="botao botao-pequeno" [class.botao-primario]="ofertaDaOutraParte()"
+                          [class.botao-secundario]="!ofertaDaOutraParte()" (click)="fecharNegocio()">
                     Fechar por {{ n.ultimaOferta | currency: 'BRL' }}
                   </button>
                 } @else {
@@ -172,11 +192,51 @@
                     Aceitar {{ n.ultimaOferta | currency: 'BRL' }}
                   </button>
                 }
-              </span>
-            </div>
+              </div>
+            }
+          </div>
+          }
+
+          <!-- Nova oferta: acima do campo de mensagem, sem esconder a conversa (spec 002, R2) -->
+          @if (ofertaAberta()) {
+            <form id="nova-oferta" class="nova-oferta" aria-labelledby="titulo-nova-oferta" (ngSubmit)="enviarOferta()"
+                  (keydown.escape)="fecharOferta()">
+              <div class="nova-oferta-topo">
+                <h2 id="titulo-nova-oferta">Nova oferta</h2>
+                <button type="button" class="botao botao-simples botao-icone botao-pequeno" aria-label="Desistir da oferta"
+                        (click)="fecharOferta()">
+                  <ui-icone nome="fechar" [tamanho]="16" />
+                </button>
+              </div>
+              <label class="rotulo" for="valor-oferta">Valor total</label>
+              <div class="valor-oferta">
+                <span class="valor-oferta-moeda" aria-hidden="true">R$</span>
+                <input #campoValor id="valor-oferta" class="numeros" type="number" name="valor" min="0.01" step="0.01"
+                       inputmode="decimal" placeholder="0,00" autocomplete="off" aria-describedby="comparacao-oferta"
+                       [ngModel]="valor()" (ngModelChange)="valor.set($event)" />
+              </div>
+              <p id="comparacao-oferta" class="ajuda comparacao" aria-live="polite">
+                {{ comparacao() ?? 'A oferta na mesa é de ' + (n.ultimaOferta | currency: 'BRL') + '.' }}
+              </p>
+              <label class="rotulo" for="nota-oferta">Mensagem <span class="opcional">(opcional)</span></label>
+              <input id="nota-oferta" class="entrada" type="text" name="nota" maxlength="1000" autocomplete="off"
+                     placeholder="Prazo, condições, o que muda nesta oferta…"
+                     [ngModel]="nota()" (ngModelChange)="nota.set($event)" />
+              <button type="submit" class="botao botao-primario botao-largo" [disabled]="!ofertaValida() || enviando()">
+                @if (enviando()) {
+                  <span class="girando" aria-hidden="true"></span>
+                }
+                {{ rotuloEnviarOferta() }}
+              </button>
+            </form>
           }
 
           <form class="compositor" (ngSubmit)="enviar()">
+            <button type="button" class="botao botao-secundario botao-oferta" aria-label="Fazer oferta" aria-controls="nova-oferta"
+                    [attr.aria-expanded]="ofertaAberta()" [class.ativa]="ofertaAberta()" (click)="alternarOferta()">
+              <ui-icone nome="etiqueta" [tamanho]="18" />
+              <span class="rotulo-oferta">Oferta</span>
+            </button>
             <label class="visually-hidden" for="mensagem">Mensagem</label>
             <textarea
               id="mensagem"
@@ -189,25 +249,8 @@
               (ngModelChange)="aoDigitar($event)"
               (keydown)="teclaNaMensagem($event)"
             ></textarea>
-            <div class="grupo-entrada campo-valor">
-              <span class="prefixo" aria-hidden="true">R$</span>
-              <input
-                #campoValor
-                id="valor"
-                class="entrada numeros"
-                type="number"
-                name="valor"
-                min="0"
-                step="0.01"
-                inputmode="decimal"
-                placeholder="Valor"
-                aria-label="Valor da contraproposta (opcional)"
-                [ngModel]="valor()"
-                (ngModelChange)="valor.set($event)"
-              />
-            </div>
-            <button type="submit" class="botao botao-primario botao-icone enviar" aria-label="Enviar" [disabled]="!podeEnviar()">
-              @if (enviando()) {
+            <button type="submit" class="botao botao-primario botao-icone enviar" aria-label="Enviar mensagem" [disabled]="!podeEnviar()">
+              @if (enviando() && !ofertaAberta()) {
                 <span class="girando" aria-hidden="true"></span>
               } @else {
                 <ui-icone nome="enviar" />

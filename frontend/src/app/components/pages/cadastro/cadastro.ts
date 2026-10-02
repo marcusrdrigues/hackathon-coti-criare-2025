@@ -121,7 +121,7 @@ export class CadastroComponent {
       .pipe(switchMap(() => this.auth.login({ email, senha })))
       .subscribe({
         next: () => {
-          this.notificacao.sucesso('Conta criada. Bem-vindo ao portal.');
+          this.notificacao.sucesso('Conta criada. Boas-vindas ao portal.');
           this.router.navigateByUrl(this.auth.rotaInicial());
         },
         error: (e) => {

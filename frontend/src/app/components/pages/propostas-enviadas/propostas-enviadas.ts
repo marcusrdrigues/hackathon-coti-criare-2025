@@ -67,7 +67,7 @@ export class PropostasEnviadas implements OnInit {
     const confirmou = await this.confirmacao.confirmar({
       titulo: 'Retirar a proposta?',
       mensagem: `A proposta para "${p.cotacaoNome}" deixa de aparecer para ${p.empresaNome}.`,
-      confirmar: 'Retirar',
+      confirmar: 'Retirar proposta',
       destrutivo: true,
     });
     if (!confirmou) {

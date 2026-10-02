@@ -132,6 +132,7 @@
 
   /* Estrutura */
   --largura-lateral: 15.5rem;
+  --largura-lateral-recolhida: 4.5rem;
   --largura-conteudo: 70rem;
   /* Espaço que a barra de abas flutuante ocupa embaixo: a cápsula (3.75rem) e a folga (0.75rem) */
   --altura-abas: 4.5rem;

@@ -36,21 +36,30 @@
   }
 </ng-template>
 
-<div class="app" [class.com-lateral]="comLateral()">
+<div class="app" [class.com-lateral]="comLateral()" [class.lateral-recolhida]="comLateral() && recolhida()">
   @if (comLateral()) {
     <aside class="lateral">
-      <a class="marca" [routerLink]="auth.rotaInicial()">
-        <img src="logo-criare.svg" alt="" width="28" height="28" />
-        <span>Portal Criare</span>
-      </a>
+      <div class="lateral-topo">
+        <a class="marca" [routerLink]="auth.rotaInicial()" [attr.title]="recolhida() ? 'Portal Criare' : null">
+          <img src="logo-criare.svg" alt="" width="28" height="28" />
+          <span class="rotulo-lateral">Portal Criare</span>
+        </a>
+        <button type="button" class="botao botao-simples botao-icone botao-pequeno alternar-lateral"
+                [attr.aria-label]="recolhida() ? 'Mostrar barra lateral' : 'Recolher barra lateral'"
+                [attr.title]="recolhida() ? 'Mostrar barra lateral' : 'Recolher barra lateral'"
+                [attr.aria-expanded]="!recolhida()" (click)="alternarLateral()">
+          <ui-icone nome="painel" [tamanho]="18" />
+        </button>
+      </div>
 
       <nav aria-label="Navegação principal">
         <ul role="list" class="navegacao">
           @for (d of destinos(); track d.rota) {
             <li>
-              <a class="nav-item" [routerLink]="d.rota" [class.ativo]="ativo(d)" [attr.aria-current]="ativo(d) ? 'page' : null">
+              <a class="nav-item" [routerLink]="d.rota" [class.ativo]="ativo(d)" [attr.aria-current]="ativo(d) ? 'page' : null"
+                 [attr.title]="recolhida() ? d.rotulo : null">
                 <ui-icone [nome]="d.icone" />
-                <span>{{ d.rotulo }}</span>
+                <span class="rotulo-lateral">{{ d.rotulo }}</span>
                 @if (d.comNaoLidas && avisos.total(); as total) {
                   <span class="contador numeros" aria-hidden="true">{{ contador(total) }}</span>
                   <ng-container [ngTemplateOutlet]="naoLidas" [ngTemplateOutletContext]="{ $implicit: total }" />
@@ -62,9 +71,10 @@
         <!-- A organização: menos usado que o trabalho do dia a dia, por isso separado (no celular, fica no menu da conta) -->
         <ul role="list" class="navegacao navegacao-secundaria">
           <li>
-            <a class="nav-item" routerLink="/pages/equipe" [class.ativo]="naEquipe()" [attr.aria-current]="naEquipe() ? 'page' : null">
+            <a class="nav-item" routerLink="/pages/equipe" [class.ativo]="naEquipe()" [attr.aria-current]="naEquipe() ? 'page' : null"
+               [attr.title]="recolhida() ? 'Equipe' : null">
               <ui-icone nome="equipe" />
-              <span>Equipe</span>
+              <span class="rotulo-lateral">Equipe</span>
             </a>
           </li>
         </ul>
@@ -74,11 +84,11 @@
         <ui-menu rotulo="Menu do usuário" tipo="painel" direcao="acima" alinhar="inicio" classeGatilho="conta">
           <span gatilho class="conta-conteudo">
             <span class="inicial" aria-hidden="true">{{ iniciais() }}</span>
-            <span class="conta-texto">
+            <span class="conta-texto rotulo-lateral">
               <strong>{{ usuario()?.nome }}</strong>
               <span>{{ usuario()?.organizacao?.razaoSocial }}</span>
             </span>
-            <ui-icone nome="acima-abaixo" [tamanho]="16" />
+            <ui-icone class="rotulo-lateral" nome="acima-abaixo" [tamanho]="16" />
           </span>
           <ng-container [ngTemplateOutlet]="conta" />
         </ui-menu>

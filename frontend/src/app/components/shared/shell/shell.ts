@@ -24,6 +24,17 @@ interface Destino {
 
 const LARGURA_COM_LATERAL = '(min-width: 1024px)';
 
+/** Onde fica a escolha de recolher a barra lateral (só neste navegador). */
+const CHAVE_LATERAL = 'barra_lateral';
+
+function lateralRecolhida(): boolean {
+  try {
+    return localStorage.getItem(CHAVE_LATERAL) === 'recolhida';
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Estrutura das telas internas: barra lateral no computador (como no Mail e no
  * Notes) e, no celular, barra de topo com a conta e barra de abas embaixo.
@@ -87,6 +98,8 @@ export class Shell {
 
   /** Barra lateral só quando há largura para ela; abaixo disso, abas */
   protected readonly comLateral = signal(true);
+  /** Barra lateral só com ícones. Nunca começa recolhida para quem não escolheu (some a descoberta). */
+  protected readonly recolhida = signal(lateralRecolhida());
 
   constructor() {
     // Tempo real (e os avisos que vêm por ele) enquanto houver sessão nas telas internas
@@ -124,6 +137,15 @@ export class Shell {
   /** Total que aparece no destino ("99+" acima disso) */
   protected contador(total: number): string {
     return total > 99 ? '99+' : String(total);
+  }
+
+  protected alternarLateral(): void {
+    this.recolhida.update((recolhida) => !recolhida);
+    try {
+      localStorage.setItem(CHAVE_LATERAL, this.recolhida() ? 'recolhida' : 'aberta');
+    } catch {
+      // Sem armazenamento: a escolha vale só até recarregar
+    }
   }
 
   protected sair(): void {

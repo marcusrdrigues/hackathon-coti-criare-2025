@@ -27,7 +27,7 @@
                 @if (p.negociacaoStatus === 'EM_ANDAMENTO') {
                   <a class="botao botao-primario botao-pequeno" [routerLink]="['/pages/negociacao', p.negociacaoId]">Abrir negociação</a>
                 } @else if (p.status === 'ENVIADA') {
-                  <button type="button" class="botao botao-destrutivo botao-pequeno" (click)="retirar(p)">Retirar</button>
+                  <button type="button" class="botao botao-destrutivo botao-pequeno" (click)="retirar(p)">Retirar proposta</button>
                 }
               </div>
             </div>

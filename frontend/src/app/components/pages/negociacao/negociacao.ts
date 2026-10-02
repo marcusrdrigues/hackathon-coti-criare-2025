@@ -26,9 +26,11 @@ import { NegociacaoService } from '../../../core/services/negociacao.service';
 import { NotificacaoService } from '../../../core/services/notificacao.service';
 import { EventoNegociacao, TempoRealService } from '../../../core/services/tempo-real.service';
 import { mensagemDeErro } from '../../../core/utils/erros';
+import { compararOferta, formatarMoeda } from '../../../core/utils/oferta';
 import { STATUS_NEGOCIACAO } from '../../../core/utils/formatos';
 import { ConfirmacaoService } from '../../../ui/confirmacao';
 import { Icone } from '../../../ui/icone';
+import { Menu, MenuItem } from '../../../ui/menu';
 import { Painel } from '../../../ui/painel';
 import { Status } from '../../../ui/status';
 import { ListaNegociacoes, ordenarNegociacoes } from '../../shared/lista-negociacoes/lista-negociacoes';
@@ -65,6 +67,8 @@ interface GrupoDoDia {
     Painel,
     Status,
     ListaNegociacoes,
+    Menu,
+    MenuItem,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './negociacao.html',
@@ -98,7 +102,11 @@ export class Negociacao implements OnInit {
   protected readonly detalhesAbertos = signal(false);
 
   protected readonly texto = signal('');
+
+  /** Área de nova oferta: valor, mensagem opcional e o botão que diz o valor (spec 002, R2) */
+  protected readonly ofertaAberta = signal(false);
   protected readonly valor = signal<number | null>(null);
+  protected readonly nota = signal('');
 
   private readonly rolagem = viewChild<ElementRef<HTMLElement>>('rolagem');
   private readonly campoValor = viewChild<ElementRef<HTMLInputElement>>('campoValor');
@@ -114,10 +122,13 @@ export class Negociacao implements OnInit {
   /** Última mensagem com valor: é a oferta que está na mesa. */
   private readonly ultimaOfertaMsg = computed(() => [...this.mensagens()].reverse().find((m) => m.valorOfertado !== null));
 
-  /** A última oferta veio da outra parte, então a decisão é minha. */
+  /**
+   * A última oferta veio da outra parte, então a decisão é minha. Sem oferta na conversa,
+   * vale a proposta inicial, que é sempre do fornecedor: a decisão é da empresa.
+   */
   protected readonly ofertaDaOutraParte = computed(() => {
     const ultima = this.ultimaOfertaMsg();
-    return !!ultima && ultima.tipoRemetente !== this.auth.usuario()?.tipo;
+    return ultima ? ultima.tipoRemetente !== this.auth.usuario()?.tipo : this.ehEmpresa();
   });
 
   /** Diferença entre a proposta inicial e a última oferta, em % */
@@ -145,7 +156,23 @@ export class Negociacao implements OnInit {
     return grupos;
   });
 
-  protected readonly podeEnviar = computed(() => !this.enviando() && (!!this.texto().trim() || (this.valor() ?? 0) > 0));
+  protected readonly podeEnviar = computed(() => !this.enviando() && !!this.texto().trim());
+
+  protected readonly ofertaValida = computed(() => {
+    const valor = this.valor();
+    return valor !== null && Number.isFinite(valor) && valor > 0;
+  });
+
+  /** "R$ 1.000,00 abaixo da oferta na mesa (−1,8%)." */
+  protected readonly comparacao = computed(() => {
+    const n = this.negociacao();
+    return n ? compararOferta(this.valor(), n.ultimaOferta) : null;
+  });
+
+  /** O botão diz exatamente o que vai acontecer */
+  protected readonly rotuloEnviarOferta = computed(() =>
+    this.ofertaValida() ? `Enviar oferta de ${formatarMoeda(this.valor()!)}` : 'Enviar oferta',
+  );
 
   constructor() {
     // Trocar de conversa pela lista ao lado reaproveita o componente: recarrega pelo id
@@ -155,7 +182,7 @@ export class Negociacao implements OnInit {
         this.negociacao.set(null);
         this.mensagens.set([]);
         this.texto.set('');
-        this.valor.set(null);
+        this.fecharOferta();
         this.outraDigitando.set(false);
         this.carregar();
         // Aberta na tela: o que chegou está lido, e o que chegar não vira contador
@@ -302,12 +329,38 @@ export class Negociacao implements OnInit {
     return this.mensagens()[0]?.id === m.id;
   }
 
+  /** Só texto: a oferta tem a área própria */
   protected enviar(): void {
     if (!this.podeEnviar()) {
       return;
     }
-    const valor = (this.valor() ?? 0) > 0 ? this.valor() : null;
-    this.enviarMensagem(this.texto().trim() || null, valor);
+    this.enviarMensagem(this.texto().trim(), null);
+  }
+
+  protected enviarOferta(): void {
+    if (!this.ofertaValida() || this.enviando()) {
+      return;
+    }
+    this.enviarMensagem(this.nota().trim() || null, this.valor());
+  }
+
+  protected alternarOferta(): void {
+    if (this.ofertaAberta()) {
+      this.fecharOferta();
+    } else {
+      this.abrirOferta();
+    }
+  }
+
+  protected abrirOferta(): void {
+    this.ofertaAberta.set(true);
+    afterNextRender(() => this.campoValor()?.nativeElement.focus(), { injector: this.injector });
+  }
+
+  protected fecharOferta(): void {
+    this.ofertaAberta.set(false);
+    this.valor.set(null);
+    this.nota.set('');
   }
 
   /** Enter envia; Shift+Enter quebra a linha */
@@ -316,10 +369,6 @@ export class Negociacao implements OnInit {
       evento.preventDefault();
       this.enviar();
     }
-  }
-
-  protected contrapropor(): void {
-    this.campoValor()?.nativeElement.focus();
   }
 
   /** Fornecedor concorda com a última oferta da empresa. */
@@ -354,7 +403,7 @@ export class Negociacao implements OnInit {
     const confirmou = await this.confirmacao.confirmar({
       titulo: 'Encerrar sem acordo?',
       mensagem: 'A cotação volta a ficar aberta e você pode negociar com outro fornecedor.',
-      confirmar: 'Encerrar',
+      confirmar: 'Encerrar sem acordo',
       destrutivo: true,
     });
     if (!confirmou) return;
@@ -373,8 +422,11 @@ export class Negociacao implements OnInit {
     // Quem envia a API descobre pelo token
     this.negociacaoService.enviarMensagem({ negociacaoId: this.id(), mensagem, valorOfertado }).subscribe({
       next: (mensagem) => {
-        this.texto.set('');
-        this.valor.set(null);
+        if (valorOfertado === null) {
+          this.texto.set('');
+        } else {
+          this.fecharOferta();
+        }
         this.enviando.set(false);
         this.ultimoSinalDigitando = 0;
         this.adicionarMensagem(mensagem);
@@ -405,6 +457,6 @@ export class Negociacao implements OnInit {
   }
 
   private moeda(valor: number): string {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+    return formatarMoeda(valor);
   }
 }

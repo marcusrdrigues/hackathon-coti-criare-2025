@@ -92,3 +92,23 @@ test.describe('Tema', () => {
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   });
 });
+
+test.describe('Barra lateral', () => {
+  test('recolhe para só os ícones e lembra a escolha', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'No celular a navegação é a barra de abas');
+    await entrarComoDemo(page, 'empresa');
+    const navegacao = page.getByRole('navigation', { name: 'Navegação principal' });
+
+    await page.getByRole('button', { name: 'Recolher barra lateral' }).click();
+    const mostrar = page.getByRole('button', { name: 'Mostrar barra lateral' });
+    await expect(mostrar).toHaveAttribute('aria-expanded', 'false');
+    // Recolhida, cada destino continua com nome acessível e funciona
+    await navegacao.getByRole('link', { name: 'Cotações' }).click();
+    await expect(page.getByRole('heading', { name: 'Cotações', level: 1 })).toBeVisible();
+
+    await page.reload();
+    await expect(mostrar).toBeVisible();
+    await mostrar.click();
+    await expect(page.getByRole('button', { name: 'Recolher barra lateral' })).toHaveAttribute('aria-expanded', 'true');
+  });
+});

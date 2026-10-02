@@ -72,9 +72,16 @@ test('empresa e fornecedor negociam até fechar o negócio', async ({ browser, b
   });
 
   await test.step('contraproposta soma no contador do fornecedor, que abre pelo aviso', async () => {
-    await empresa.getByLabel('Mensagem', { exact: true }).fill('Fechamos em 10.800 com o mesmo prazo?');
-    await empresa.getByLabel('Valor da contraproposta (opcional)').fill('10800');
-    await empresa.getByRole('button', { name: 'Enviar', exact: true }).click();
+    await empresa.getByRole('button', { name: 'Fazer contraproposta' }).click();
+    const oferta = empresa.getByRole('form', { name: 'Nova oferta' });
+    // O campo de valor já abre focado
+    await expect(oferta.getByLabel('Valor total')).toBeFocused();
+    await oferta.getByLabel('Valor total').fill('10800');
+    await expect(oferta.getByText(/abaixo da oferta na mesa/)).toBeVisible();
+    await oferta.getByLabel('Mensagem (opcional)').fill('Fechamos em 10.800 com o mesmo prazo?');
+    // O botão diz o que acontece, com o valor
+    await oferta.getByRole('button', { name: /^Enviar oferta de R\$\s?10\.800,00$/ }).click();
+    await expect(oferta).toBeHidden();
     await expect(empresa.getByText('Fechamos em 10.800 com o mesmo prazo?')).toBeVisible();
 
     const novaOferta = aviso(fornecedor, /Nova oferta de R\$\s?10\.800,00/);

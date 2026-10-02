@@ -8,7 +8,12 @@
 
 .app.com-lateral {
   display: grid;
-  grid-template-columns: calc(var(--largura-lateral) + 0.75rem) minmax(0, 1fr);
+  grid-template-columns: var(--largura-lateral) minmax(0, 1fr);
+  transition: grid-template-columns var(--duracao) var(--curva);
+}
+
+.app.lateral-recolhida {
+  grid-template-columns: var(--largura-lateral-recolhida) minmax(0, 1fr);
 }
 
 .conteudo {
@@ -65,19 +70,76 @@
   box-shadow: inset 0 0.5px 0 var(--vidro-brilho), 0 0 0 0.5px var(--vidro-contorno), var(--vidro-sombra);
 }
 
-/* ---------- Barra lateral: um painel de vidro afastado das bordas, como no iPadOS e no macOS ---------- */
+/* ---------- Barra lateral: parte da janela, de vidro, encostada na borda (spec 002, ADR 0019) ---------- */
 .lateral {
   position: sticky;
   z-index: 30;
-  top: 0.75rem;
+  top: 0;
   display: flex;
   flex-direction: column;
   gap: var(--esp-5);
-  height: calc(100dvh - 1.5rem);
-  margin: 0.75rem 0 0.75rem 0.75rem;
-  padding: var(--esp-5) var(--esp-3) var(--esp-3);
-  border-radius: var(--raio-vidro);
+  min-width: 0;
+  height: 100dvh;
+  padding: var(--esp-4) var(--esp-3) var(--esp-3);
   background: var(--vidro-espesso);
+  /* Só a linha que separa do conteúdo: sem sombra, ela não flutua */
+  box-shadow: inset -0.5px 0 0 var(--vidro-contorno), inset -1px 0 0 var(--cor-divisoria);
+}
+
+.lateral-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-2);
+  min-height: var(--altura-controle);
+}
+
+.alternar-lateral {
+  flex-shrink: 0;
+  color: var(--cor-texto-2);
+}
+
+.alternar-lateral:hover:not(:disabled) {
+  color: var(--cor-texto);
+}
+
+/* ---------- Recolhida: só os ícones. Os nomes continuam no DOM para o leitor de tela ---------- */
+.lateral-recolhida .lateral {
+  padding-inline: var(--esp-2);
+}
+
+.lateral-recolhida .lateral-topo {
+  flex-direction: column;
+}
+
+.lateral-recolhida .rotulo-lateral {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.lateral-recolhida .lateral .marca {
+  padding: 0;
+}
+
+.lateral-recolhida .nav-item {
+  position: relative;
+  justify-content: center;
+  padding: 0;
+}
+
+.lateral-recolhida .nav-item .contador {
+  position: absolute;
+  top: 0.125rem;
+  right: 0.25rem;
+  margin: 0;
+}
+
+.lateral-recolhida .conta-conteudo {
+  justify-content: center;
 }
 
 .lateral .marca {
