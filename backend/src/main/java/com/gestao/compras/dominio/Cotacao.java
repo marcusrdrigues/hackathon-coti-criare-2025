@@ -59,6 +59,20 @@ public class Cotacao {
     @OneToMany(mappedBy = "cotacao")
     private List<Proposta> propostas = new ArrayList<>();
 
+    /**
+     * Liga a proposta a esta cotação pelos dois lados da relação, para quem ainda tem a
+     * cotação em mãos na mesma transação ver a proposta nova (total e melhor oferta).
+     */
+    public void receber(Proposta proposta) {
+        proposta.setCotacao(this);
+        propostas.add(proposta);
+    }
+
+    /** Desfaz {@link #receber(Proposta)} quando o fornecedor retira a proposta. */
+    public void retirar(Proposta proposta) {
+        propostas.remove(proposta);
+    }
+
     /** Indica se o prazo para envio de propostas já passou. */
     public boolean isPrazoEncerrado() {
         return dataLimite != null && dataLimite.isBefore(LocalDateTime.now());

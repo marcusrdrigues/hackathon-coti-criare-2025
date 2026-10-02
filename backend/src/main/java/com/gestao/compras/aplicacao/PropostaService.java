@@ -48,7 +48,7 @@ public class PropostaService {
 
         proposta.setFornecedor(organizacaoService.buscarPorId(fornecedorId));
         proposta.setEnviadaPor(organizacaoService.buscarUsuario(autor.usuarioId()));
-        proposta.setCotacao(cotacao);
+        cotacao.receber(proposta);
         proposta.setStatus(StatusProposta.ENVIADA);
         proposta.setDataEnvio(LocalDateTime.now());
 
@@ -134,6 +134,7 @@ public class PropostaService {
         if (proposta.getStatus() == StatusProposta.ACEITA) {
             throw new RegraDeNegocioException("Propostas aceitas não podem ser excluídas!");
         }
+        proposta.getCotacao().retirar(proposta);
         propostaRepositorio.excluir(proposta);
     }
 }
