@@ -44,7 +44,7 @@ ADR: **0021 · Auditoria com Hibernate Envers e eventos de segurança em tabela 
 - Um evento de domínio no módulo compartilhado, `EventoDeSeguranca(tipo, usuarioId, organizacaoId, emailMascarado, detalhe)`, publicado por quem sabe que algo aconteceu: o login e a renovação de sessão, a equipe, o superadmin da configuração e as respostas 403.
 - O módulo `auditoria` ouve o evento e grava em `tb_evento_seguranca` numa **transação própria** (`REQUIRES_NEW`). Assim, a senha errada fica registrada mesmo com o login desfeito.
 - Se a gravação falhar, a ação principal segue e a falha vai para o log com o rastreio. Derrubar um login porque a auditoria caiu tiraria o portal do ar por um problema secundário.
-- Tipos: `LOGIN`, `LOGIN_FALHOU`, `LOGIN_BLOQUEADO`, `SESSAO_REVOGADA_POR_REUSO`, `LOGOUT`, `CONVITE_CRIADO`, `CONVITE_CANCELADO`, `CONVITE_ACEITO`, `MEMBRO_REMOVIDO`, `SUPERADMIN_CRIADO`, `SUPERADMIN_SENHA_TROCADA`, `SUPERADMIN_DESATIVADO`, `ACESSO_NEGADO`, `CONSULTA_DE_AUDITORIA`, `DADOS_PESSOAIS_ANONIMIZADOS`.
+- Tipos: `LOGIN`, `LOGIN_FALHOU`, `LOGIN_BLOQUEADO`, `SESSAO_REVOGADA_POR_REUSO`, `LOGOUT`, `CONVITE_CRIADO`, `CONVITE_CANCELADO`, `CONVITE_ACEITO`, `MEMBRO_REMOVIDO`, `SUPERADMIN_CRIADO`, `SUPERADMIN_SENHA_TROCADA`, `SUPERADMIN_DESATIVADO`, `ACESSO_NEGADO`, `CONSULTA_DE_AUDITORIA`, `DADOS_PESSOAIS_ANONIMIZADOS`, e, com a spec 004, `REDEFINICAO_DE_SENHA_PEDIDA` e `SENHA_REDEFINIDA`.
 
 ## Só acréscimo e retenção (R3)
 

@@ -1,6 +1,6 @@
 # 004 · Redefinição de senha
 
-- **Status:** Em implementação
+- **Status:** Concluída
 - **Data:** 2026-10-02
 - **Plano:** [plan.md](plan.md) · **Tarefas:** [tasks.md](tasks.md)
 

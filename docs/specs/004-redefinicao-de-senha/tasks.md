@@ -9,20 +9,20 @@ Cada passo termina com o CI verde e o roadmap do README atualizado.
 
 ## Passo 2 · Back-end
 
-- [ ] Migração V8 e entidade do link de redefinição
-- [ ] Pedido, consulta e confirmação, com limite por e-mail e contas sem envio
-- [ ] Porta de envio de e-mail, adaptador da Brevo e envio desligado
-- [ ] Eventos de segurança novos
-- [ ] Testes da API e do adaptador
+- [x] Migração V8 e entidade do link de redefinição
+- [x] Pedido, consulta e confirmação, com limite por e-mail e contas sem envio
+- [x] Porta de envio de e-mail, adaptador da Brevo e envio desligado
+- [x] Eventos de segurança novos
+- [x] Testes da API e do adaptador
 
 ## Passo 3 · Front-end
 
-- [ ] Link "Esqueci minha senha" no login
-- [ ] Telas de pedido e de senha nova
-- [ ] Teste ponta a ponta
+- [x] Link "Esqueci minha senha" no login
+- [x] Telas de pedido e de senha nova
+- [x] Teste ponta a ponta
 
 ## Passo 4 · Fechamento
 
-- [ ] Política de dados com o provedor de e-mail
-- [ ] Variáveis de ambiente documentadas no README
-- [ ] Spec marcada como concluída
+- [x] Política de dados com o provedor de e-mail
+- [x] Variáveis de ambiente documentadas no README
+- [x] Spec marcada como concluída

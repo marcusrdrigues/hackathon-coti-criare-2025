@@ -39,8 +39,8 @@ Dois tipos novos em `EventoDeSeguranca.Tipo`: `REDEFINICAO_DE_SENHA_PEDIDA` (só
 
 ## Front-end
 
-- Link "Esqueci minha senha" no formulário de login, abaixo da senha.
-- `/esqueci-a-senha`: no layout das telas de acesso; pede o e-mail e mostra a mesma confirmação em qualquer caso.
+- Link "Esqueci minha senha" no formulário de login, ao lado do rótulo da senha, levando o e-mail já digitado.
+- `/pages/esqueci-a-senha`: no layout das telas de acesso; pede o e-mail e mostra a mesma confirmação em qualquer caso.
 - `/redefinir-senha`: lê o token do fragmento e o apaga da barra de endereço (`history.replaceState`), consulta, e mostra senha nova e confirmação, com as regras do cadastro. Link que não vale mostra o aviso e o atalho para pedir outro.
 - Ao concluir, vai para o login com o aviso de senha alterada.
 
@@ -48,7 +48,7 @@ Dois tipos novos em `EventoDeSeguranca.Tipo`: `REDEFINICAO_DE_SENHA_PEDIDA` (só
 
 - API: resposta igual com e sem conta, conta de exemplo e superadmin sem e-mail, limite por hora, link vencido, usado e substituído, troca que derruba as sessões e zera o bloqueio, senha fora das regras sem gastar o link, eventos registrados, token fora do banco e dos logs.
 - Adaptador da Brevo com servidor simulado (`MockRestServiceServer`): corpo, cabeçalho da chave e falha do provedor.
-- Front-end: as duas telas e o link no login; teste ponta a ponta do fluxo com o e-mail capturado.
+- Front-end: as duas telas e o link no login, num teste ponta a ponta. O e-mail não sai no ambiente de teste, então o link inválido usa a API de verdade, e o caminho feliz da tela de senha nova usa a resposta simulada (a API inteira já está coberta pelos testes do back-end).
 
 ## Riscos
 

@@ -26,7 +26,7 @@ O portal registra o estado atual de cada negócio, mas não a história de como 
 
 - **O superadmin alterar dados** (suspender uma organização, redefinir uma senha). Nesta fase, o console é só de leitura. Ações administrativas ganham spec própria.
 - **Armazenamento externo imutável** (WORM, serviço de log dedicado). Os registros ficam no mesmo banco, protegidos contra alteração pela aplicação, não contra quem administra o banco.
-- **Alertas automáticos** por e-mail ou mensagem. O portal não envia e-mail.
+- **Alertas automáticos** por e-mail ou mensagem. O único e-mail do portal é o da redefinição de senha (spec 004).
 - **Exportação** da auditoria (CSV, PDF).
 - **A IA em si**: fase 7. Aqui fica só o registro de consumo.
 

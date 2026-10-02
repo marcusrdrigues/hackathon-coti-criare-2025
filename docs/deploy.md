@@ -92,11 +92,33 @@ Não é preciso criar tabelas: na primeira inicialização o Flyway aplica as mi
 2. Troque `CORS_ALLOWED_ORIGINS` pelo endereço da Vercel (sem barra no final), por exemplo `https://portal-criare.vercel.app`.
 3. Salve. O Render reinicia a API sozinho.
 
+## 4.1 E-mail com a Brevo (opcional)
+
+Sem esta parte, o portal funciona normalmente, mas o "Esqueci minha senha" não envia nenhum e-mail (o log da API avisa). O plano gratuito do Render bloqueia as portas de SMTP, por isso o envio é pela API HTTP da Brevo, que no plano gratuito manda 300 e-mails por dia.
+
+1. Crie uma conta em [brevo.com](https://www.brevo.com) no plano **Free**.
+2. Em **Senders, Domains & Dedicated IPs → Senders**, adicione um remetente: o nome `Portal Criare` e um e-mail seu (pode ser um Gmail). A Brevo manda um código para esse e-mail; confirme.
+3. Em **SMTP & API → API Keys**, gere uma chave nova e copie (ela aparece uma vez só).
+4. Se as configurações de e-mail transacional tiverem **rastreamento de cliques**, desligue: ele troca o link do e-mail por um redirecionamento da Brevo, e o link de redefinição precisa chegar intacto.
+5. Em **Security → Authorised IPs**, desative o bloqueio de IPs desconhecidos. O Render não tem IP fixo no plano gratuito, e a Brevo recusaria os envios.
+6. No Render, em **Environment**, preencha:
+
+   | Variável | Valor |
+   |---|---|
+   | `BREVO_API_KEY` | a chave do item 3 |
+   | `EMAIL_REMETENTE` | o e-mail confirmado no item 2 |
+   | `APP_URL_FRONTEND` | o endereço da Vercel, por exemplo `https://portal-criare.vercel.app` |
+
+7. Salve e espere o Render reiniciar. No log da subida aparece `Envio de e-mail pela Brevo`.
+
+Sem domínio próprio, os primeiros e-mails podem cair no spam; a tela de confirmação já avisa a pessoa. Com um domínio, dá para configurar SPF e DKIM na Brevo e melhorar a entrega.
+
 ## 5. Testar
 
 1. Abra o endereço da Vercel. A tela de login deve mostrar os botões **Entrar como empresa** e **Entrar como fornecedor**.
 2. Clique em um deles. Se a API estava dormindo, aparece o aviso de que o servidor está iniciando.
 3. Recarregue a página (F5): você deve continuar logado. Isso confirma que o cookie da sessão está funcionando pelo proxy da Vercel.
+4. Com a Brevo configurada (passo 4.1): crie uma conta sua (não as de demonstração, que não recebem e-mail), saia, clique em **Esqueci minha senha** e confira se o link chega e troca a senha.
 
 ## 6. Divulgar
 

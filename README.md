@@ -132,6 +132,7 @@ sequenceDiagram
 - **Avisos ao vivo em qualquer tela**: mensagem nova, proposta recebida, negociação aberta, fechada ou encerrada, com atalho para abrir; as telas abertas se atualizam sozinhas
 - Telas carregadas sob demanda (*lazy loading*)
 - **Modo claro e escuro**: segue o tema do sistema e pode ser fixado no menu do usuário ou no canto das telas de acesso
+- **Esqueci minha senha**: o link vai por e-mail, vale 30 minutos e uma vez só; a tela nunca diz se o e-mail tem conta, e a senha nova encerra as sessões em todos os aparelhos
 - Layout responsivo, do celular ao monitor largo; login e cadastro cabem na tela sem rolagem
 
 ---
@@ -205,6 +206,7 @@ sequenceDiagram
 | **No banco** | Só o **hash SHA-256** do refresh token | Quem acessar o banco não consegue usar as sessões gravadas |
 | **Rotação** | Cada renovação gera um refresh token novo e revoga o anterior | Um token roubado só serve uma vez |
 | **Convites** | Link com token aleatório de 256 bits, válido por 72 horas e uma vez só; o banco guarda só o hash. O token vai depois do `#` do link e no corpo das requisições, nunca no caminho da URL | Quem acessa o banco não usa os convites, e o token não aparece em log de acesso da Vercel, da API ou de proxies |
+| **Redefinição de senha** | Link por e-mail com token de 256 bits, válido por 30 minutos e uma vez só; o banco guarda o hash, e um pedido novo invalida o anterior. A resposta do pedido é a mesma com conta ou sem, e o e-mail sai depois, fora da requisição. No máximo 3 pedidos por hora para o mesmo e-mail. A troca encerra todas as sessões e zera o bloqueio de login | Ninguém descobre quais e-mails têm conta, um link vazado expira logo, e quem trocou a senha por suspeita derruba quem estava usando a conta |
 | **Saída da equipe** | Remover uma pessoa revoga todas as sessões dela e fecha as conexões em tempo real abertas por ela | O acesso acaba na hora; o access token em uso vence em até 15 minutos |
 | **Detecção de reuso** | Se um refresh token já usado aparecer de novo, **todas** as sessões daquele usuário são encerradas | Reuso indica que alguém copiou o token |
 | **Força bruta** | 5 senhas erradas para o mesmo e-mail em 15 minutos bloqueiam o login (HTTP 429 com `Retry-After`) | Dificulta adivinhar senhas |
@@ -318,6 +320,7 @@ erDiagram
     NEGOCIACAO ||--o{ MENSAGEM_NEGOCIACAO : contem
     USUARIO ||--o{ MENSAGEM_NEGOCIACAO : escreve
     USUARIO ||--o{ REFRESH_TOKEN : "sessões"
+    USUARIO ||--o{ REDEFINICAO_SENHA : "links de senha nova"
     ORGANIZACAO ||--o{ CONVITE : "convida para"
     USUARIO ||--o{ CONVITE : convida
 
@@ -382,6 +385,13 @@ erDiagram
         string token_hash
         datetime expira_em
         datetime revogado_em
+    }
+    REDEFINICAO_SENHA {
+        uuid id
+        string token_hash
+        datetime expira_em
+        datetime usada_em
+        datetime substituida_em
     }
 ```
 
@@ -467,6 +477,10 @@ Para rodar localmente sem exportar nada, copie [`backend/.env.example`](backend/
 | `JWT_COOKIE_SECURE` | `false` | `true` em produção (HTTPS): o cookie só trafega por conexão segura |
 | `DB_POOL_SIZE` | `10` | Máximo de conexões com o banco |
 | `SUPERADMIN_EMAIL` e `SUPERADMIN_SENHA` | — (sem superadmin) | O superadmin da plataforma. A senha precisa de 12 caracteres ou mais. Trocar a senha atualiza a conta e encerra as sessões dela; trocar o e-mail troca o superadmin; apagar as duas desativa |
+| `BREVO_API_KEY` e `EMAIL_REMETENTE` | — (envio desligado) | Envio de e-mail pela API da Brevo (redefinição de senha). O remetente precisa estar verificado na Brevo. Sem os dois, nada é enviado e o log avisa. Passo a passo em [docs/deploy.md](docs/deploy.md#41-e-mail-com-a-brevo-opcional) |
+| `EMAIL_REMETENTE_NOME` | `Portal Criare` | Nome do remetente nos e-mails |
+| `APP_URL_FRONTEND` | `http://localhost:4200` | Endereço do front-end, usado nos links dos e-mails |
+| `REDEFINICAO_DOMINIOS_SEM_ENVIO` | `demo.com` | Domínios cujas contas não recebem o link de redefinição (as contas de exemplo) |
 | `DEMO_RESET_CRON` | `0 0 4 * * *` | Profile `demo`: quando os dados de exemplo voltam ao estado inicial (horário de Brasília) |
 | `LOGGING_STRUCTURED_FORMAT_CONSOLE` | — (texto) | `ecs` grava os logs em JSON, com o `traceId` de cada requisição (usado em produção) |
 | `MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT` | — (não exporta) | Endereço de um coletor OpenTelemetry (OTLP/HTTP) para receber os traces |
@@ -534,6 +548,9 @@ Legenda: 🌐 público · 🔑 qualquer pessoa de uma organização · 🏢 só 
 | `POST` | `/auth/login` | 🌐 | Devolve `accessToken`, `expiresIn` e o usuário; grava o cookie `refresh_token` |
 | `POST` | `/auth/refresh` | 🌐 (cookie) | Troca o refresh token do cookie por um access token novo |
 | `POST` | `/auth/logout` | 🌐 (cookie) | Revoga o refresh token e apaga o cookie |
+| `POST` | `/auth/redefinicao` | 🌐 | `{ email }`; sempre `202`, com conta ou sem. Se a conta existe, envia o link de redefinição por e-mail |
+| `POST` | `/auth/redefinicao/consulta` | 🌐 | `{ token }`; `204` se o link vale, `404` se não vale (vencido, usado, substituído ou inexistente) |
+| `POST` | `/auth/redefinicao/confirmacao` | 🌐 | `{ token, senha }`; troca a senha e encerra todas as sessões (`204`). `400` para senha fora das regras, sem gastar o link |
 | `GET` | `/auth/me` | 🔑 | A pessoa do token (`id`, `nome`, `email`), o `tipo` e o `papel`, e a `organizacao` (`id`, `razaoSocial`, `cnpj`). O login e a renovação devolvem o mesmo objeto em `usuario` |
 | `GET` | `/dashboard/empresa` | 🏢 | Indicadores, demandas por categoria e top fornecedores |
 | `GET` | `/dashboard/fornecedor` | 🚚 | Indicadores e valor total fechado |
@@ -710,6 +727,8 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | `DemonstracaoApiTest` | Login de demonstração em um clique (nunca como superadmin), health check e reset diário dos dados de exemplo, preservando o superadmin |
 | `HistoricoDeAlteracoesTest` | Histórico de alterações com o Envers, com transações confirmadas de verdade: a edição de uma cotação guarda os valores anteriores, quem mudou, a organização e o rastreio; a proposta retirada continua no histórico com o último estado e quem a retirou; o cadastro aparece como rota pública e a alteração fora de uma requisição, como sistema; nenhuma coluna de hash, senha ou token nas tabelas do histórico |
 | `EventosDeSegurancaTest` | Eventos de segurança com transações confirmadas de verdade: a senha errada fica registrada mesmo com o login desfeito, e o e-mail sem conta aparece só mascarado; bloqueio por excesso de tentativas, login e saída, token de sessão reutilizado, convite criado, cancelado e aceito, pessoa removida, mudanças no superadmin da configuração e acesso negado pelo perfil e pela rota, com o rastreio; nenhum evento guarda o e-mail inteiro |
+| `RedefinicaoDeSenhaApiTest` | "Esqueci minha senha" com transações confirmadas e uma caixa de saída de teste: resposta igual com conta ou sem, só o hash do token no banco, conta de exemplo e superadmin sem e-mail, limite de 3 pedidos por hora, falha do provedor sem mudar a resposta, link de uso único que troca a senha e derruba as sessões, pedido novo invalidando o anterior, link vencido ou inventado, senha fora das regras sem gastar o link, bloqueio de login zerado, eventos de segurança e nada de token, senha ou e-mail no log |
+| `EmailPelaBrevoTest` e `EmailDeRedefinicaoTest` | O adaptador da Brevo contra um servidor simulado (corpo, chave no cabeçalho, recusa e queda do provedor) e o modelo do e-mail (link com o token no fragmento, prazo, nome digitado escapado no HTML) |
 | `AdministracaoApiTest` | Superadmin vindo da configuração: token sem organização, renovação, lista de organizações com os totais e sem dado pessoal, paginação (tamanho máximo, ordem permitida, página inválida), pessoa de organização barrada na área administrativa, superadmin barrado nas rotas das organizações, cadastro público que não cria superadmin, configuração vazia, senha nova, e-mail novo, senha curta e e-mail de uma conta existente |
 | `EquipeApiTest` | Convidar, consultar e aceitar o convite (já logado como membro), link usado, vencido, cancelado ou adulterado sem criar conta, convite novo substituindo o anterior, e-mail já cadastrado, membro sem permissão de convidar ou remover, remoção revogando as sessões e mantendo o nome no histórico |
 | `IsolamentoEntreOrganizacoesTest` | Toda rota da API que recebe id, no caminho ou no corpo, tentada por outra organização: a resposta é `404` com a mesma mensagem de um id inexistente. Lê as rotas do Spring MVC e falha se uma rota com id não tiver caso cadastrado |
@@ -816,7 +835,7 @@ Saber quem fez o quê. O proprietário vê a atividade da própria organização
 - [ ] **Console do superadmin**: eventos de segurança, atividade de cada organização e histórico de cada registro; as consultas dele também ficam registradas
 - [ ] **Registro de consumo de IA**: tokens, custo e latência por organização e por funcionalidade, pronto para a fase 7
 - [ ] **Exclusão de dados pessoais a pedido** (LGPD): nome e e-mail anonimizados na conta e no histórico
-- [ ] **Redefinição de senha**: "Esqueci minha senha" no login, link de uso único por e-mail e sessões encerradas depois da troca ([spec 004](docs/specs/004-redefinicao-de-senha/spec.md))
+- [x] **Redefinição de senha**: "Esqueci minha senha" no login, link de uso único por e-mail (Brevo) e sessões encerradas depois da troca ([spec 004](docs/specs/004-redefinicao-de-senha/spec.md))
 
 ### Fase 6 · Produto &nbsp;`planejada`
 
