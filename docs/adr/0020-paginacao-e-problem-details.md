@@ -33,3 +33,4 @@ Os erros tinham um formato próprio (`status`, `message`, `timestamp`, `traceId`
 - Toda listagem nova que pode crescer já nasce paginada, com a lista de campos de ordenação aceitos.
 - O front-end lê `detail` e `erros`. Um cliente que lia `message` precisa mudar (a API é usada só pelo front-end deste repositório).
 - As telas com busca esperam a pessoa parar de digitar antes de consultar a API, para não fazer uma requisição por tecla.
+- A paginação é por deslocamento: se um item entra ou sai da lista entre uma página e outra, o próximo "Carregar mais" pode trazer de novo o último item (o front-end descarta o repetido) ou pular um. Depois de uma ação na própria tela (retirar uma proposta, por exemplo), a lista se realinha com a API. Se pular um item passar a importar, a troca é pela paginação por cursor.

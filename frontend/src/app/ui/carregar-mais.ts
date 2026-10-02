@@ -12,6 +12,9 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
   template: `
     @if (total() > 0) {
       <div class="carregar-mais">
+        @if (falha(); as mensagem) {
+          <p class="carregar-mais-falha" role="alert">{{ mensagem }}</p>
+        }
         <p class="carregar-mais-contagem" aria-live="polite">
           {{ mostrando() }} de {{ total() }} {{ total() === 1 ? singular() : plural() }}
         </p>
@@ -34,6 +37,13 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
       margin-top: var(--esp-4);
     }
 
+    .carregar-mais-falha {
+      margin: 0;
+      font-size: var(--texto-pequeno);
+      color: var(--cor-erro-texto);
+      text-align: center;
+    }
+
     .carregar-mais-contagem {
       margin: 0;
       font-size: var(--texto-legenda);
@@ -45,6 +55,8 @@ export class CarregarMais {
   readonly mostrando = input.required<number>();
   readonly total = input.required<number>();
   readonly carregando = input(false);
+  /** A última página (ou atualização) não veio: a lista continua, com o aviso */
+  readonly falha = input<string | null>(null);
   readonly singular = input('item');
   readonly plural = input('itens');
   readonly carregar = output<void>();

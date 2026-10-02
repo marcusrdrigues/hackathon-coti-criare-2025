@@ -13,7 +13,7 @@ export type OrdemOrganizacoes = 'criadaEm,desc' | 'razaoSocial,asc';
 export class AdminService {
   private readonly http = inject(HttpClient);
 
-  organizacoes(pagina: number, ordem: OrdemOrganizacoes, tamanho = 20): Observable<Pagina<OrganizacaoAdmin>> {
+  organizacoes(pagina: number, ordem: OrdemOrganizacoes, tamanho?: number): Observable<Pagina<OrganizacaoAdmin>> {
     const params = parametrosDePagina(pagina, tamanho).set('sort', ordem);
     return this.http.get<Pagina<OrganizacaoAdmin>>(`${API_URL}/admin/organizacoes`, { params });
   }

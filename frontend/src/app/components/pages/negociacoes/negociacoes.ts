@@ -47,7 +47,7 @@ import { ListaNegociacoes } from '../../shared/lista-negociacoes/lista-negociaco
         </div>
         @if (itens.length > 0) {
           <app-lista-negociacoes [negociacoes]="itens" />
-          <ui-carregar-mais [mostrando]="itens.length" [total]="lista.total()" [carregando]="lista.carregando()"
+          <ui-carregar-mais [mostrando]="itens.length" [total]="lista.total()" [carregando]="lista.carregando()" [falha]="lista.falhaAoAtualizar()"
                             singular="negociação" plural="negociações" (carregar)="lista.carregarMais()" />
         } @else {
           <div class="lista"><p class="vazio">Nenhuma negociação em andamento.</p></div>

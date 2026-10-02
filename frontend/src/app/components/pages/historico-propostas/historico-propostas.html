@@ -39,7 +39,7 @@
           </li>
         }
       </ul>
-      <ui-carregar-mais [mostrando]="itens.length" [total]="lista.total()" [carregando]="lista.carregando()"
+      <ui-carregar-mais [mostrando]="itens.length" [total]="lista.total()" [carregando]="lista.carregando()" [falha]="lista.falhaAoAtualizar()"
                         singular="proposta" plural="propostas" (carregar)="lista.carregarMais()" />
     } @else {
       <div class="lista">

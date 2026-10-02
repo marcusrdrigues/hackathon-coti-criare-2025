@@ -60,7 +60,7 @@
             </li>
           }
         </ul>
-        <ui-carregar-mais [mostrando]="itens.length" [total]="lista.total()" [carregando]="lista.carregando()"
+        <ui-carregar-mais [mostrando]="itens.length" [total]="lista.total()" [carregando]="lista.carregando()" [falha]="lista.falhaAoAtualizar()"
                           singular="cotação" plural="cotações" (carregar)="lista.carregarMais()" />
       } @else {
         <div class="lista"><p class="vazio">Nenhuma cotação com esses filtros.</p></div>
