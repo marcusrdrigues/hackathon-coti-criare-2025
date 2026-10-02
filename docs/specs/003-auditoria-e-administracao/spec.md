@@ -1,6 +1,6 @@
 # 003 · Auditoria e administração
 
-- **Status:** Rascunho
+- **Status:** Em implementação
 - **Data:** 2026-10-02
 - **Plano:** [plan.md](plan.md) · **Tarefas:** [tasks.md](tasks.md)
 
@@ -55,7 +55,6 @@ Os eventos que importam para a segurança ficam registrados com o tipo, o moment
 - **Dado** a equipe, **quando** alguém é convidado, aceita o convite, tem o convite cancelado ou é removido, **então** um evento é registrado.
 - **Dado** a configuração do servidor, **quando** o superadmin é criado, tem a senha trocada ou é desativado, **então** um evento é registrado.
 - **Dado** um pedido negado por perfil (403), **então** um evento é registrado.
-- **Dado** um evento de segurança, **então** ele pode trazer o endereço de rede reduzido de quem fez o pedido (sem o último bloco), nunca o endereço completo. *(Pode)*
 
 ### R3 · Só acréscimo e retenção (Deve)
 
@@ -120,3 +119,4 @@ Resolvidas antes da escrita, em 2026-10-02:
 1. **Retenção de 5 anos**, o prazo comum para registros comerciais. Depois disso, a rotina diária apaga.
 2. **O proprietário vê a atividade da própria organização**, como administrador dela, só com informação de negócio. Os registros técnicos (logins, endereços de rede, rastreio, eventos de segurança) ficam com o superadmin.
 3. **Membros comuns não veem a atividade.** Eles continuam vendo a equipe, como hoje.
+4. **Segurança na medida de um portfólio.** O endereço de rede de quem faz o pedido fica fora dos eventos, e a proteção dos registros é contra erro da aplicação. Endurecer mais (endereço de rede, armazenamento externo, alertas) depende de onde o sistema for hospedado, e fica para quando houver um uso real.

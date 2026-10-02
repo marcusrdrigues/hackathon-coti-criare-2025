@@ -5,15 +5,15 @@ Cada passo termina com o CI verde e o roadmap do README atualizado.
 ## Passo 1 · Spec
 
 - [x] Spec, plano e tarefas
-- [ ] Spec aprovada
+- [x] Spec aprovada
 
 ## Passo 2 · Histórico de alterações (R1)
 
-- [ ] Hibernate Envers nas entidades, sem credenciais
-- [ ] Revisão com pessoa, organização, rastreio e origem
-- [ ] Migração V6 com as tabelas do histórico
-- [ ] Testes: valores anteriores, exclusão, origem `SISTEMA`, nenhum hash no histórico
-- [ ] ADR 0021
+- [x] Hibernate Envers nas entidades, sem credenciais
+- [x] Revisão com pessoa, organização, rastreio e origem
+- [x] Migração V6 com as tabelas do histórico
+- [x] Testes: valores anteriores, exclusão, origem `SISTEMA`, nenhum hash no histórico
+- [x] ADR 0021
 
 ## Passo 3 · Eventos de segurança (R2)
 

@@ -30,6 +30,6 @@ Este repositório é público: as specs descrevem comportamento e decisões, nun
 |---|---|---|
 | [001](001-fundacao-da-arquitetura/spec.md) | Fundação da arquitetura: módulos, identidade com organizações, autorização, observabilidade e padrões de API | Concluída |
 | [002](002-experiencia-da-negociacao/spec.md) | Experiência da negociação e escrita da interface: barra lateral recolhível, oferta com botão próprio e revisão dos textos | Concluída |
-| [003](003-auditoria-e-administracao/spec.md) | Auditoria e administração: histórico de alterações, eventos de segurança, atividade da organização para o proprietário, console do superadmin e registro de consumo de IA | Rascunho · em revisão |
+| [003](003-auditoria-e-administracao/spec.md) | Auditoria e administração: histórico de alterações, eventos de segurança, atividade da organização para o proprietário, console do superadmin e registro de consumo de IA | Aprovada · em implementação |
 
 Modelo para uma spec nova: [template.md](template.md).

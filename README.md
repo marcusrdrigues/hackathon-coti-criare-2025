@@ -246,6 +246,7 @@ hackathon-coti-criare-2025/
 │       ├── compras/             Cotações, propostas, negociações e mensagens
 │       ├── painel/              Números dos dashboards (só leitura)
 │       ├── administracao/       Área do superadmin: organizações e uso (só leitura)
+│       ├── auditoria/           Histórico de alterações (Hibernate Envers): quem mudou o quê e quando
 │       ├── temporeal/           WebSocket/STOMP: eventos de compras ao vivo
 │       ├── demonstracao/        Contas e dados da demo pública
 │       └── compartilhado/       Exceções de negócio, validação de CNPJ, CORS e Swagger
@@ -278,9 +279,10 @@ flowchart LR
     demonstracao --> compras & identidade
     painel --> compras & identidade
     administracao --> identidade
+    auditoria --> identidade
     temporeal --> compras & identidade
     compras --> identidade
-    identidade & compras & painel & administracao & temporeal & demonstracao --> compartilhado
+    identidade & compras & painel & administracao & auditoria & temporeal & demonstracao --> compartilhado
 ```
 
 ```text
@@ -706,6 +708,7 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | `MigracaoPessoasEOrganizacoesTest` | As migrações V2_1, V3 e V5 sobre dados no formato antigo, com as chaves nomeadas como o Hibernate nomeia, num PostgreSQL real: empresas e fornecedores viram organizações com o mesmo id, cada conta vira uma pessoa proprietária com a mesma senha, o negócio ganha autoria, nenhuma chave aponta mais para as tabelas antigas, as chaves novas apontam para as tabelas novas, as sessões antigas são encerradas e, depois da V5, as tabelas antigas somem sem levar nenhum dado |
 | `FluxoCotacaoPostgresTest` e `AutenticacaoPostgresTest` | Os mesmos cenários das duas suítes acima, agora no PostgreSQL real, para pegar diferenças que o H2 esconde |
 | `DemonstracaoApiTest` | Login de demonstração em um clique (nunca como superadmin), health check e reset diário dos dados de exemplo, preservando o superadmin |
+| `HistoricoDeAlteracoesTest` | Histórico de alterações com o Envers, com transações confirmadas de verdade: a edição de uma cotação guarda os valores anteriores, quem mudou, a organização e o rastreio; a proposta retirada continua no histórico com o último estado e quem a retirou; o cadastro aparece como rota pública e a alteração fora de uma requisição, como sistema; nenhuma coluna de hash, senha ou token nas tabelas do histórico |
 | `AdministracaoApiTest` | Superadmin vindo da configuração: token sem organização, renovação, lista de organizações com os totais e sem dado pessoal, paginação (tamanho máximo, ordem permitida, página inválida), pessoa de organização barrada na área administrativa, superadmin barrado nas rotas das organizações, cadastro público que não cria superadmin, configuração vazia, senha nova, e-mail novo, senha curta e e-mail de uma conta existente |
 | `EquipeApiTest` | Convidar, consultar e aceitar o convite (já logado como membro), link usado, vencido, cancelado ou adulterado sem criar conta, convite novo substituindo o anterior, e-mail já cadastrado, membro sem permissão de convidar ou remover, remoção revogando as sessões e mantendo o nome no histórico |
 | `IsolamentoEntreOrganizacoesTest` | Toda rota da API que recebe id, no caminho ou no corpo, tentada por outra organização: a resposta é `404` com a mesma mensagem de um id inexistente. Lê as rotas do Spring MVC e falha se uma rota com id não tiver caso cadastrado |
@@ -738,6 +741,7 @@ As decisões maiores têm um registro próprio, com contexto, alternativas e con
 - **Refresh token opaco e não JWT**: como fica no banco, dá para revogar no logout e detectar reuso, algo que um JWT puro não permite.
 - **Autorização em duas camadas**: perfil no controller (`@PreAuthorize`) e acesso por organização numa política única do módulo (`AcessoCompras`), usada pelos services e pelo WebSocket, com `404` para o que é de outra organização ([ADR 0016](docs/adr/0016-autorizacao-por-organizacao.md)).
 - **Front-end com signals e componentes standalone**, controle de fluxo `@if`/`@for` e um service por recurso da API.
+- **Histórico de alterações com o Hibernate Envers**: cada transação que muda um dado de negócio vira uma revisão, com a pessoa, a organização dela e o rastreio da requisição, e uma cópia do registro como ficou. Credenciais ficam de fora, e a exclusão guarda o último estado ([ADR 0021](docs/adr/0021-auditoria-com-envers-e-eventos-de-seguranca.md)).
 - **Esquema do banco versionado com Flyway**: cada mudança vira uma migração revisável, e o Hibernate só confere (`ddl-auto=validate`) se as entidades batem com o banco.
 - **Design tokens** ([`tokens.css`](frontend/src/styles/tokens.css)): cores, tipografia, espaços e movimento existem num lugar só, com uma versão para o claro e outra para o escuro. Nenhum componente usa valor solto, e todos os pares de texto e fundo passam no contraste da WCAG. Detalhes em [docs/design-system.md](docs/design-system.md).
 - **Componentes próprios no lugar do Bootstrap**: a hierarquia vem da tipografia e do espaço, não de cards e cores. Seletor, menu, painel e confirmação seguem os padrões de acessibilidade da WAI-ARIA, e o bundle inicial caiu quase pela metade ([ADR 0011](docs/adr/0011-componentes-proprios-no-lugar-do-bootstrap.md)).
@@ -798,12 +802,12 @@ A base que as próximas fases exigem, feita antes delas. Especificação: [spec 
 - [x] **Política de dados**: o que é sensível, onde cada dado pode aparecer (logs, auditoria, IA, demo) e por quanto tempo ([docs/dados.md](docs/dados.md))
 - [x] **Limpeza**: as tabelas de conta de antes da separação entre pessoa e organização saem do banco (migração V5), depois da validação em produção
 
-### Fase 5 · Auditoria e administração &nbsp;`em especificação`
+### Fase 5 · Auditoria e administração &nbsp;`em andamento`
 
 Saber quem fez o quê. O proprietário vê a atividade da própria organização, em linguagem de negócio; o superadmin vê a plataforma inteira, com os registros técnicos. Especificação: [spec 003](docs/specs/003-auditoria-e-administracao/spec.md).
 
 - [x] **Spec 003**: requisitos, plano e tarefas, com retenção de 5 anos e a atividade da organização para o proprietário
-- [ ] **Histórico de alterações com Hibernate Envers**: quem mudou, quando e qual era o valor anterior, sem credenciais
+- [x] **Histórico de alterações com Hibernate Envers**: quem mudou, de qual organização, quando e qual era o valor anterior, sem credenciais ([ADR 0021](docs/adr/0021-auditoria-com-envers-e-eventos-de-seguranca.md))
 - [ ] **Eventos de segurança**: logins, falhas, bloqueios, sessões revogadas, equipe e as ações do próprio superadmin
 - [ ] Registros **só de acréscimo**, protegidos no banco, guardados por **5 anos** e com os dados sensíveis mascarados
 - [ ] **Atividade da organização** para o proprietário: quem da equipe fez o quê, com o antes e o depois

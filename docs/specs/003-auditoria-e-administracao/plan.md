@@ -34,6 +34,8 @@ flowchart LR
 - `track_entities_changed_in_revision` liga a lista de entidades mudadas em cada revisão, e `global_with_modified_flag` marca quais campos mudaram. Com isso, a atividade sai de uma consulta por revisão, sem comparar versões inteiras.
 - As tabelas `_aud` e a de revisão nascem por **migração Flyway (V6)**, como todo o resto do esquema: o Hibernate continua só validando.
 - A anotação do Envers no domínio é aceitável pela regra de camadas, como já são as do JPA.
+- As marcas de leitura da negociação (`lida_empresa_em`, `lida_fornecedor_em`) ficam fora: mudam a cada visita e não são uma decisão de ninguém.
+- A origem da revisão é `PESSOA` (autenticada), `PUBLICO` (cadastro e aceite de convite, sem login) ou `SISTEMA` (rotinas, fora de uma requisição).
 
 ADR: **0021 · Auditoria com Hibernate Envers e eventos de segurança em tabela própria**.
 
@@ -43,7 +45,6 @@ ADR: **0021 · Auditoria com Hibernate Envers e eventos de segurança em tabela 
 - O módulo `auditoria` ouve o evento e grava em `tb_evento_seguranca` numa **transação própria** (`REQUIRES_NEW`). Assim, a senha errada fica registrada mesmo com o login desfeito.
 - Se a gravação falhar, a ação principal segue e a falha vai para o log com o rastreio. Derrubar um login porque a auditoria caiu tiraria o portal do ar por um problema secundário.
 - Tipos: `LOGIN`, `LOGIN_FALHOU`, `LOGIN_BLOQUEADO`, `SESSAO_REVOGADA_POR_REUSO`, `LOGOUT`, `CONVITE_CRIADO`, `CONVITE_CANCELADO`, `CONVITE_ACEITO`, `MEMBRO_REMOVIDO`, `SUPERADMIN_CRIADO`, `SUPERADMIN_SENHA_TROCADA`, `SUPERADMIN_DESATIVADO`, `ACESSO_NEGADO`, `CONSULTA_DE_AUDITORIA`, `DADOS_PESSOAIS_ANONIMIZADOS`.
-- **Endereço de rede (Pode):** só se o endereço vier de um cabeçalho de proxy confiável (a requisição passa pela Vercel e pelo Render); guardado sem o último bloco. Se não houver como confiar no cabeçalho, fica de fora e a spec registra.
 
 ## Só acréscimo e retenção (R3)
 
