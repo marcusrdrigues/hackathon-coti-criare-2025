@@ -148,9 +148,11 @@ let instancias = 0;
       padding: 0.25rem;
       overflow-y: auto;
       list-style: none;
-      background: var(--cor-flutuante);
+      background: var(--vidro-menu);
+      -webkit-backdrop-filter: var(--vidro-filtro);
+      backdrop-filter: var(--vidro-filtro);
       border-radius: var(--raio);
-      box-shadow: var(--sombra-flutuante);
+      box-shadow: inset 0 0.5px 0 var(--vidro-brilho), 0 0 0 0.5px var(--vidro-contorno), var(--vidro-sombra);
       animation: surgir var(--duracao-rapida) var(--curva);
     }
 

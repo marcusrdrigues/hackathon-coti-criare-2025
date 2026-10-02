@@ -19,7 +19,7 @@
   height: var(--altura-controle);
   padding: 0 1rem;
   border: 0;
-  border-radius: var(--raio);
+  border-radius: var(--raio-cheio); /* cápsula, como os botões do iOS */
   background: transparent;
   font-size: var(--texto-corpo);
   font-weight: 600;

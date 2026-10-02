@@ -114,6 +114,8 @@ export class Shell {
     }
   }
 
+  protected readonly naEquipe = computed(() => this.url().split('?')[0] === '/pages/equipe');
+
   protected ativo(destino: Destino): boolean {
     const url = this.url().split('?')[0];
     return url === destino.rota || (destino.inclui ?? []).some((rota) => url.startsWith(rota));

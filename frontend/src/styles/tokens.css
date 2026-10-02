@@ -12,6 +12,10 @@
 
    Contrastes (WCAG 2.x) estão anotados nos valores de texto
    e documentados em docs/design-system.md.
+
+   Liquid Glass (docs/adr/0018): o vidro fica só na camada que
+   flutua sobre o conteúdo (barra de abas, topo, barra lateral,
+   menus, painéis, avisos). O conteúdo nunca é de vidro.
    ========================================================= */
 
 /* ---------------------------------------------------------
@@ -45,6 +49,21 @@
   --cor-hover: rgba(0, 0, 0, 0.04);     /* linha sob o cursor */
   --cor-selecao: rgba(0, 0, 0, 0.06);   /* item selecionado na navegação */
   --cor-barra: rgba(255, 255, 255, 0.78); /* barras translúcidas (topo e abas) */
+
+  /* Vidro: o fundo é translúcido e o desfoque com saturação deixa passar a cor do conteúdo.
+     Fino nas barras pequenas (abas, topo); espesso onde há muito texto (lateral, menus, painéis). */
+  --vidro-fino: rgba(255, 255, 255, 0.62);
+  --vidro-espesso: rgba(255, 255, 255, 0.8);
+  /* Menus abrem de dentro de outra barra de vidro, onde o desfoque não alcança o conteúdo
+     (o vidro de fora vira a referência do de dentro): por isso são quase opacos */
+  --vidro-menu: rgba(255, 255, 255, 0.96);
+  --vidro-filtro: blur(24px) saturate(180%);
+  --vidro-brilho: rgba(255, 255, 255, 0.85);    /* reflexo na borda de cima, como luz no vidro */
+  --vidro-contorno: rgba(0, 0, 0, 0.08);
+  --vidro-sombra: 0 10px 30px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --vidro-selecao: rgba(0, 0, 0, 0.07);         /* a "lente" da aba selecionada */
+  /* A cor da marca mora no conteúdo, e o vidro a recolhe ao passar por cima */
+  --brilho-conteudo: rgba(143, 11, 17, 0.07);
   --cor-veu: rgba(0, 0, 0, 0.28);       /* fundo atrás de painéis e diálogos */
   --cor-flutuante: #ffffff;             /* menus, listas de opção, painéis, avisos */
   --cor-balao-outro: #e9e9eb;           /* mensagem da outra parte; texto 13,9:1 */
@@ -105,7 +124,8 @@
   /* Forma */
   --raio-pequeno: 8px;
   --raio: 10px;
-  --raio-grande: 14px;
+  --raio-grande: 16px;
+  --raio-vidro: 26px;                   /* barras e painéis flutuantes */
   --raio-cheio: 999px;
   --altura-controle: 2.5rem;            /* 40px no computador */
   --altura-controle-pequeno: 2rem;
@@ -113,7 +133,9 @@
   /* Estrutura */
   --largura-lateral: 15.5rem;
   --largura-conteudo: 70rem;
-  --altura-abas: 3.5rem;
+  /* Espaço que a barra de abas flutuante ocupa embaixo: a cápsula (3.75rem) e a folga (0.75rem) */
+  --altura-abas: 4.5rem;
+  --folga-abas: 0.75rem;
 
   /* Movimento: curto e discreto; some com prefers-reduced-motion */
   --duracao-rapida: 120ms;
@@ -162,6 +184,15 @@
   --cor-hover: rgba(255, 255, 255, 0.06);
   --cor-selecao: rgba(255, 255, 255, 0.1);
   --cor-barra: rgba(28, 28, 30, 0.78);
+
+  --vidro-fino: rgba(40, 40, 44, 0.56);
+  --vidro-espesso: rgba(36, 36, 40, 0.8);
+  --vidro-menu: rgba(44, 44, 48, 0.97);
+  --vidro-brilho: rgba(255, 255, 255, 0.14);
+  --vidro-contorno: rgba(0, 0, 0, 0.6);
+  --vidro-sombra: 0 10px 30px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --vidro-selecao: rgba(255, 255, 255, 0.14);
+  --brilho-conteudo: rgba(143, 11, 17, 0.22);
   --cor-veu: rgba(0, 0, 0, 0.5);
   --cor-flutuante: #2c2c2e;             /* elevado: no escuro, mais claro que a superfície */
   --cor-balao-outro: #2c2c2e;           /* texto 12,8:1 */
@@ -187,6 +218,44 @@
 
   --sombra-leve: 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
   --sombra-flutuante: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+}
+
+/* ---------------------------------------------------------
+   Quando o vidro atrapalha, ele vira superfície sólida:
+   - "Reduzir transparência" ligado no sistema
+   - "Aumentar contraste" ligado no sistema (borda mais forte)
+   - navegador sem backdrop-filter
+   --------------------------------------------------------- */
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  :root[data-theme='dark'] {
+    --vidro-fino: var(--cor-flutuante);
+    --vidro-espesso: var(--cor-flutuante);
+    --vidro-menu: var(--cor-flutuante);
+    --vidro-filtro: none;
+    --brilho-conteudo: transparent;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root,
+  :root[data-theme='dark'] {
+    --vidro-fino: var(--cor-flutuante);
+    --vidro-espesso: var(--cor-flutuante);
+    --vidro-menu: var(--cor-flutuante);
+    --vidro-filtro: none;
+    --vidro-contorno: var(--cor-borda-campo);
+    --brilho-conteudo: transparent;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root,
+  :root[data-theme='dark'] {
+    --vidro-fino: var(--cor-flutuante);
+    --vidro-espesso: var(--cor-flutuante);
+    --vidro-menu: var(--cor-flutuante);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

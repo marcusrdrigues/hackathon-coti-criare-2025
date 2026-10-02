@@ -189,3 +189,39 @@ export interface DashboardFornecedor {
   cotacoesGanhas: number;
   valorTotalGanho: number;
 }
+
+/** Uma pessoa da equipe. O id é o do vínculo com a organização (é ele que se remove). */
+export interface Membro {
+  id: string;
+  nome: string;
+  email: string;
+  papel: Papel;
+  desde: string;
+  /** A própria pessoa que está vendo a lista */
+  voce: boolean;
+}
+
+/** Convite pendente. O token só vem na resposta de quem acabou de criar o convite. */
+export interface Convite {
+  id: string;
+  nome: string;
+  email: string;
+  convidadoPor: string;
+  expiraEm: string;
+  token: string | null;
+}
+
+export interface ConviteRequest {
+  nome: string;
+  email: string;
+}
+
+/** O que a tela de aceitar convite mostra antes de a pessoa definir a senha. */
+export interface ConviteAberto {
+  organizacao: string;
+  tipo: TipoOrganizacao;
+  convidadoPor: string;
+  nome: string;
+  email: string;
+  expiraEm: string;
+}

@@ -1,0 +1,70 @@
+<app-layout-acesso
+  titulo="Sua equipe está no Portal Criare."
+  texto="Quem convidou você já usa o portal para publicar cotações, receber propostas e negociar. Defina sua senha e entre direto na equipe.">
+
+  @if (invalido(); as mensagem) {
+    <h1 class="titulo">Convite indisponível</h1>
+    <p class="aviso aviso-erro" role="alert">{{ mensagem }}</p>
+    <p class="rodape">
+      Já tem conta? <a routerLink="/pages/login" class="link">Entrar</a>
+    </p>
+  } @else if (convite(); as c) {
+    <h1 class="titulo">Entrar na equipe</h1>
+    <p class="legenda convite-origem">
+      {{ c.convidadoPor }} convidou você para a equipe da <strong>{{ c.organizacao }}</strong> ({{ tipo() }}).
+    </p>
+
+    @if (erroGeral(); as mensagem) {
+      <p class="aviso aviso-erro" role="alert">{{ mensagem }}</p>
+    }
+
+    <form (ngSubmit)="aceitar()" novalidate>
+      <div class="campo">
+        <label for="email" class="rotulo">E-mail</label>
+        <input id="email" type="email" class="entrada" name="email" autocomplete="username" readonly [value]="c.email">
+      </div>
+
+      <div class="campo">
+        <label for="nome" class="rotulo">Seu nome</label>
+        <input id="nome" type="text" class="entrada" name="nome" autocomplete="name" maxlength="150"
+               [ngModel]="nome()" (ngModelChange)="nome.set($event)"
+               [attr.aria-invalid]="tentouEnviar() && !!erros().nome" aria-describedby="nome-erro">
+        @if (tentouEnviar() && erros().nome; as erro) {
+          <p id="nome-erro" class="erro-campo">{{ erro }}</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="senha" class="rotulo">Crie uma senha</label>
+        <input id="senha" type="password" class="entrada" name="senha" autocomplete="new-password" maxlength="72"
+               [ngModel]="senha()" (ngModelChange)="senha.set($event)"
+               [attr.aria-invalid]="tentouEnviar() && !!erros().senha" aria-describedby="senha-regras">
+        <ul id="senha-regras" class="requisitos">
+          <li [class.cumprido]="senhaTemTamanho()">
+            <span class="marcador" aria-hidden="true"></span>
+            Pelo menos 8 caracteres<span class="visually-hidden">{{ senhaTemTamanho() ? ': atendido' : ': pendente' }}</span>
+          </li>
+          <li [class.cumprido]="senhaTemLetraENumero()">
+            <span class="marcador" aria-hidden="true"></span>
+            Letras e números<span class="visually-hidden">{{ senhaTemLetraENumero() ? ': atendido' : ': pendente' }}</span>
+          </li>
+        </ul>
+      </div>
+
+      @if (auth.logado()) {
+        <p class="legenda">Ao entrar na equipe, você sai da conta aberta neste navegador.</p>
+      }
+
+      <button type="submit" class="botao-principal" [disabled]="carregando()">
+        @if (carregando()) {
+          <span class="girando" aria-hidden="true"></span>
+          <span>Entrando…</span>
+        } @else {
+          Entrar na equipe
+        }
+      </button>
+    </form>
+  } @else {
+    <div class="carregando-pagina" role="status"><span class="girando"></span><span class="visually-hidden">Carregando</span></div>
+  }
+</app-layout-acesso>

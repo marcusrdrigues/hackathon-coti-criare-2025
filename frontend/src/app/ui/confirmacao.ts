@@ -93,8 +93,10 @@ export class ConfirmacaoService {
       border: 0;
       border-radius: var(--raio-grande);
       color: var(--cor-texto);
-      background: var(--cor-flutuante);
-      box-shadow: var(--sombra-flutuante);
+      background: var(--vidro-espesso);
+      -webkit-backdrop-filter: var(--vidro-filtro);
+      backdrop-filter: var(--vidro-filtro);
+      box-shadow: inset 0 0.5px 0 var(--vidro-brilho), 0 0 0 0.5px var(--vidro-contorno), var(--vidro-sombra);
       text-align: center;
     }
 

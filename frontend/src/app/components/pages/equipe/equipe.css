@@ -1,0 +1,47 @@
+section + section,
+section + .nota {
+  margin-top: var(--esp-7);
+}
+
+.voce {
+  margin-left: 0.375rem;
+  font-size: var(--texto-legenda);
+  font-weight: 500;
+  color: var(--cor-texto-2);
+}
+
+/* O papel é texto, não só cor */
+.papel-proprietario {
+  font-weight: 600;
+  color: var(--cor-marca-texto);
+}
+
+.convite-pronto {
+  display: grid;
+  gap: var(--esp-2);
+}
+
+.convite-pronto-titulo {
+  font-weight: 600;
+}
+
+.convite-pronto .rotulo {
+  margin-top: var(--esp-3);
+}
+
+.link-convite {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: var(--texto-pequeno);
+}
+
+.rodape-convite {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--esp-2);
+}
+
+@media (max-width: 639.98px) {
+  .rodape-convite > .botao {
+    flex: 1;
+  }
+}

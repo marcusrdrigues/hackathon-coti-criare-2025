@@ -44,17 +44,22 @@ let instancias = 0;
   styles: `
     .painel {
       position: fixed;
-      inset: 0 0 0 auto;
-      width: min(28rem, 100%);
-      height: 100dvh;
-      max-width: 100%;
-      max-height: 100dvh;
+      /* Flutua afastado das bordas, como as folhas do iOS: o vidro precisa de conteúdo em volta */
+      inset: 0.5rem 0.5rem 0.5rem auto;
+      width: min(28rem, calc(100% - 1rem));
+      height: calc(100dvh - 1rem);
+      max-width: calc(100% - 1rem);
+      max-height: calc(100dvh - 1rem);
       margin: 0;
       padding: 0;
       border: 0;
+      border-radius: var(--raio-vidro);
+      overflow: hidden;
       color: var(--cor-texto);
-      background: var(--cor-flutuante);
-      box-shadow: var(--sombra-flutuante);
+      background: var(--vidro-espesso);
+      -webkit-backdrop-filter: var(--vidro-filtro);
+      backdrop-filter: var(--vidro-filtro);
+      box-shadow: inset 0 0.5px 0 var(--vidro-brilho), 0 0 0 0.5px var(--vidro-contorno), var(--vidro-sombra);
     }
 
     .painel[open] {
@@ -119,12 +124,13 @@ let instancias = 0;
     }
 
     @media (max-width: 639.98px) {
+      /* No celular, folha que sobe de baixo, também afastada das bordas */
       .painel {
-        inset: auto 0 0 0;
-        width: 100%;
+        inset: auto 0.5rem calc(0.5rem + env(safe-area-inset-bottom)) 0.5rem;
+        width: calc(100% - 1rem);
         height: auto;
-        max-height: 92dvh;
-        border-radius: var(--raio-grande) var(--raio-grande) 0 0;
+        max-height: 90dvh;
+        border-radius: var(--raio-vidro);
       }
 
       .painel[open] {

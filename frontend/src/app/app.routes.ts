@@ -26,12 +26,26 @@ export const routes: Routes = [
     loadComponent: () => import('./components/pages/cadastro/cadastro').then((m) => m.CadastroComponent),
   },
 
+  // Convite para a equipe: público, aberto pelo link (o token vem depois do "#")
+  {
+    path: 'convite',
+    title: 'Convite | Portal Criare',
+    loadComponent: () => import('./components/pages/convite/convite').then((m) => m.ConviteComponent),
+  },
+
   // Telas internas: todas dentro da estrutura (barra lateral no computador, abas no celular)
   {
     path: 'pages',
     canActivate: [perfilGuard()],
     loadComponent: () => import('./components/shared/shell/shell').then((m) => m.Shell),
     children: [
+      // Os dois perfis
+      {
+        path: 'equipe',
+        title: 'Equipe | Portal Criare',
+        loadComponent: () => import('./components/pages/equipe/equipe').then((m) => m.Equipe),
+      },
+
       // Empresa
       {
         path: 'dashboard',

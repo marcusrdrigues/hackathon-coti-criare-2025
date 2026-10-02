@@ -1,0 +1,146 @@
+<div class="pagina pagina-estreita">
+  <header class="cabecalho">
+    <div class="cabecalho-texto">
+      <h1 class="titulo-pagina">Equipe</h1>
+      <p class="subtitulo-pagina">{{ auth.usuario()?.organizacao?.razaoSocial }}</p>
+    </div>
+    @if (proprietario()) {
+      <div class="cabecalho-acoes">
+        <button type="button" class="botao botao-primario" (click)="abrirConvite()">
+          <ui-icone nome="mais" [tamanho]="18" />
+          Convidar pessoa
+        </button>
+      </div>
+    }
+  </header>
+
+  @if (erro(); as mensagem) {
+    <p class="nota nota-erro" role="alert"><ui-icone nome="alerta" [tamanho]="18" />{{ mensagem }}</p>
+  } @else if (membros(); as lista) {
+    <section aria-labelledby="titulo-pessoas">
+      <div class="secao-cabecalho">
+        <h2 class="secao-titulo" id="titulo-pessoas">
+          {{ lista.length === 1 ? '1 pessoa' : lista.length + ' pessoas' }}
+        </h2>
+      </div>
+      <ul class="lista" role="list">
+        @for (m of lista; track m.id) {
+          <li class="linha">
+            <span class="inicial" aria-hidden="true">{{ iniciais(m.nome) }}</span>
+            <span class="linha-principal">
+              <span class="linha-titulo">
+                {{ m.nome }}
+                @if (m.voce) {
+                  <span class="voce">você</span>
+                }
+              </span>
+              <span class="linha-detalhe">
+                <span [class.papel-proprietario]="m.papel === 'PROPRIETARIO'">{{ papel(m) }}</span> · {{ m.email }}
+              </span>
+            </span>
+            @if (proprietario() && !m.voce) {
+              <button type="button" class="botao botao-destrutivo botao-pequeno" (click)="remover(m)"
+                      [attr.aria-label]="'Remover ' + m.nome">
+                Remover
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+
+    @if (proprietario()) {
+      <section aria-labelledby="titulo-convites">
+        <div class="secao-cabecalho">
+          <h2 class="secao-titulo" id="titulo-convites">Convites pendentes</h2>
+        </div>
+        @if (convites().length > 0) {
+          <ul class="lista" role="list">
+            @for (c of convites(); track c.id) {
+              <li class="linha">
+                <span class="inicial" aria-hidden="true"><ui-icone nome="enviar" [tamanho]="16" /></span>
+                <span class="linha-principal">
+                  <span class="linha-titulo">{{ c.nome }}</span>
+                  <span class="linha-detalhe">{{ c.email }} · vale até {{ c.expiraEm | date: "dd/MM 'às' HH:mm" }}</span>
+                </span>
+                <button type="button" class="botao botao-destrutivo botao-pequeno" (click)="cancelarConvite(c)"
+                        [attr.aria-label]="'Cancelar o convite de ' + c.nome">
+                  Cancelar
+                </button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <div class="lista">
+            <p class="vazio">Nenhum convite esperando resposta.</p>
+          </div>
+        }
+      </section>
+    } @else {
+      <p class="nota"><ui-icone nome="info" [tamanho]="18" />Só o proprietário da organização convida e remove pessoas.</p>
+    }
+  } @else {
+    <div class="carregando-pagina" role="status"><span class="girando"></span><span class="visually-hidden">Carregando</span></div>
+  }
+</div>
+
+<ui-painel titulo="Convidar pessoa" [(aberto)]="painelAberto">
+  @if (link(); as url) {
+    <div class="convite-pronto">
+      <p class="convite-pronto-titulo">Convite criado para {{ convidado()?.nome }}</p>
+      <p class="ajuda">
+        Envie este link para {{ convidado()?.email }} por um canal de confiança.
+        Ele vale por 72 horas e uma vez só. Depois de fechar, o link não aparece de novo.
+      </p>
+      <label class="rotulo" for="link-convite">Link do convite</label>
+      <input id="link-convite" class="entrada link-convite" type="text" readonly [value]="url"
+             (focus)="$any($event.target).select()" />
+    </div>
+  } @else {
+    <form id="form-convite" class="formulario" (ngSubmit)="convidar()" novalidate>
+      <p class="ajuda">A pessoa entra como membro: vê e opera os dados da organização, mas não convida nem remove ninguém.</p>
+      <div class="campo">
+        <label class="rotulo" for="nome-convite">Nome</label>
+        <input id="nome-convite" class="entrada" type="text" name="nome" autocomplete="off" maxlength="150"
+               [ngModel]="nome()" (ngModelChange)="nome.set($event)"
+               [attr.aria-invalid]="tentouEnviar() && !!erros().nome" aria-describedby="nome-convite-erro" />
+        @if (tentouEnviar() && erros().nome; as erro) {
+          <p id="nome-convite-erro" class="erro-campo">{{ erro }}</p>
+        }
+      </div>
+      <div class="campo">
+        <label class="rotulo" for="email-convite">E-mail</label>
+        <input id="email-convite" class="entrada" type="email" name="email" inputmode="email" autocomplete="off"
+               maxlength="100" placeholder="nome@empresa.com.br"
+               [ngModel]="email()" (ngModelChange)="email.set($event)"
+               [attr.aria-invalid]="tentouEnviar() && !!erros().email" aria-describedby="email-convite-erro" />
+        @if (tentouEnviar() && erros().email; as erro) {
+          <p id="email-convite-erro" class="erro-campo">{{ erro }}</p>
+        }
+      </div>
+    </form>
+  }
+
+  <div rodape class="rodape-convite">
+    @if (link()) {
+      @if (podeCompartilhar) {
+        <button type="button" class="botao botao-secundario" (click)="compartilhar()">
+          <ui-icone nome="compartilhar" [tamanho]="18" />
+          Compartilhar
+        </button>
+      }
+      <button type="button" class="botao botao-primario" (click)="copiar()">
+        <ui-icone [nome]="copiado() ? 'check' : 'copiar'" [tamanho]="18" />
+        {{ copiado() ? 'Link copiado' : 'Copiar link' }}
+      </button>
+    } @else {
+      <button type="button" class="botao botao-secundario" (click)="painelAberto.set(false)">Cancelar</button>
+      <button type="submit" form="form-convite" class="botao botao-primario" [disabled]="enviando()">
+        @if (enviando()) {
+          <span class="girando" aria-hidden="true"></span>
+        }
+        Criar convite
+      </button>
+    }
+  </div>
+</ui-painel>

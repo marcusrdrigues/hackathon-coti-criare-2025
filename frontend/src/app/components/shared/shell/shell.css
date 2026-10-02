@@ -8,7 +8,7 @@
 
 .app.com-lateral {
   display: grid;
-  grid-template-columns: var(--largura-lateral) minmax(0, 1fr);
+  grid-template-columns: calc(var(--largura-lateral) + 0.75rem) minmax(0, 1fr);
 }
 
 .conteudo {
@@ -56,17 +56,28 @@
   border-radius: 7px;
 }
 
-/* ---------- Barra lateral ---------- */
+/* ---------- Vidro (Liquid Glass): só nas barras que flutuam sobre o conteúdo ---------- */
+.lateral,
+.topo,
+.abas {
+  -webkit-backdrop-filter: var(--vidro-filtro);
+  backdrop-filter: var(--vidro-filtro);
+  box-shadow: inset 0 0.5px 0 var(--vidro-brilho), 0 0 0 0.5px var(--vidro-contorno), var(--vidro-sombra);
+}
+
+/* ---------- Barra lateral: um painel de vidro afastado das bordas, como no iPadOS e no macOS ---------- */
 .lateral {
   position: sticky;
-  top: 0;
+  z-index: 30;
+  top: 0.75rem;
   display: flex;
   flex-direction: column;
   gap: var(--esp-5);
-  height: 100dvh;
+  height: calc(100dvh - 1.5rem);
+  margin: 0.75rem 0 0.75rem 0.75rem;
   padding: var(--esp-5) var(--esp-3) var(--esp-3);
-  background: var(--cor-superficie);
-  border-right: 1px solid var(--cor-divisoria);
+  border-radius: var(--raio-vidro);
+  background: var(--vidro-espesso);
 }
 
 .lateral .marca {
@@ -77,6 +88,12 @@
   display: grid;
   gap: 2px;
   margin: 0;
+}
+
+.navegacao-secundaria {
+  margin-top: var(--esp-5);
+  padding-top: var(--esp-3);
+  border-top: 1px solid var(--cor-divisoria);
 }
 
 .nav-item {
@@ -101,7 +118,7 @@
 }
 
 .nav-item.ativo {
-  background: var(--cor-selecao);
+  background: var(--vidro-selecao);
   font-weight: 600;
 }
 
@@ -178,7 +195,7 @@
   white-space: nowrap;
 }
 
-/* ---------- Celular e tablet: topo e abas translúcidos ---------- */
+/* ---------- Celular e tablet: topo de vidro e barra de abas flutuante ---------- */
 .topo {
   position: sticky;
   z-index: 40;
@@ -188,10 +205,7 @@
   justify-content: space-between;
   height: calc(3.25rem + env(safe-area-inset-top));
   padding: env(safe-area-inset-top) var(--esp-4) 0;
-  background: var(--cor-barra);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 1px solid var(--cor-divisoria);
+  background: var(--vidro-fino);
 }
 
 .topo ::ng-deep .conta-redonda {
@@ -210,18 +224,32 @@
   width: min(18rem, calc(100vw - 2rem));
 }
 
+/* A barra de abas é uma cápsula de vidro que flutua sobre o conteúdo, longe da borda da tela */
 .abas {
   position: fixed;
   z-index: 40;
-  inset: auto 0 0 0;
+  left: 50%;
+  bottom: calc(var(--folga-abas) + env(safe-area-inset-bottom));
   display: grid;
   grid-template-columns: repeat(var(--colunas, 4), minmax(0, 1fr));
-  height: calc(var(--altura-abas) + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom);
-  background: var(--cor-barra);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  backdrop-filter: saturate(180%) blur(20px);
-  border-top: 1px solid var(--cor-divisoria);
+  gap: 0.125rem;
+  width: min(calc(100% - 1.5rem), 28rem);
+  height: calc(var(--altura-abas) - var(--folga-abas));
+  padding: 0.3125rem;
+  border-radius: var(--raio-cheio);
+  background: var(--vidro-fino);
+  transform: translateX(-50%);
+}
+
+/* Borda de rolagem: o conteúdo some aos poucos atrás da barra, em vez de bater nela */
+.borda-abas {
+  position: fixed;
+  z-index: 39;
+  inset: auto 0 0 0;
+  height: calc(var(--altura-abas) + env(safe-area-inset-bottom) + 1rem);
+  pointer-events: none;
+  background: linear-gradient(to top, var(--cor-fundo) 15%, transparent);
+  opacity: 0.85;
 }
 
 .aba {
@@ -230,17 +258,29 @@
   align-items: center;
   justify-content: center;
   gap: 0.125rem;
+  min-width: 0;
+  border-radius: var(--raio-cheio);
   font-size: 0.6875rem;
-  font-weight: 500;
-  color: var(--cor-texto-2);
+  font-weight: 600;
+  color: var(--cor-texto);
+  transition: background-color var(--duracao) var(--curva), color var(--duracao) var(--curva);
 }
 
 .aba:hover {
   color: var(--cor-texto);
 }
 
+/* A aba selecionada ganha a "lente": um fundo mais denso dentro da cápsula, e a cor da marca no ícone */
 .aba.ativo {
+  background: var(--vidro-selecao);
   color: var(--cor-marca-texto);
+}
+
+.aba > span:last-of-type {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .aba-icone {
@@ -257,5 +297,5 @@
   padding: 0 0.3125rem;
   font-size: 0.6875rem;
   line-height: 1.125rem;
-  box-shadow: 0 0 0 2px var(--cor-fundo);
+  box-shadow: 0 0 0 2px var(--cor-superficie);
 }
