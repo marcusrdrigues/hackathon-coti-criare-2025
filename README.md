@@ -132,7 +132,7 @@ sequenceDiagram
 - **Avisos ao vivo em qualquer tela**: mensagem nova, proposta recebida, negociação aberta, fechada ou encerrada, com atalho para abrir; as telas abertas se atualizam sozinhas
 - Telas carregadas sob demanda (*lazy loading*)
 - **Modo claro e escuro**: segue o tema do sistema e pode ser fixado no menu do usuário ou no canto das telas de acesso
-- **Esqueci minha senha**: o link vai por e-mail, vale 30 minutos e uma vez só; a tela nunca diz se o e-mail tem conta, e a senha nova encerra as sessões em todos os aparelhos
+- **Esqueci minha senha**: o link vai por e-mail, vale 30 minutos e uma vez só; a tela nunca diz se o e-mail tem conta, e a senha nova encerra as sessões em todos os aparelhos. Na demo pública o envio fica desligado; com uma chave da Brevo, funciona de ponta a ponta ([como ligar](#e-mail-opcional))
 - Layout responsivo, do celular ao monitor largo; login e cadastro cabem na tela sem rolagem
 
 ---
@@ -458,6 +458,30 @@ SPRING_PROFILES_ACTIVE=demo docker compose up -d --build
 
 Depois é só rodar o front-end como no passo 3.
 
+### E-mail (opcional)
+
+O único e-mail do portal é o de **redefinição de senha**. Ele sai pela API HTTP da [Brevo](https://www.brevo.com), que tem plano gratuito de 300 e-mails por dia; a hospedagem gratuita da API bloqueia SMTP, por isso não é SMTP ([spec 004](docs/specs/004-redefinicao-de-senha/spec.md)).
+
+**Sem configurar nada**, tudo funciona igual: o "Esqueci minha senha" responde normalmente, o link é criado no banco e a API escreve no log `Envio de e-mail desligado`, sem o link. É assim na demo pública.
+
+**Para receber o e-mail de verdade:**
+
+1. Crie uma conta gratuita na Brevo e verifique um remetente (um e-mail seu, pode ser Gmail) em **Senders**.
+2. Gere uma chave em **SMTP & API → API Keys**.
+3. No `backend/.env`, preencha:
+
+   ```properties
+   BREVO_API_KEY=sua-chave
+   EMAIL_REMETENTE=o-remetente-verificado@gmail.com
+   ```
+
+4. Suba a API (Maven ou Docker). No log aparece `Envio de e-mail pela Brevo`.
+5. Crie uma conta com um e-mail seu (as contas da demonstração, `@demo.com`, nunca recebem e-mail), saia e clique em **Esqueci minha senha**.
+
+Se o e-mail não chegar, confira o spam e o log da API: uma recusa da Brevo aparece ali, com o rastreio da requisição e o e-mail mascarado. Os detalhes de produção (rastreamento de cliques desligado, IPs autorizados) estão em [docs/deploy.md](docs/deploy.md#41-e-mail-com-a-brevo-opcional).
+
+O fluxo inteiro também roda sem conta nenhuma nos testes: `RedefinicaoDeSenhaApiTest` troca o provedor por uma caixa de saída de teste, lê o link do e-mail e redefine a senha.
+
 ### Variáveis de ambiente do back-end
 
 Para rodar localmente sem exportar nada, copie [`backend/.env.example`](backend/.env.example) para `backend/.env` e preencha: a API lê esse arquivo ao subir (pelo Maven ou pelo `docker compose`), e ele fica fora do git. Variáveis de ambiente de verdade, como as do Render, têm prioridade sobre o arquivo.
@@ -477,7 +501,7 @@ Para rodar localmente sem exportar nada, copie [`backend/.env.example`](backend/
 | `JWT_COOKIE_SECURE` | `false` | `true` em produção (HTTPS): o cookie só trafega por conexão segura |
 | `DB_POOL_SIZE` | `10` | Máximo de conexões com o banco |
 | `SUPERADMIN_EMAIL` e `SUPERADMIN_SENHA` | — (sem superadmin) | O superadmin da plataforma. A senha precisa de 12 caracteres ou mais. Trocar a senha atualiza a conta e encerra as sessões dela; trocar o e-mail troca o superadmin; apagar as duas desativa |
-| `BREVO_API_KEY` e `EMAIL_REMETENTE` | — (envio desligado) | Envio de e-mail pela API da Brevo (redefinição de senha). O remetente precisa estar verificado na Brevo. Sem os dois, nada é enviado e o log avisa. Passo a passo em [docs/deploy.md](docs/deploy.md#41-e-mail-com-a-brevo-opcional) |
+| `BREVO_API_KEY` e `EMAIL_REMETENTE` | — (envio desligado) | Envio de e-mail pela API da Brevo (redefinição de senha). O remetente precisa estar verificado na Brevo. Sem os dois, nada é enviado e o log avisa. Veja [E-mail (opcional)](#e-mail-opcional) |
 | `EMAIL_REMETENTE_NOME` | `Portal Criare` | Nome do remetente nos e-mails |
 | `APP_URL_FRONTEND` | `http://localhost:4200` | Endereço do front-end, usado nos links dos e-mails |
 | `REDEFINICAO_DOMINIOS_SEM_ENVIO` | `demo.com` | Domínios cujas contas não recebem o link de redefinição (as contas de exemplo) |
@@ -523,6 +547,7 @@ A demo pública está em **[portal-criare.vercel.app](https://portal-criare.verc
 | Front-end | Vercel | [`frontend/vercel.json`](frontend/vercel.json): build do Angular e repasse de `/api/*` para a API. Só a `main` publica: o ramo de trabalho é testado no CI, sem gastar a cota de deploys da Vercel |
 | API | Render | [`render.yaml`](render.yaml): Docker, health check e `JWT_SECRET` gerado pela plataforma |
 | Banco | Neon | PostgreSQL gerenciado; o Flyway cria e atualiza o esquema na inicialização |
+| E-mail | Brevo (opcional) | Desligado na demo pública: o "Esqueci minha senha" funciona, mas nenhum e-mail sai. Para ligar, basta a chave e o remetente no Render ([passo a passo](docs/deploy.md#41-e-mail-com-a-brevo-opcional)) |
 
 Com o repasse da Vercel, o navegador fala só com um domínio: o cookie da sessão funciona com `SameSite=Strict` e não há chamada entre domínios. O passo a passo completo está em **[docs/deploy.md](docs/deploy.md)**.
 
