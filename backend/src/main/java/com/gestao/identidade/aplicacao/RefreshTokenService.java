@@ -1,5 +1,6 @@
 package com.gestao.identidade.aplicacao;
 
+import com.gestao.compartilhado.dominio.EventoDeSeguranca;
 import com.gestao.compartilhado.dominio.NaoAutenticadoException;
 import com.gestao.identidade.aplicacao.porta.RefreshTokenRepositorio;
 import com.gestao.identidade.dominio.RefreshToken;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -25,11 +27,13 @@ public class RefreshTokenService {
     private static final String SESSAO_EXPIRADA = "Sessão expirada. Faça login novamente.";
 
     private final RefreshTokenRepositorio repositorio;
+    private final EventosDaIdentidade eventos;
     private final Duration validade;
 
-    public RefreshTokenService(RefreshTokenRepositorio repositorio,
+    public RefreshTokenService(RefreshTokenRepositorio repositorio, EventosDaIdentidade eventos,
                                @Value("${app.jwt.expiracao-refresh}") Duration validade) {
         this.repositorio = repositorio;
+        this.eventos = eventos;
         this.validade = validade;
     }
 
@@ -68,6 +72,8 @@ public class RefreshTokenService {
             repositorio.revogarTodosDoUsuario(token.getUsuarioId(), agora);
             log.warn("Refresh token reutilizado para o usuário {}. Todas as sessões foram encerradas.",
                     token.getUsuarioId());
+            eventos.publicar(EventoDeSeguranca.Tipo.SESSAO_REVOGADA_POR_REUSO, token.getUsuarioId(),
+                    "Um token de sessão já usado apareceu de novo.");
             throw new NaoAutenticadoException(SESSAO_EXPIRADA);
         }
         if (token.isExpirado(agora)) {
@@ -78,14 +84,18 @@ public class RefreshTokenService {
         return new Rotacao(token.getUsuarioId(), emitir(token.getUsuarioId()));
     }
 
+    /** Encerra uma sessão; devolve de quem ela era, se ainda estava valendo. */
     @Transactional
-    public void revogar(String tokenBruto) {
+    public Optional<UUID> revogar(String tokenBruto) {
         if (tokenBruto == null || tokenBruto.isBlank()) {
-            return;
+            return Optional.empty();
         }
-        repositorio.buscarPorHash(hash(tokenBruto))
+        return repositorio.buscarPorHash(hash(tokenBruto))
                 .filter(t -> !t.isRevogado())
-                .ifPresent(t -> t.setRevogadoEm(Instant.now()));
+                .map(t -> {
+                    t.setRevogadoEm(Instant.now());
+                    return t.getUsuarioId();
+                });
     }
 
     /** Limpeza diária dos tokens vencidos há mais de um dia. */

@@ -1,5 +1,6 @@
 package com.gestao.identidade.aplicacao;
 
+import com.gestao.compartilhado.dominio.EventoDeSeguranca.Tipo;
 import com.gestao.compartilhado.dominio.RecursoNaoEncontradoException;
 import com.gestao.identidade.aplicacao.porta.ConviteRepositorio;
 import com.gestao.identidade.dominio.Convite;
@@ -24,6 +25,7 @@ public class ConviteService {
     private final ConviteRepositorio conviteRepositorio;
     private final CadastroService cadastroService;
     private final AuthService authService;
+    private final EventosDaIdentidade eventos;
 
     @Transactional(readOnly = true)
     public Convite consultar(String token) {
@@ -38,6 +40,7 @@ public class ConviteService {
         UsuarioAutenticado membro = cadastroService.adicionarMembro(
                 convite.getOrganizacao().getId(), nome, convite.getEmail(), senha);
         convite.aceitar(agora);
+        eventos.publicar(Tipo.CONVITE_ACEITO, membro.usuarioId(), "Entrou na equipe pelo convite.");
         return authService.abrirSessao(membro.usuarioId());
     }
 

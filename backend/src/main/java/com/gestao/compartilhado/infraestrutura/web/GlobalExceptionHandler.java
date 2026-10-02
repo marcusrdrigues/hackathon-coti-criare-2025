@@ -1,13 +1,17 @@
 package com.gestao.compartilhado.infraestrutura.web;
 
 import com.gestao.compartilhado.dominio.AcessoNegadoException;
+import com.gestao.compartilhado.dominio.EventoDeSeguranca;
 import com.gestao.compartilhado.dominio.MuitasTentativasException;
 import com.gestao.compartilhado.dominio.NaoAutenticadoException;
 import com.gestao.compartilhado.dominio.RecursoDuplicadoException;
 import com.gestao.compartilhado.dominio.RecursoNaoEncontradoException;
 import com.gestao.compartilhado.dominio.RegraDeNegocioException;
 import io.swagger.v3.oas.annotations.Hidden;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -35,10 +39,13 @@ import java.util.Map;
 @Slf4j
 @Hidden
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
 
     static final String ACESSO_NEGADO_POR_PERFIL = "Seu perfil não tem permissão para esta ação.";
     static final String ERRO_INTERNO = "Erro interno do servidor. Tente novamente mais tarde.";
+
+    private final ApplicationEventPublisher eventos;
 
     @ExceptionHandler(RecursoNaoEncontradoException.class)
     public ResponseEntity<Problema> naoEncontrado(RecursoNaoEncontradoException ex) {
@@ -55,11 +62,21 @@ public class GlobalExceptionHandler {
         return resposta(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
-    /** AccessDeniedException vem do @PreAuthorize (perfil errado); a nossa traz a mensagem do caso de uso. */
+    /**
+     * AccessDeniedException vem do @PreAuthorize (perfil errado); a nossa traz a mensagem do caso de uso.
+     * Os dois viram evento de segurança (spec 003, R2), com a rota que foi negada.
+     */
     @ExceptionHandler({AcessoNegadoException.class, AccessDeniedException.class})
-    public ResponseEntity<Problema> acessoNegado(RuntimeException ex) {
+    public ResponseEntity<Problema> acessoNegado(RuntimeException ex, HttpServletRequest requisicao) {
         String mensagem = ex instanceof AcessoNegadoException ? ex.getMessage() : ACESSO_NEGADO_POR_PERFIL;
+        eventos.publishEvent(EventoDeSeguranca.daPessoaAtual(EventoDeSeguranca.Tipo.ACESSO_NEGADO,
+                rota(requisicao)));
         return resposta(HttpStatus.FORBIDDEN, mensagem);
+    }
+
+    /** Método e caminho, sem a query string: é o que basta para saber o que foi tentado. */
+    public static String rota(HttpServletRequest requisicao) {
+        return requisicao.getMethod() + " " + requisicao.getRequestURI();
     }
 
     @ExceptionHandler(MuitasTentativasException.class)

@@ -24,7 +24,13 @@ São dois tipos de registro com naturezas diferentes:
 - As tabelas `_aud` nascem por migração do Flyway (V6), como o resto do esquema, sem chave estrangeira para as tabelas de negócio: o histórico continua válido depois que o registro some.
 - A anotação do Envers no domínio é aceita pela regra de camadas, como as do JPA.
 
-**Eventos de segurança em tabela própria**, gravados pelo módulo `auditoria` ao ouvir um evento de domínio, numa transação separada (`REQUIRES_NEW`). Assim, o evento fica registrado mesmo quando a operação que o causou é desfeita.
+**Eventos de segurança em tabela própria** (`tb_evento_seguranca`, migração V7):
+
+- Quem sabe do fato publica um `EventoDeSeguranca` (módulo compartilhado): o login e a renovação de sessão, a equipe, o superadmin da configuração e as duas origens do 403 (o `@PreAuthorize`, pelo tratador de exceções, e a regra da rota, pelo filtro do Spring Security).
+- O módulo `auditoria` ouve e grava **na hora, numa transação separada** (`REQUIRES_NEW`). Assim, o evento fica registrado mesmo quando a operação que o causou é desfeita: a senha errada desfaz o login, o token reutilizado responde 401.
+- Se a gravação falhar, a ação principal segue e a falha vai para o log com o rastreio. Derrubar um login porque a auditoria caiu tiraria o portal do ar por um problema secundário.
+- O evento traz a pessoa e a organização quando se sabe quem é; sem isso, o ouvinte completa com quem está autenticado na requisição. O e-mail entra só mascarado, e nenhum campo guarda credencial.
+- A porta de gravação só acrescenta: não tem método de alterar nem de apagar.
 
 ## Alternativas consideradas
 
@@ -37,5 +43,7 @@ São dois tipos de registro com naturezas diferentes:
 
 - Toda entidade nova que represente uma decisão de negócio entra com `@Audited` e com a tabela `_aud` na mesma migração. Campo de credencial entra com `@NotAudited`.
 - Testes do histórico não podem ser `@Transactional`: o Envers grava na confirmação da transação.
+- Um evento de segurança fica gravado mesmo que a transação de quem publicou falhe depois de publicar. Para os eventos de sucesso (convite criado), isso é raro e aceitável; para as falhas, é justamente o que se quer.
+- Cada ação com evento abre uma segunda conexão com o banco por um instante, para a transação própria.
 - Uma alteração feita direto pelo SQL (como o reset da demo) não aparece no histórico. É uma escolha: o histórico conta o que a aplicação fez.
-- O histórico fica no mesmo banco. A proteção contra alteração é responsabilidade do passo 4 da spec 003, e protege contra erro da aplicação, não contra quem administra o banco.
+- O histórico fica no mesmo banco. O mesmo vale para os eventos. A proteção contra alteração é responsabilidade do passo 4 da spec 003, e protege contra erro da aplicação, não contra quem administra o banco.

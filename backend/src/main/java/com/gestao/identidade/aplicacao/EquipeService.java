@@ -2,6 +2,7 @@ package com.gestao.identidade.aplicacao;
 
 import com.gestao.compartilhado.dominio.AcessoNegadoException;
 import com.gestao.compartilhado.dominio.Documentos;
+import com.gestao.compartilhado.dominio.EventoDeSeguranca.Tipo;
 import com.gestao.compartilhado.dominio.RecursoNaoEncontradoException;
 import com.gestao.compartilhado.dominio.RegraDeNegocioException;
 import com.gestao.identidade.aplicacao.porta.ConviteRepositorio;
@@ -38,6 +39,7 @@ public class EquipeService {
     private final CredenciaisService credenciais;
     private final RefreshTokenService sessoes;
     private final ApplicationEventPublisher eventos;
+    private final EventosDaIdentidade eventosDeSeguranca;
 
     /** O convite e o token do link, que só existe aqui: o banco guarda o hash. */
     public record ConviteCriado(Convite convite, String token) {}
@@ -73,6 +75,7 @@ public class EquipeService {
                 organizacaoRepositorio.buscarPorId(usuario.organizacaoId()).orElseThrow(),
                 nome.trim(), emailNormalizado, TokenAleatorio.hash(token),
                 usuarioRepositorio.buscarPorId(usuario.usuarioId()).orElseThrow(), agora));
+        eventosDeSeguranca.publicarDaEquipe(Tipo.CONVITE_CRIADO, usuario, emailNormalizado, null);
         return new ConviteCriado(convite, token);
     }
 
@@ -85,6 +88,7 @@ public class EquipeService {
                 .filter(c -> c.situacao(agora) == Convite.Situacao.PENDENTE)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Convite não encontrado!"));
         convite.cancelar(agora);
+        eventosDeSeguranca.publicarDaEquipe(Tipo.CONVITE_CANCELADO, usuario, convite.getEmail(), null);
     }
 
     /**
@@ -108,6 +112,8 @@ public class EquipeService {
         membro.remover(LocalDateTime.now());
         sessoes.revogarTodas(pessoa);
         eventos.publishEvent(new MembroRemovidoEvento(pessoa));
+        eventosDeSeguranca.publicarDaEquipe(Tipo.MEMBRO_REMOVIDO, usuario, membro.getUsuario().getEmail(),
+                "As sessões da pessoa foram encerradas.");
     }
 
     private static void exigirProprietario(UsuarioAutenticado usuario) {

@@ -246,7 +246,7 @@ hackathon-coti-criare-2025/
 │       ├── compras/             Cotações, propostas, negociações e mensagens
 │       ├── painel/              Números dos dashboards (só leitura)
 │       ├── administracao/       Área do superadmin: organizações e uso (só leitura)
-│       ├── auditoria/           Histórico de alterações (Hibernate Envers): quem mudou o quê e quando
+│       ├── auditoria/           Histórico de alterações (Hibernate Envers) e eventos de segurança
 │       ├── temporeal/           WebSocket/STOMP: eventos de compras ao vivo
 │       ├── demonstracao/        Contas e dados da demo pública
 │       └── compartilhado/       Exceções de negócio, validação de CNPJ, CORS e Swagger
@@ -709,6 +709,7 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | `FluxoCotacaoPostgresTest` e `AutenticacaoPostgresTest` | Os mesmos cenários das duas suítes acima, agora no PostgreSQL real, para pegar diferenças que o H2 esconde |
 | `DemonstracaoApiTest` | Login de demonstração em um clique (nunca como superadmin), health check e reset diário dos dados de exemplo, preservando o superadmin |
 | `HistoricoDeAlteracoesTest` | Histórico de alterações com o Envers, com transações confirmadas de verdade: a edição de uma cotação guarda os valores anteriores, quem mudou, a organização e o rastreio; a proposta retirada continua no histórico com o último estado e quem a retirou; o cadastro aparece como rota pública e a alteração fora de uma requisição, como sistema; nenhuma coluna de hash, senha ou token nas tabelas do histórico |
+| `EventosDeSegurancaTest` | Eventos de segurança com transações confirmadas de verdade: a senha errada fica registrada mesmo com o login desfeito, e o e-mail sem conta aparece só mascarado; bloqueio por excesso de tentativas, login e saída, token de sessão reutilizado, convite criado, cancelado e aceito, pessoa removida, mudanças no superadmin da configuração e acesso negado pelo perfil e pela rota, com o rastreio; nenhum evento guarda o e-mail inteiro |
 | `AdministracaoApiTest` | Superadmin vindo da configuração: token sem organização, renovação, lista de organizações com os totais e sem dado pessoal, paginação (tamanho máximo, ordem permitida, página inválida), pessoa de organização barrada na área administrativa, superadmin barrado nas rotas das organizações, cadastro público que não cria superadmin, configuração vazia, senha nova, e-mail novo, senha curta e e-mail de uma conta existente |
 | `EquipeApiTest` | Convidar, consultar e aceitar o convite (já logado como membro), link usado, vencido, cancelado ou adulterado sem criar conta, convite novo substituindo o anterior, e-mail já cadastrado, membro sem permissão de convidar ou remover, remoção revogando as sessões e mantendo o nome no histórico |
 | `IsolamentoEntreOrganizacoesTest` | Toda rota da API que recebe id, no caminho ou no corpo, tentada por outra organização: a resposta é `404` com a mesma mensagem de um id inexistente. Lê as rotas do Spring MVC e falha se uma rota com id não tiver caso cadastrado |
@@ -742,6 +743,7 @@ As decisões maiores têm um registro próprio, com contexto, alternativas e con
 - **Autorização em duas camadas**: perfil no controller (`@PreAuthorize`) e acesso por organização numa política única do módulo (`AcessoCompras`), usada pelos services e pelo WebSocket, com `404` para o que é de outra organização ([ADR 0016](docs/adr/0016-autorizacao-por-organizacao.md)).
 - **Front-end com signals e componentes standalone**, controle de fluxo `@if`/`@for` e um service por recurso da API.
 - **Histórico de alterações com o Hibernate Envers**: cada transação que muda um dado de negócio vira uma revisão, com a pessoa, a organização dela e o rastreio da requisição, e uma cópia do registro como ficou. Credenciais ficam de fora, e a exclusão guarda o último estado ([ADR 0021](docs/adr/0021-auditoria-com-envers-e-eventos-de-seguranca.md)).
+- **Eventos de segurança numa transação própria**: login, falha, bloqueio, sessão revogada, equipe e acesso negado viram um evento de domínio que a auditoria grava em `REQUIRES_NEW`. A senha errada fica registrada mesmo com o login desfeito, e uma falha na auditoria não derruba o login (mesmo ADR).
 - **Esquema do banco versionado com Flyway**: cada mudança vira uma migração revisável, e o Hibernate só confere (`ddl-auto=validate`) se as entidades batem com o banco.
 - **Design tokens** ([`tokens.css`](frontend/src/styles/tokens.css)): cores, tipografia, espaços e movimento existem num lugar só, com uma versão para o claro e outra para o escuro. Nenhum componente usa valor solto, e todos os pares de texto e fundo passam no contraste da WCAG. Detalhes em [docs/design-system.md](docs/design-system.md).
 - **Componentes próprios no lugar do Bootstrap**: a hierarquia vem da tipografia e do espaço, não de cards e cores. Seletor, menu, painel e confirmação seguem os padrões de acessibilidade da WAI-ARIA, e o bundle inicial caiu quase pela metade ([ADR 0011](docs/adr/0011-componentes-proprios-no-lugar-do-bootstrap.md)).
@@ -808,7 +810,7 @@ Saber quem fez o quê. O proprietário vê a atividade da própria organização
 
 - [x] **Spec 003**: requisitos, plano e tarefas, com retenção de 5 anos e a atividade da organização para o proprietário
 - [x] **Histórico de alterações com Hibernate Envers**: quem mudou, de qual organização, quando e qual era o valor anterior, sem credenciais ([ADR 0021](docs/adr/0021-auditoria-com-envers-e-eventos-de-seguranca.md))
-- [ ] **Eventos de segurança**: logins, falhas, bloqueios, sessões revogadas, equipe e as ações do próprio superadmin
+- [x] **Eventos de segurança**: logins, falhas, bloqueios, sessões revogadas, equipe, superadmin da configuração e acessos negados, gravados numa transação própria e com o e-mail mascarado
 - [ ] Registros **só de acréscimo**, protegidos no banco, guardados por **5 anos** e com os dados sensíveis mascarados
 - [ ] **Atividade da organização** para o proprietário: quem da equipe fez o quê, com o antes e o depois
 - [ ] **Console do superadmin**: eventos de segurança, atividade de cada organização e histórico de cada registro; as consultas dele também ficam registradas

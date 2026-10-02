@@ -1,6 +1,7 @@
 package com.gestao.compartilhado.infraestrutura.web;
 
 import com.gestao.compartilhado.dominio.AcessoNegadoException;
+import com.gestao.compartilhado.dominio.EventoDeSeguranca;
 import com.gestao.compartilhado.dominio.MuitasTentativasException;
 import com.gestao.compartilhado.dominio.RecursoNaoEncontradoException;
 import org.junit.jupiter.api.Test;
@@ -9,14 +10,19 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.access.AccessDeniedException;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Respostas que os testes de API não alcançam com facilidade: erro inesperado, banco e bloqueio. */
 class GlobalExceptionHandlerTest {
 
-    private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    private final List<Object> publicados = new ArrayList<>();
+    private final GlobalExceptionHandler handler = new GlobalExceptionHandler(publicados::add);
 
     @Test
     void erroInesperadoNaoExpoeDetalhes() {
@@ -40,10 +46,20 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void acessoNegadoPorPerfilUsaMensagemPadrao() {
-        assertThat(mensagem(handler.acessoNegado(new AccessDeniedException("Access Denied"))))
+        MockHttpServletRequest requisicao = new MockHttpServletRequest("PATCH", "/api/v1/negociacoes/1/fechar");
+        requisicao.setQueryString("valor=10");
+        assertThat(mensagem(handler.acessoNegado(new AccessDeniedException("Access Denied"), requisicao)))
                 .isEqualTo(GlobalExceptionHandler.ACESSO_NEGADO_POR_PERFIL);
         String doCasoDeUso = "Só a empresa desta negociação pode fechá-la ou encerrá-la.";
-        assertThat(mensagem(handler.acessoNegado(new AcessoNegadoException(doCasoDeUso)))).isEqualTo(doCasoDeUso);
+        assertThat(mensagem(handler.acessoNegado(new AcessoNegadoException(doCasoDeUso), requisicao)))
+                .isEqualTo(doCasoDeUso);
+
+        // Cada 403 vira um evento de segurança, com a rota e sem a query string
+        assertThat(publicados).hasSize(2).allSatisfy(evento -> {
+            assertThat(evento).isInstanceOf(EventoDeSeguranca.class);
+            assertThat(((EventoDeSeguranca) evento).tipo()).isEqualTo(EventoDeSeguranca.Tipo.ACESSO_NEGADO);
+            assertThat(((EventoDeSeguranca) evento).detalhe()).isEqualTo("PATCH /api/v1/negociacoes/1/fechar");
+        });
     }
 
     @Test

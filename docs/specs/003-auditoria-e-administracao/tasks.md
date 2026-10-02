@@ -17,9 +17,9 @@ Cada passo termina com o CI verde e o roadmap do README atualizado.
 
 ## Passo 3 · Eventos de segurança (R2)
 
-- [ ] Evento de domínio e gravação em transação própria
-- [ ] Login, renovação, equipe, superadmin e 403 publicando eventos
-- [ ] Testes: evento registrado mesmo com a operação desfeita, e-mail mascarado
+- [x] Evento de domínio e gravação em transação própria
+- [x] Login, renovação, equipe, superadmin e 403 publicando eventos
+- [x] Testes: evento registrado mesmo com a operação desfeita, e-mail mascarado
 
 ## Passo 4 · Só acréscimo e retenção (R3)
 

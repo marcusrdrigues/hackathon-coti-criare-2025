@@ -1,6 +1,8 @@
 package com.gestao.identidade.aplicacao;
 
 import com.gestao.compartilhado.dominio.Documentos;
+import com.gestao.compartilhado.dominio.EventoDeSeguranca.Tipo;
+import com.gestao.compartilhado.dominio.MuitasTentativasException;
 import com.gestao.compartilhado.dominio.NaoAutenticadoException;
 import com.gestao.identidade.aplicacao.dto.TokenResponse;
 import com.gestao.identidade.aplicacao.dto.UsuarioResponse;
@@ -15,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 import java.util.UUID;
 
 /** Login, renovação e encerramento de sessão. */
@@ -31,25 +34,42 @@ public class AuthService {
     private final EmissorDeToken emissorDeToken;
     private final RefreshTokenService refreshTokenService;
     private final TentativasLoginService tentativas;
+    private final EventosDaIdentidade eventos;
 
     /** Resultado de login/renovação: o corpo da resposta e o refresh token que vai para o cookie. */
     public record Sessao(TokenResponse resposta, String refreshToken) {}
 
     /**
      * A mensagem de erro é a mesma para e-mail inexistente e senha errada, para não
-     * revelar quais e-mails estão cadastrados.
+     * revelar quais e-mails estão cadastrados. Cada tentativa vira um evento de segurança,
+     * gravado mesmo quando o login é desfeito.
      */
     @Transactional
     public Sessao login(String email, String senha) {
-        tentativas.verificarBloqueio(email);
-        Usuario usuario = usuarioRepositorio.buscarPorEmail(Documentos.normalizarEmail(email))
+        Optional<Usuario> conta = usuarioRepositorio.buscarPorEmail(Documentos.normalizarEmail(email));
+        try {
+            tentativas.verificarBloqueio(email);
+        } catch (MuitasTentativasException e) {
+            eventos.publicarTentativa(Tipo.LOGIN_BLOQUEADO, conta, email, "Excesso de senhas erradas.");
+            throw e;
+        }
+        Usuario usuario = conta
                 .filter(u -> credenciais.senhaConfere(senha, u.getSenhaHash()))
                 .orElseThrow(() -> {
                     tentativas.registrarFalha(email);
+                    eventos.publicarTentativa(Tipo.LOGIN_FALHOU, conta, email,
+                            conta.isPresent() ? "Senha errada." : "E-mail sem conta.");
                     return new NaoAutenticadoException(CREDENCIAIS_INVALIDAS);
                 });
-        TokenResponse resposta = resposta(usuario);
+        TokenResponse resposta;
+        try {
+            resposta = resposta(usuario);
+        } catch (NaoAutenticadoException e) {
+            eventos.publicarTentativa(Tipo.LOGIN_FALHOU, conta, email, "Conta sem acesso.");
+            throw e;
+        }
         tentativas.limpar(email);
+        eventos.publicar(Tipo.LOGIN, usuario, null);
         return new Sessao(resposta, refreshTokenService.emitir(usuario.getId()));
     }
 
@@ -63,7 +83,8 @@ public class AuthService {
 
     @Transactional
     public void logout(String refreshToken) {
-        refreshTokenService.revogar(refreshToken);
+        refreshTokenService.revogar(refreshToken)
+                .ifPresent(usuarioId -> eventos.publicar(Tipo.LOGOUT, usuarioId, null));
     }
 
     /** Abre a sessão de quem acabou de entrar na plataforma sem passar pelo login (ao aceitar um convite). */

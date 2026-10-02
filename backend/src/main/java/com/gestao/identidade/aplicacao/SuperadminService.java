@@ -1,6 +1,7 @@
 package com.gestao.identidade.aplicacao;
 
 import com.gestao.compartilhado.dominio.Documentos;
+import com.gestao.compartilhado.dominio.EventoDeSeguranca.Tipo;
 import com.gestao.compartilhado.dominio.Mascaras;
 import com.gestao.identidade.aplicacao.porta.UsuarioRepositorio;
 import com.gestao.identidade.dominio.Usuario;
@@ -27,6 +28,7 @@ public class SuperadminService {
     private final UsuarioRepositorio usuarioRepositorio;
     private final CredenciaisService credenciais;
     private final RefreshTokenService refreshTokenService;
+    private final EventosDaIdentidade eventos;
 
     /** E-mail e senha vindos da configuração do servidor. */
     public record Configuracao(String email, String senha) {
@@ -55,6 +57,7 @@ public class SuperadminService {
                 refreshTokenService.revogarTodas(antigo.getId());
                 log.warn("Superadmin {} desativado: não está mais na configuração do servidor.",
                         Mascaras.email(antigo.getEmail()));
+                eventos.publicar(Tipo.SUPERADMIN_DESATIVADO, antigo, "Fora da configuração do servidor.");
             }
         }
         return valida.flatMap(c -> garantir(email, c.senha()));
@@ -65,6 +68,7 @@ public class SuperadminService {
         if (existente.isEmpty()) {
             Usuario novo = usuarioRepositorio.salvar(Usuario.superadmin(NOME, email, credenciais.gerarHash(senha)));
             log.info("Superadmin {} criado a partir da configuração do servidor.", Mascaras.email(email));
+            eventos.publicar(Tipo.SUPERADMIN_CRIADO, novo, "Criado a partir da configuração do servidor.");
             return Optional.of(novo);
         }
         Usuario usuario = existente.get();
@@ -78,6 +82,7 @@ public class SuperadminService {
             usuario.trocarSenha(credenciais.gerarHash(senha));
             refreshTokenService.revogarTodas(usuario.getId());
             log.info("Senha do superadmin {} atualizada a partir da configuração.", Mascaras.email(email));
+            eventos.publicar(Tipo.SUPERADMIN_SENHA_TROCADA, usuario, "Senha trocada pela configuração do servidor.");
         }
         usuario.reativar();
         return Optional.of(usuario);
