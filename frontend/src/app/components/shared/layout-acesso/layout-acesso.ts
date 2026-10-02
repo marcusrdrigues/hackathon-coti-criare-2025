@@ -14,7 +14,9 @@ import { SeletorTema } from '../seletor-tema/seletor-tema';
   styleUrl: './layout-acesso.css',
 })
 export class LayoutAcesso {
-  readonly titulo = input('Do pedido de compra ao negócio fechado, numa conversa só.');
+  readonly titulo = input('Do pedido de compra ao negócio fechado,');
+  /** O fim do título, numa linha própria, com o brilho que passa devagar (opcional) */
+  readonly destaque = input<string | null>('numa conversa só.');
   readonly texto = input(
     'Empresas publicam cotações, fornecedores enviam propostas e as duas partes negociam o valor final com todo o histórico registrado.',
   );

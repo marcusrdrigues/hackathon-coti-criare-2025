@@ -51,26 +51,100 @@
 }
 
 .manifesto {
-  max-width: 30rem;
+  max-width: 34rem;
 }
 
+/*
+ * Título de vitrine, como nos títulos de produto da Apple: grande, entrelinha curta e
+ * letras um pouco mais juntas. Entra subindo e saindo do desfoque, em cascata com o
+ * texto e a negociação. A última linha tem um brilho que atravessa devagar.
+ */
 .manifesto-titulo {
-  font-size: clamp(1.75rem, 2.6vw, 2.5rem);
+  font-size: clamp(2.25rem, 3.7vw, 3.5rem);
   font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-  margin: 0 0 1rem;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+  margin: 0 0 1.25rem;
+}
+
+.manifesto-destaque {
+  display: block;
+  /* Branco, um tom rosado do painel no meio, e branco de novo: o brilho é o rosado passando */
+  background: linear-gradient(
+    100deg,
+    var(--cor-sobre-marca) 0%,
+    var(--cor-sobre-marca) 35%,
+    var(--cor-painel-texto-2) 50%,
+    var(--cor-sobre-marca) 65%,
+    var(--cor-sobre-marca) 100%
+  );
+  background-size: 250% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  /* Sem esta folga, o recorte do degradê corta a ponta do último caractere */
+  padding-right: 0.06em;
 }
 
 .manifesto-texto {
-  font-size: 1rem;
+  max-width: 30rem;
+  font-size: 1.0625rem;
   line-height: 1.5;
   color: var(--cor-painel-texto-2);
   margin: 0 0 2rem;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .manifesto-titulo,
+  .manifesto-texto,
+  .negociacao {
+    animation: entrar 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .manifesto-texto {
+    animation-delay: 0.12s;
+  }
+
+  .negociacao {
+    animation-delay: 0.24s;
+  }
+
+  .manifesto-destaque {
+    animation: brilho 8s cubic-bezier(0.45, 0, 0.55, 1) 1s infinite;
+  }
+}
+
+@keyframes entrar {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateY(14px);
+  }
+}
+
+@keyframes brilho {
+  0% {
+    background-position: 100% 0;
+  }
+  45%,
+  100% {
+    background-position: 0% 0;
+  }
+}
+
+/* Alto contraste e cores forçadas: texto sólido, sem degradê */
+@media (prefers-contrast: more), (forced-colors: active) {
+  .manifesto-destaque {
+    background: none;
+    color: inherit;
+  }
+}
+
 /* Assinatura: o valor convergindo ao longo da negociação */
 .negociacao {
+  max-width: 30rem;
   list-style: none;
   margin: 0;
   padding: 0;

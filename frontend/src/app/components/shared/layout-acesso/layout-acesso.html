@@ -9,7 +9,12 @@
     </div>
 
     <div class="manifesto">
-      <h2 class="manifesto-titulo">{{ titulo() }}</h2>
+      <h2 class="manifesto-titulo">
+        {{ titulo() }}
+        @if (destaque(); as fim) {
+          <span class="manifesto-destaque">{{ fim }}</span>
+        }
+      </h2>
       <p class="manifesto-texto">{{ texto() }}</p>
 
       <ol class="negociacao" aria-label="Exemplo de negociação">
