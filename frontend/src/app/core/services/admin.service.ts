@@ -1,8 +1,9 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL } from '../api.config';
 import { OrganizacaoAdmin, Pagina } from '../models';
+import { parametrosDePagina } from './paginas';
 
 /** Ordens que a API aceita para a lista de organizações. */
 export type OrdemOrganizacoes = 'criadaEm,desc' | 'razaoSocial,asc';
@@ -13,7 +14,7 @@ export class AdminService {
   private readonly http = inject(HttpClient);
 
   organizacoes(pagina: number, ordem: OrdemOrganizacoes, tamanho = 20): Observable<Pagina<OrganizacaoAdmin>> {
-    const params = new HttpParams().set('page', pagina).set('size', tamanho).set('sort', ordem);
+    const params = parametrosDePagina(pagina, tamanho).set('sort', ordem);
     return this.http.get<Pagina<OrganizacaoAdmin>>(`${API_URL}/admin/organizacoes`, { params });
   }
 }

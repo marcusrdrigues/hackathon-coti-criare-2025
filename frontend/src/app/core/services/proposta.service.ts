@@ -2,7 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL } from '../api.config';
-import { Proposta, PropostaRequest } from '../models';
+import { Pagina, Proposta, PropostaRequest, SituacaoProposta } from '../models';
+import { parametrosDePagina } from './paginas';
 
 @Injectable({ providedIn: 'root' })
 export class PropostaService {
@@ -17,9 +18,10 @@ export class PropostaService {
     return this.http.get<Proposta[]>(`${this.url}/cotacao/${cotacaoId}`);
   }
 
-  /** Propostas do fornecedor logado. */
-  listarMinhas(): Observable<Proposta[]> {
-    return this.http.get<Proposta[]>(`${this.url}/minhas`);
+  /** Uma página das propostas do fornecedor logado: negociações ativas primeiro, depois as mais recentes. */
+  minhas(situacao: SituacaoProposta, pagina: number, tamanho?: number): Observable<Pagina<Proposta>> {
+    const params = parametrosDePagina(pagina, tamanho).set('situacao', situacao);
+    return this.http.get<Pagina<Proposta>>(`${this.url}/minhas`, { params });
   }
 
   recusar(id: string): Observable<Proposta> {

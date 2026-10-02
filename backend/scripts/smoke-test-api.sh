@@ -122,9 +122,16 @@ COTACAO=$(chamar POST "$V1/cotacoes" 201 "$(jq -n --arg d "$LIMITE" \
   '{nomeServico:"Café e descartáveis",requisitos:"Fornecimento mensal",categoria:"ALIMENTOS",orcamentoEstimado:1500,dataLimite:$d}')" "$TOKEN_E")
 COTACAO_ID=$(jq -r .id <<<"$COTACAO")
 [[ $(jq -r .empresaId <<<"$COTACAO") == "$EMPRESA_ID" ]] || falhar "cotação não ficou em nome da empresa do token"
-chamar GET "$V1/cotacoes/abertas" 200 "" "$TOKEN_F" | jq -e --arg id "$COTACAO_ID" 'any(.[]; .id == $id)' >/dev/null \
+chamar GET "$V1/cotacoes/abertas?busca=descart%C3%A1veis&size=50" 200 "" "$TOKEN_F" \
+  | jq -e --arg id "$COTACAO_ID" 'any(.content[]; .id == $id) and .page.size == 50' >/dev/null \
   || falhar "cotação nova não aparece no mural"
-passo "cotação publicada e visível no mural"
+# Paginação: tamanho máximo de 50 e ordem só pelos campos aceitos (ADR 0020)
+[[ $(chamar GET "$V1/cotacoes/minhas?size=500" 200 "" "$TOKEN_E" | jq .page.size) -eq 50 ]] \
+  || falhar "a página deveria ter no máximo 50 itens"
+ERRO=$(chamar GET "$V1/cotacoes/minhas?sort=senha" 400 "" "$TOKEN_E")
+[[ $(jq -r .title <<<"$ERRO") == "Requisição inválida" && $(jq -r .status <<<"$ERRO") == "400" ]] \
+  || falhar "erro sem o formato Problem Details: $ERRO"
+passo "cotação publicada e visível no mural, paginação e erros no formato Problem Details"
 
 # 7. Propostas: uma por fornecedor, e um não vê a do outro
 PROPOSTA=$(chamar POST "$V1/propostas" 201 "{\"valor\":1400,\"descricao\":\"Entrega semanal\",\"cotacaoId\":\"$COTACAO_ID\"}" "$TOKEN_F")

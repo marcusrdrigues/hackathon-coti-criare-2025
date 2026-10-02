@@ -125,12 +125,3 @@ export class ListaNegociacoes {
     return this.auth.ehEmpresa() ? n.fornecedorNome : n.empresaNome;
   }
 }
-
-/** Em andamento primeiro; depois as mais recentes. */
-export function ordenarNegociacoes(lista: Negociacao[]): Negociacao[] {
-  return [...lista].sort(
-    (a, b) =>
-      Number(b.status === 'EM_ANDAMENTO') - Number(a.status === 'EM_ANDAMENTO') ||
-      (b.dataInicio ?? '').localeCompare(a.dataInicio ?? ''),
-  );
-}

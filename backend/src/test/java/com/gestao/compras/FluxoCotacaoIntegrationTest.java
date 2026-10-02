@@ -1,5 +1,6 @@
 package com.gestao.compras;
 
+import com.gestao.compartilhado.aplicacao.PedidoDePagina;
 import com.gestao.compartilhado.dominio.AcessoNegadoException;
 import com.gestao.compartilhado.dominio.NaoAutenticadoException;
 import com.gestao.compartilhado.dominio.RecursoDuplicadoException;
@@ -271,11 +272,11 @@ class FluxoCotacaoIntegrationTest {
     @Test
     void cotacaoComPrazoVencidoSaiDoMuralENaoRecebePropostas() {
         Cotacao cotacao = criarCotacao(2);
-        assertTrue(cotacaoService.listarCotacoesAbertas().stream().anyMatch(c -> c.getId().equals(cotacao.getId())));
+        assertTrue(noMural().stream().anyMatch(c -> c.getId().equals(cotacao.getId())));
 
         cotacao.setDataLimite(LocalDateTime.now().minusMinutes(1));
 
-        assertTrue(cotacaoService.listarCotacoesAbertas().stream().noneMatch(c -> c.getId().equals(cotacao.getId())));
+        assertTrue(noMural().stream().noneMatch(c -> c.getId().equals(cotacao.getId())));
         assertThrows(RegraDeNegocioException.class, () -> enviarProposta(fornecedorA, cotacao, "500.00"));
     }
 
@@ -403,6 +404,11 @@ class FluxoCotacaoIntegrationTest {
     private UsuarioAutenticado cadastrar(TipoOrganizacao tipo, String razaoSocial, String cnpj, String email) {
         return cadastroService.cadastrar(new NovaOrganizacao(
                 tipo, razaoSocial, cnpj, "Pessoa da " + razaoSocial, email, "segredo123"));
+    }
+
+    private java.util.List<Cotacao> noMural() {
+        return cotacaoService.buscarNoMural(null, "Compra de notebooks",
+                new PedidoDePagina(0, PedidoDePagina.TAMANHO_MAXIMO, new PedidoDePagina.Ordem("dataCriacao", false))).itens();
     }
 
     private Cotacao criarCotacao(int diasDePrazo) {

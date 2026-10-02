@@ -121,6 +121,7 @@ sequenceDiagram
 - Visual no padrão das interfaces da Apple, com **Liquid Glass** na camada que flutua: barra de abas em cápsula de vidro no celular, barra lateral de vidro encostada na borda e **recolhível** aos ícones ([ADR 0019](docs/adr/0019-barra-lateral-encostada-e-recolhivel.md)), topo de vidro, menus e painéis translúcidos, botões em cápsula. O conteúdo continua sólido, e o vidro vira superfície sólida quando o sistema pede menos transparência ou mais contraste ([ADR 0018](docs/adr/0018-liquid-glass-na-camada-flutuante.md))
 - Componentes próprios (seletor, menu, controle segmentado, painel lateral, diálogo de confirmação), acessíveis pelo teclado e pelo leitor de tela
 - Avisos rápidos de sucesso e erro, com as mensagens que vêm da API
+- Listas que crescem (cotações, mural, propostas, negociações, organizações) carregadas aos poucos, com "Carregar mais"; a busca e os filtros vão para a API, e a busca espera a pessoa parar de digitar
 - Moeda e datas no formato brasileiro (`R$ 1.234,56`, `31/12/2025`)
 - Máscara de CNPJ no cadastro, que cria a organização e a pessoa proprietária juntas
 - Menu da conta com a pessoa, a organização e o papel dela (proprietária ou membro)
@@ -209,7 +210,7 @@ sequenceDiagram
 | **Força bruta** | 5 senhas erradas para o mesmo e-mail em 15 minutos bloqueiam o login (HTTP 429 com `Retry-After`) | Dificulta adivinhar senhas |
 | **Senhas** | BCrypt; cadastro exige 8+ caracteres com letras e números | Hash lento e com *salt*, resistente a vazamentos |
 | **Autorização por perfil** | `@PreAuthorize("hasRole('EMPRESA')")` nos endpoints | Fornecedor não cria cotação, empresa não envia proposta |
-| **Autorização por organização** | Uma política de acesso única no módulo de compras (`AcessoCompras`), usada pela API e pelo WebSocket. Recurso de outra organização responde **404**, igual a um id que não existe | Empresa só vê e altera as próprias cotações; fornecedor não vê o lance do concorrente nem cotações fora do mural em que não entrou; negociação só para as duas organizações participantes. O 404 não confirma que o id existe ([ADR 0016](docs/adr/0016-autorizacao-por-organizacao.md)) |
+| **Autorização por organização** | Uma política de acesso única no módulo de compras (`AcessoCompras`), usada pela API e pelo WebSocket. Recurso de outra organização responde **404**, igual a um id que não existe | Empresa só vê e altera as próprias cotações; fornecedor não vê o lance do concorrente (nem a menor oferta de uma cotação, que só vai para a empresa dona) nem cotações fora do mural em que não entrou; negociação só para as duas organizações participantes. O 404 não confirma que o id existe ([ADR 0016](docs/adr/0016-autorizacao-por-organizacao.md)) |
 | **Trava de rota nova** | Um teste lê todas as rotas da API que recebem id e exige, para cada uma, a tentativa de outra organização | Uma rota nova sem teste de isolamento quebra o build |
 | **Superadmin** | Nasce só da configuração do servidor (`SUPERADMIN_EMAIL` e `SUPERADMIN_SENHA`, 12+ caracteres); sem ela, nenhum fica ativo. Nunca promove uma conta existente, não tem organização e só alcança `/api/v1/admin/**`, somente leitura. As demais rotas exigem o perfil de uma organização já no filtro de segurança, e o WebSocket recusa a conexão dele | Nenhuma tela ou rota cria um administrador; um token sem organização não chega aos dados de compras |
 | **Identidade** | Quem é a pessoa e em nome de qual organização ela age vem **sempre do token**, nunca de um ID enviado no corpo | Ninguém consegue agir em nome de outra empresa trocando um ID |
@@ -517,6 +518,12 @@ Todos os endpoints ficam sob `/api/v1`. A documentação completa, com exemplos,
 
 Legenda: 🌐 público · 🔑 qualquer pessoa de uma organização · 🏢 só empresa · 🚚 só fornecedor · 🛡️ só o superadmin. As rotas marcadas como "dona" ou "participante" também conferem se o recurso é da organização do token; se não for, respondem `404`, como um id que não existe.
 
+**Listas paginadas** ([ADR 0020](docs/adr/0020-paginacao-e-problem-details.md)): `page` (a partir de 0), `size` (padrão 20, máximo 50) e, onde indicado, `sort=campo,asc|desc` com os campos aceitos (outro campo responde `400`). A resposta vem no formato do Spring Data:
+
+```json
+{ "content": [ … ], "page": { "size": 20, "number": 0, "totalElements": 42, "totalPages": 3 } }
+```
+
 <details>
 <summary><b>Autenticação e dashboard</b></summary>
 
@@ -563,10 +570,11 @@ Legenda: 🌐 público · 🔑 qualquer pessoa de uma organização · 🏢 só 
 | Método | Endpoint | Acesso | Descrição |
 |---|---|---|---|
 | `POST` | `/cotacoes` | 🏢 | Cria cotação em nome da empresa do token |
-| `GET` | `/cotacoes/minhas` | 🏢 | Cotações da empresa logada |
-| `GET` | `/cotacoes/abertas` | 🔑 | Abertas e dentro do prazo (mural) |
+| `GET` | `/cotacoes/minhas` | 🏢 | Cotações da empresa logada, paginadas. Filtros `status` e `busca` (título e requisitos); `sort` por `dataCriacao` (padrão, mais recentes), `dataLimite` ou `nomeServico` |
+| `GET` | `/cotacoes/minhas/contagem` | 🏢 | Quantas cotações a empresa tem em cada situação, inclusive as em zero |
+| `GET` | `/cotacoes/abertas` | 🔑 | Mural: abertas e dentro do prazo, paginadas. Filtros `categoria` e `busca` (título, requisitos e empresa); `sort` por `dataCriacao` (padrão) ou `dataLimite`. Para o fornecedor, cada item traz `minhaProposta` |
 | `GET` | `/cotacoes/categorias` | 🌐 | Categorias disponíveis |
-| `GET` | `/cotacoes/{id}` | 🔑 | Detalhe; empresas veem as próprias, fornecedores as abertas e aquelas em que enviaram proposta |
+| `GET` | `/cotacoes/{id}` | 🔑 | Detalhe; empresas veem as próprias, fornecedores as abertas e aquelas em que enviaram proposta. A `melhorOferta` só vem para a empresa dona |
 | `PUT` | `/cotacoes/{id}` | 🏢 dona | Edita (somente abertas) |
 | `PATCH` | `/cotacoes/{id}/cancelar` | 🏢 dona | Cancela |
 
@@ -578,7 +586,7 @@ Legenda: 🌐 público · 🔑 qualquer pessoa de uma organização · 🏢 só 
 | Método | Endpoint | Acesso | Descrição |
 |---|---|---|---|
 | `POST` | `/propostas` | 🚚 | Envia proposta em nome do fornecedor do token |
-| `GET` | `/propostas/minhas` | 🚚 | Propostas do fornecedor logado |
+| `GET` | `/propostas/minhas` | 🚚 | Propostas do fornecedor logado, paginadas, por `situacao`: `ANDAMENTO` (padrão) ou `HISTORICO`. Negociações ativas primeiro |
 | `GET` | `/propostas/{id}` | 🔑 autor ou empresa da cotação | Detalhe |
 | `GET` | `/propostas/cotacao/{cotacaoId}` | 🏢 dona | Propostas de uma cotação (menor valor primeiro) |
 | `PATCH` | `/propostas/{id}/recusar` | 🏢 dona da cotação | Recusa |
@@ -592,7 +600,8 @@ Legenda: 🌐 público · 🔑 qualquer pessoa de uma organização · 🏢 só 
 | Método | Endpoint | Acesso | Descrição |
 |---|---|---|---|
 | `POST` | `/negociacoes` | 🏢 dona da cotação | Aceita a proposta e abre a negociação (`{ "propostaId": "..." }`) |
-| `GET` | `/negociacoes/minhas` | 🔑 | Negociações do usuário logado, com `naoLidas` (mensagens da outra parte ainda não vistas) |
+| `GET` | `/negociacoes/minhas` | 🔑 | Negociações da organização, paginadas, por `situacao`: `TODAS` (padrão) ou `ANDAMENTO`. Em andamento primeiro, cada uma com `naoLidas` |
+| `GET` | `/negociacoes/nao-lidas` | 🔑 | `{ total, porNegociacao }`: mensagens da outra parte ainda não vistas (o contador da navegação) |
 | `GET` | `/negociacoes/{id}` | 🔑 participante | Detalhe, com `ultimaOferta` e `naoLidas` |
 | `PATCH` | `/negociacoes/{id}/leitura` | 🔑 participante | Marca como lido tudo o que a outra parte enviou até agora (`204`) |
 | `PATCH` | `/negociacoes/{id}/finalizar` | 🏢 participante | Fecha o negócio (`{ "valorFinal": 1350.00 }`) |
@@ -689,7 +698,7 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | Suíte | O que cobre |
 |---|---|
 | `FluxoCotacaoIntegrationTest` | Cadastro de organização e proprietário, login com papel, membro da equipe agindo pela organização e registrado como autor, CNPJ único por tipo, CNPJ inválido, e-mail duplicado, proposta duplicada, negociação, contrapropostas, fechamento, cancelamento, prazo vencido, dashboards e regras de posse (empresa concorrente, fornecedor concorrente, intruso na negociação) |
-| `ComprasApiTest` | O contrato HTTP de compras, como o front-end usa: publicar, editar, propor, retirar, recusar, negociar, conversar, fechar e cancelar, painéis, e o formato Problem Details das respostas de erro (validação por campo, 404, id malformado, JSON inválido, cadastro repetido) |
+| `ComprasApiTest` | O contrato HTTP de compras, como o front-end usa: publicar, editar, propor, retirar, recusar, negociar, conversar, fechar e cancelar, painéis, listas paginadas com os filtros no servidor (situação, busca com `%` tratado como texto, categoria, contagem por situação, ordem permitida), a menor oferta escondida do fornecedor e a proposta dele no mural, e o formato Problem Details das respostas de erro (validação por campo, 404, id malformado, JSON inválido, cadastro repetido) |
 | `AutenticacaoIntegrationTest` | Conteúdo do JWT (pessoa, organização, tipo e papel), token de antes da separação recusado, login de um membro, token adulterado, refresh gravado como hash, rotação, detecção de reuso, logout e bloqueio de força bruta |
 | `SegurancaApiTest` | Pela camada HTTP: cadastro público (201, 409 e validação por campo), formato de `/auth/me`, 401 sem token e com token inválido, rotas públicas, cookie `HttpOnly`/`SameSite`, 403 por perfil, 404 para recurso de outra organização, identidade vinda do token, refresh pelo cookie, logout e CORS |
 | `TempoRealIntegrationTest` | WebSocket de verdade (STOMP): conexão sem token ou com token inválido recusada, mensagem e aviso entregues na hora (o aviso chega a toda a equipe da organização), conexão encerrada quando a pessoa sai da equipe, "digitando…" e quem não participa não consegue assinar a negociação |
@@ -706,7 +715,7 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | `GlobalExceptionHandlerTest` | Respostas de erro difíceis de provocar pela API: erro inesperado sem detalhes internos, violação de integridade, acesso negado por perfil e bloqueio de login com `Retry-After` |
 | `smoke-test-api.sh` | Contra a API real com PostgreSQL: login (inclusive de um membro da equipe), proteção das rotas, CORS, validações, regras de perfil e de posse, cotação → proposta → negociação → mensagens → fechamento, dashboards, refresh com rotação e reuso, logout e força bruta |
 | Playwright (`frontend/e2e`) | No navegador, com API e banco reais: empresa e fornecedor negociam do começo ao fim (publicar, propor pelo painel do mural, contraproposta pelo cartão de oferta, aceitar, fechar com confirmação), vendo um ao outro **ao vivo** (proposta e aviso chegando à empresa, contador de não lidas do fornecedor e atalho do aviso, "digitando…", aceite e fechamento sem recarregar), a proprietária convida, a pessoa aceita pelo link num outro navegador, trabalha como membro e perde o acesso ao ser removida, rota protegida, login com erro, cadastro com validação de CNPJ, sessão após F5, sair, barra lateral recolhida e lembrada, tema claro/escuro e o superadmin vendo as organizações sem alcançar as telas delas. As telas de acesso rodam também num celular emulado |
-| Front-end | Interceptor (token, renovação automática e expiração), guards por perfil (inclusive o superadmin fora das telas das organizações e vice-versa), tema claro/escuro, seletor (teclado e busca por letra), controle segmentado, confirmação, máscara de CNPJ, comparação de ofertas e componente raiz |
+| Front-end | Interceptor (token, renovação automática e expiração), guards por perfil (inclusive o superadmin fora das telas das organizações e vice-versa), tema claro/escuro, seletor (teclado e busca por letra), controle segmentado, confirmação, máscara de CNPJ, comparação de ofertas, lista paginada (juntar páginas, recarregar e descartar a resposta de um filtro antigo), leitura dos erros em Problem Details e componente raiz |
 
 O **GitHub Actions** (`.github/workflows/ci.yml`) roda a cada push: compila e testa o back-end (inclusive contra PostgreSQL com Testcontainers), sobe a API com PostgreSQL e executa o teste de fumaça, faz o build de produção e os testes do front-end, e roda os testes ponta a ponta com Playwright. O **CodeQL** procura vulnerabilidades no código Java e TypeScript, e o **Dependabot** abre PRs semanais com as atualizações de dependências.
 
@@ -785,7 +794,7 @@ A base que as próximas fases exigem, feita antes delas. Especificação: [spec 
 - [x] **Liquid Glass**: barra de abas em cápsula e barras de vidro, com versão sólida para acessibilidade ([ADR 0018](docs/adr/0018-liquid-glass-na-camada-flutuante.md))
 - [x] **Experiência da negociação**: oferta com valor no botão, oferta na mesa, barra lateral recolhível e revisão da escrita ([spec 002](docs/specs/002-experiencia-da-negociacao/spec.md), [ADR 0019](docs/adr/0019-barra-lateral-encostada-e-recolhivel.md))
 - [x] **Superadmin**, criado só pela configuração do servidor, com área administrativa somente leitura
-- [ ] **Paginação** nas listagens e erros no padrão **Problem Details** (RFC 9457)
+- [x] **Paginação** no servidor, com os filtros, e erros no padrão **Problem Details** (RFC 9457) ([ADR 0020](docs/adr/0020-paginacao-e-problem-details.md))
 - [ ] **Política de dados**: o que é sensível e onde cada dado pode aparecer (logs, auditoria, IA, demo)
 
 ### Fase 5 · Auditoria e administração &nbsp;`planejada`

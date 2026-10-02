@@ -8,23 +8,23 @@
 
   <app-abas-propostas atual="historico" />
 
-  @if (erro(); as mensagem) {
+  @if (lista.erro(); as mensagem) {
     <p class="nota nota-erro" role="alert"><ui-icone nome="alerta" [tamanho]="18" />{{ mensagem }}</p>
-  } @else if (propostas() !== null) {
-    @if (historico().length > 0) {
+  } @else if (lista.itens(); as itens) {
+    @if (itens.length > 0) {
       <dl class="metricas">
         <div class="metrica">
           <dt class="metrica-rotulo">Em negócios fechados</dt>
-          <dd class="metrica-valor">{{ totalGanho() | currency: 'BRL' : 'symbol' : '1.0-0' }}</dd>
+          <dd class="metrica-valor">{{ totalGanho() !== null ? (totalGanho() | currency: 'BRL' : 'symbol' : '1.0-0') : '–' }}</dd>
         </div>
         <div class="metrica">
           <dt class="metrica-rotulo">Propostas no histórico</dt>
-          <dd class="metrica-valor">{{ historico().length }}</dd>
+          <dd class="metrica-valor">{{ lista.total() }}</dd>
         </div>
       </dl>
 
       <ul class="lista" role="list">
-        @for (p of historico(); track p.id) {
+        @for (p of itens; track p.id) {
           <li>
             @if (p.negociacaoId) {
               <a class="linha" [routerLink]="['/pages/negociacao', p.negociacaoId]">
@@ -39,6 +39,8 @@
           </li>
         }
       </ul>
+      <ui-carregar-mais [mostrando]="itens.length" [total]="lista.total()" [carregando]="lista.carregando()"
+                        singular="proposta" plural="propostas" (carregar)="lista.carregarMais()" />
     } @else {
       <div class="lista">
         <div class="vazio">

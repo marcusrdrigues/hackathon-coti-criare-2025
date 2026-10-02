@@ -1,5 +1,7 @@
 package com.gestao.compras.aplicacao;
 
+import com.gestao.compartilhado.aplicacao.Pagina;
+import com.gestao.compartilhado.aplicacao.PedidoDePagina;
 import com.gestao.compartilhado.dominio.RecursoNaoEncontradoException;
 import com.gestao.compartilhado.dominio.RegraDeNegocioException;
 import com.gestao.compras.aplicacao.porta.PropostaRepositorio;
@@ -78,9 +80,11 @@ public class PropostaService {
         return propostaRepositorio.listarDaCotacao(cotacaoId);
     }
 
+    /** Uma página das propostas do fornecedor de quem pede, em andamento ou já encerradas. */
     @Transactional(readOnly = true)
-    public List<Proposta> listarPorFornecedor(UUID fornecedorId) {
-        return propostaRepositorio.listarDoFornecedor(fornecedorId);
+    public Pagina<Proposta> buscarDoFornecedor(UsuarioAutenticado usuario, SituacaoProposta situacao,
+                                               PedidoDePagina pedido) {
+        return propostaRepositorio.buscarDoFornecedor(usuario.organizacaoId(), situacao, pedido);
     }
 
     /**

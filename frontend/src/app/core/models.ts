@@ -102,7 +102,26 @@ export interface Cotacao {
   empresaId: string;
   empresaNome: string;
   quantidadePropostas: number;
+  /** Menor valor entre as propostas em jogo; só vem para a empresa dona. */
   melhorOferta: number | null;
+  /** A proposta que o fornecedor logado enviou para esta cotação, se houver. */
+  minhaProposta: { id: string; valor: number; status: StatusProposta } | null;
+}
+
+/** Filtros das listas paginadas. */
+export interface FiltroCotacoes {
+  status?: StatusCotacao | null;
+  categoria?: CategoriaCotacao | null;
+  busca?: string;
+  sort?: string;
+}
+export type SituacaoProposta = 'ANDAMENTO' | 'HISTORICO';
+export type SituacaoNegociacao = 'ANDAMENTO' | 'TODAS';
+
+/** Mensagens não lidas: o total e por negociação (só as que têm alguma). */
+export interface NaoLidas {
+  total: number;
+  porNegociacao: Record<string, number>;
 }
 
 export interface CotacaoRequest {

@@ -1,22 +1,24 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { forkJoin, map } from 'rxjs';
-import { CategoriaCotacao, Cotacao, Proposta } from '../../../core/models';
+import { debounceTime, distinctUntilChanged, map, skip } from 'rxjs';
+import { CategoriaCotacao, Cotacao } from '../../../core/models';
 import { CotacaoService } from '../../../core/services/cotacao.service';
 import { NotificacaoService } from '../../../core/services/notificacao.service';
 import { PropostaService } from '../../../core/services/proposta.service';
 import { mensagemDeErro } from '../../../core/utils/erros';
 import { diasRestantes } from '../../../core/utils/formatos';
+import { ESPERA_DA_BUSCA_MS, ListaPaginada } from '../../../core/utils/lista-paginada';
+import { CarregarMais } from '../../../ui/carregar-mais';
 import { Icone } from '../../../ui/icone';
 import { Painel } from '../../../ui/painel';
 import { OpcaoSeletor, Seletor } from '../../../ui/seletor';
 
 @Component({
   selector: 'app-mural-oportunidades',
-  imports: [FormsModule, RouterLink, CurrencyPipe, DatePipe, Icone, Painel, Seletor],
+  imports: [FormsModule, RouterLink, CurrencyPipe, DatePipe, CarregarMais, Icone, Painel, Seletor],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './mural-oportunidades.html',
   styleUrl: './mural-oportunidades.css',
@@ -37,13 +39,15 @@ export class MuralOportunidades implements OnInit {
   );
   protected readonly diasRestantes = diasRestantes;
 
-  protected readonly oportunidades = signal<Cotacao[] | null>(null);
-  /** cotacaoId -> proposta que este fornecedor já enviou */
-  protected readonly minhasPropostas = signal<Map<string, Proposta>>(new Map());
-  protected readonly erro = signal<string | null>(null);
   // A busca pode vir pela URL (ex.: atalho do painel inicial)
   protected readonly busca = signal(inject(ActivatedRoute).snapshot.queryParamMap.get('busca') ?? '');
   protected readonly categoria = signal<CategoriaCotacao | ''>('');
+  protected readonly comFiltro = computed(() => !!this.busca().trim() || !!this.categoria());
+
+  /** Cada item já traz a proposta que este fornecedor enviou (minhaProposta) */
+  protected readonly lista = new ListaPaginada<Cotacao>((pagina, tamanho) =>
+    this.cotacaoService.mural(pagina, { busca: this.busca(), categoria: this.categoria() || null }, tamanho),
+  );
   protected readonly enviando = signal(false);
 
   /** Cotação para a qual o painel de proposta está aberto */
@@ -52,34 +56,18 @@ export class MuralOportunidades implements OnInit {
   protected readonly valor = signal<number | null>(null);
   protected readonly condicoes = signal('');
 
-  protected readonly filtradas = computed(() => {
-    const termo = this.busca().trim().toLowerCase();
-    const categoria = this.categoria();
-    return (this.oportunidades() ?? []).filter(
-      (c) =>
-        (!categoria || c.categoria === categoria) &&
-        (!termo ||
-          c.nomeServico.toLowerCase().includes(termo) ||
-          c.requisitos.toLowerCase().includes(termo) ||
-          c.empresaNome.toLowerCase().includes(termo)),
-    );
-  });
-
-  ngOnInit(): void {
-    this.carregar();
+  constructor() {
+    // Categoria muda na hora; o texto espera a pessoa parar de digitar
+    toObservable(this.categoria)
+      .pipe(skip(1), takeUntilDestroyed())
+      .subscribe(() => this.lista.recomecar());
+    toObservable(this.busca)
+      .pipe(skip(1), debounceTime(ESPERA_DA_BUSCA_MS), distinctUntilChanged(), takeUntilDestroyed())
+      .subscribe(() => this.lista.recomecar());
   }
 
-  carregar(): void {
-    forkJoin({
-      abertas: this.cotacaoService.listarAbertas(),
-      minhas: this.propostaService.listarMinhas(),
-    }).subscribe({
-      next: ({ abertas, minhas }) => {
-        this.oportunidades.set(abertas);
-        this.minhasPropostas.set(new Map(minhas.map((p) => [p.cotacaoId, p])));
-      },
-      error: (e) => this.erro.set(mensagemDeErro(e)),
-    });
+  ngOnInit(): void {
+    this.lista.recomecar();
   }
 
   /** Publicada nas últimas 48 horas. */
@@ -115,7 +103,18 @@ export class MuralOportunidades implements OnInit {
       .subscribe({
         next: (proposta) => {
           this.notificacao.sucesso(`Proposta enviada para ${c.empresaNome}.`);
-          this.minhasPropostas.update((mapa) => new Map(mapa).set(c.id, proposta));
+          // A linha passa a mostrar "Você ofertou" sem buscar a lista de novo
+          this.lista.itens.update((itens) =>
+            (itens ?? []).map((item) =>
+              item.id === c.id
+                ? {
+                    ...item,
+                    quantidadePropostas: item.quantidadePropostas + 1,
+                    minhaProposta: { id: proposta.id, valor: proposta.valor, status: proposta.status },
+                  }
+                : item,
+            ),
+          );
           this.painelAberto.set(false);
           this.enviando.set(false);
         },

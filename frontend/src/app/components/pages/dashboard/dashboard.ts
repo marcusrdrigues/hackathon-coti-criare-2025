@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { Cotacao, DashboardEmpresa, Negociacao } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
-import { AvisosService, aoReceberAviso, chegouProposta, mudouNegociacao } from '../../../core/services/avisos.service';
+import { aoReceberAviso, chegouProposta, mudouNegociacao } from '../../../core/services/avisos.service';
 import { CotacaoService } from '../../../core/services/cotacao.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { NegociacaoService } from '../../../core/services/negociacao.service';
@@ -12,6 +12,9 @@ import { CnpjPipe } from '../../../core/utils/cnpj.pipe';
 import { mensagemDeErro } from '../../../core/utils/erros';
 import { diasRestantes, iniciais } from '../../../core/utils/formatos';
 import { Icone } from '../../../ui/icone';
+
+/** Quantas pendências o painel mostra. */
+const LIMITE_DE_PENDENCIAS = 6;
 
 /** Algo que pede uma ação da empresa agora. */
 interface Pendencia {
@@ -32,7 +35,6 @@ export class DashboardComponent implements OnInit {
   private readonly cotacaoService = inject(CotacaoService);
   private readonly negociacaoService = inject(NegociacaoService);
   protected readonly auth = inject(AuthService);
-  private readonly avisos = inject(AvisosService);
 
   protected readonly dados = signal<DashboardEmpresa | null>(null);
   private readonly cotacoes = signal<Cotacao[]>([]);
@@ -66,7 +68,7 @@ export class DashboardComponent implements OnInit {
         });
       }
     }
-    return lista.slice(0, 6);
+    return lista.slice(0, LIMITE_DE_PENDENCIAS);
   });
 
   protected readonly maiorCategoria = computed(() => Math.max(1, ...(this.dados()?.categorias ?? []).map((c) => c.total)));
@@ -81,16 +83,17 @@ export class DashboardComponent implements OnInit {
   }
 
   private carregar(): void {
+    // Só o que a lista "Precisa da sua atenção" mostra: as negociações em andamento e as
+    // cotações abertas com o prazo mais perto do fim
     forkJoin({
       dados: this.dashboardService.empresa(),
-      cotacoes: this.cotacaoService.listarMinhas(),
-      negociacoes: this.negociacaoService.listarMinhas(),
+      cotacoes: this.cotacaoService.minhas(0, { status: 'ABERTA', sort: 'dataLimite,asc' }),
+      negociacoes: this.negociacaoService.minhas('ANDAMENTO', 0, LIMITE_DE_PENDENCIAS),
     }).subscribe({
       next: ({ dados, cotacoes, negociacoes }) => {
-        this.cotacoes.set(cotacoes);
-        this.negociacoes.set(negociacoes);
+        this.cotacoes.set(cotacoes.content);
+        this.negociacoes.set(negociacoes.content);
         this.dados.set(dados);
-        this.avisos.atualizar(negociacoes);
       },
       error: (e) => this.erro.set(mensagemDeErro(e)),
     });

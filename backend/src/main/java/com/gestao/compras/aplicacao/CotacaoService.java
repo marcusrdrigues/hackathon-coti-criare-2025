@@ -1,5 +1,8 @@
 package com.gestao.compras.aplicacao;
 
+import com.gestao.compartilhado.aplicacao.Busca;
+import com.gestao.compartilhado.aplicacao.Pagina;
+import com.gestao.compartilhado.aplicacao.PedidoDePagina;
 import com.gestao.compartilhado.dominio.RecursoNaoEncontradoException;
 import com.gestao.compartilhado.dominio.RegraDeNegocioException;
 import com.gestao.compras.aplicacao.porta.CotacaoRepositorio;
@@ -16,12 +19,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class CotacaoService {
+
+    /** Campos aceitos para ordenar as cotações da empresa. */
+    public static final Set<String> ORDENS_DA_EMPRESA = Set.of("dataCriacao", "dataLimite", "nomeServico");
+    /** Campos aceitos para ordenar o mural. */
+    public static final Set<String> ORDENS_DO_MURAL = Set.of("dataCriacao", "dataLimite");
 
     private final CotacaoRepositorio cotacaoRepositorio;
     private final PropostaRepositorio propostaRepositorio;
@@ -57,15 +67,28 @@ public class CotacaoService {
         return acesso.cotacaoVisivel(id, usuario);
     }
 
+    /** Uma página das cotações da empresa de quem pede, com filtro opcional por situação e texto. */
     @Transactional(readOnly = true)
-    public List<Cotacao> listarPorEmpresa(UUID empresaId) {
-        return cotacaoRepositorio.listarDaEmpresa(empresaId);
+    public Pagina<Cotacao> buscarDaEmpresa(UsuarioAutenticado usuario, StatusCotacao status, String busca,
+                                           PedidoDePagina pedido) {
+        return cotacaoRepositorio.buscarDaEmpresa(usuario.organizacaoId(), status, Busca.normalizar(busca), pedido);
     }
 
-    /** Mural do fornecedor: só cotações abertas e dentro do prazo. */
+    /** Quantas cotações a empresa de quem pede tem em cada situação, inclusive as que estão em zero. */
     @Transactional(readOnly = true)
-    public List<Cotacao> listarCotacoesAbertas() {
-        return cotacaoRepositorio.listarAbertasVigentes(LocalDateTime.now());
+    public Map<StatusCotacao, Long> contarDaEmpresaPorSituacao(UsuarioAutenticado usuario) {
+        Map<StatusCotacao, Long> totais = new EnumMap<>(StatusCotacao.class);
+        for (StatusCotacao status : StatusCotacao.values()) {
+            totais.put(status, 0L);
+        }
+        totais.putAll(cotacaoRepositorio.contarDaEmpresaPorSituacao(usuario.organizacaoId()));
+        return totais;
+    }
+
+    /** Uma página do mural (abertas e dentro do prazo), com filtro opcional por categoria e texto. */
+    @Transactional(readOnly = true)
+    public Pagina<Cotacao> buscarNoMural(CategoriaCotacao categoria, String busca, PedidoDePagina pedido) {
+        return cotacaoRepositorio.buscarAbertasVigentes(LocalDateTime.now(), categoria, Busca.normalizar(busca), pedido);
     }
 
     @Transactional

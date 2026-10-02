@@ -62,9 +62,9 @@ Cada passo é entregue com o CI verde (testes, ponta a ponta e quality gate) e c
 
 ## Passo 8 · Padrões de API (R7)
 
-- [ ] Paginação nas listagens, com "Carregar mais" no front-end
-- [ ] Erros no formato Problem Details, com o front-end ajustado
-- [ ] ADR 0020
+- [x] Paginação nas listagens, com "Carregar mais" no front-end
+- [x] Erros no formato Problem Details, com o front-end ajustado
+- [x] ADR 0020
 
 ## Passo 9 · Política de dados (R8)
 

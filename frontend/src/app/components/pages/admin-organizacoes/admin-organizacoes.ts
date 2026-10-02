@@ -3,8 +3,8 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { OrganizacaoAdmin } from '../../../core/models';
 import { AdminService, OrdemOrganizacoes } from '../../../core/services/admin.service';
 import { CnpjPipe } from '../../../core/utils/cnpj.pipe';
-import { mensagemDeErro } from '../../../core/utils/erros';
 import { iniciais } from '../../../core/utils/formatos';
+import { ListaPaginada } from '../../../core/utils/lista-paginada';
 import { CarregarMais } from '../../../ui/carregar-mais';
 import { Icone } from '../../../ui/icone';
 import { OpcaoSegmento, Segmentado } from '../../../ui/segmentado';
@@ -30,41 +30,19 @@ export class AdminOrganizacoes implements OnInit {
   ];
 
   protected readonly ordem = signal<OrdemOrganizacoes>('criadaEm,desc');
-  protected readonly organizacoes = signal<OrganizacaoAdmin[] | null>(null);
-  protected readonly total = signal(0);
-  protected readonly erro = signal<string | null>(null);
-  protected readonly carregando = signal(false);
-  private proximaPagina = 0;
+  protected readonly lista = new ListaPaginada<OrganizacaoAdmin>((pagina, tamanho) =>
+    this.adminService.organizacoes(pagina, this.ordem(), tamanho),
+  );
 
   ngOnInit(): void {
-    this.carregar();
+    this.lista.recomecar();
   }
 
   protected ordenar(ordem: OrdemOrganizacoes | undefined): void {
-    if (!ordem || ordem === this.ordem()) {
-      return;
+    if (ordem && ordem !== this.ordem()) {
+      this.ordem.set(ordem);
+      this.lista.recomecar();
     }
-    this.ordem.set(ordem);
-    this.organizacoes.set(null);
-    this.proximaPagina = 0;
-    this.carregar();
-  }
-
-  /** Traz a próxima página e junta à lista que já está na tela. */
-  protected carregar(): void {
-    this.carregando.set(true);
-    this.adminService.organizacoes(this.proximaPagina, this.ordem()).subscribe({
-      next: (pagina) => {
-        this.organizacoes.update((atual) => [...(atual ?? []), ...pagina.content]);
-        this.total.set(pagina.page.totalElements);
-        this.proximaPagina = pagina.page.number + 1;
-        this.carregando.set(false);
-      },
-      error: (e) => {
-        this.erro.set(mensagemDeErro(e));
-        this.carregando.set(false);
-      },
-    });
   }
 
   protected uso(o: OrganizacaoAdmin): string {

@@ -12,11 +12,19 @@
     </div>
   </header>
 
-  @if (erro(); as mensagem) {
+  @if (lista.erro(); as mensagem) {
     <p class="nota nota-erro" role="alert"><ui-icone nome="alerta" [tamanho]="18" />{{ mensagem }}</p>
-  } @else if (cotacoes(); as lista) {
+  } @else if (total() === 0) {
+    <div class="lista">
+      <div class="vazio">
+        <p class="vazio-titulo">Nenhuma cotação ainda</p>
+        <p>Publique o que você precisa comprar e receba propostas dos fornecedores.</p>
+        <a class="botao botao-primario" routerLink="/pages/cadastro-cotacao">Nova cotação</a>
+      </div>
+    </div>
+  } @else {
     <div class="filtros">
-      <ui-segmentado rotulo="Situação" [opcoes]="filtros()" [(valor)]="filtro" />
+      <ui-segmentado rotulo="Situação" [opcoes]="filtros()" [valor]="filtro()" (valorChange)="filtrar($event)" />
       <div class="busca">
         <ui-icone nome="buscar" [tamanho]="17" />
         <input class="entrada" type="search" placeholder="Buscar" aria-label="Buscar cotações"
@@ -24,45 +32,41 @@
       </div>
     </div>
 
-    @if (filtradas().length > 0) {
-      <ul class="lista" role="list">
-        @for (c of filtradas(); track c.id) {
-          <li>
-            <a class="linha" [routerLink]="['/pages/detalhe-cotacao', c.id]">
-              <span class="linha-principal">
-                <span class="linha-titulo">{{ c.nomeServico }}</span>
-                <span class="linha-detalhe">
-                  {{ c.categoriaDescricao ?? 'Sem categoria' }} · criada em {{ c.dataCriacao | date: 'dd/MM/yyyy' }}
-                  @if (c.dataLimite) {
-                    · prazo {{ c.dataLimite | date: 'dd/MM' }}
+    @if (lista.itens(); as itens) {
+      @if (itens.length > 0) {
+        <ul class="lista" role="list">
+          @for (c of itens; track c.id) {
+            <li>
+              <a class="linha" [routerLink]="['/pages/detalhe-cotacao', c.id]">
+                <span class="linha-principal">
+                  <span class="linha-titulo">{{ c.nomeServico }}</span>
+                  <span class="linha-detalhe">
+                    {{ c.categoriaDescricao ?? 'Sem categoria' }} · criada em {{ c.dataCriacao | date: 'dd/MM/yyyy' }}
+                    @if (c.dataLimite) {
+                      · prazo {{ c.dataLimite | date: 'dd/MM' }}
+                    }
+                  </span>
+                  <ui-status class="status-celular" [tom]="status[c.status].tom">{{ status[c.status].texto }}</ui-status>
+                </span>
+                <span class="linha-lateral coluna-propostas">
+                  <span class="numeros">{{ c.quantidadePropostas === 1 ? '1 proposta' : c.quantidadePropostas + ' propostas' }}</span>
+                  @if (c.melhorOferta !== null) {
+                    <span class="ajuda numeros">menor {{ c.melhorOferta | currency: 'BRL' : 'symbol' : '1.0-0' }}</span>
                   }
                 </span>
-                <ui-status class="status-celular" [tom]="status[c.status].tom">{{ status[c.status].texto }}</ui-status>
-              </span>
-              <span class="linha-lateral coluna-propostas">
-                <span class="numeros">{{ c.quantidadePropostas === 1 ? '1 proposta' : c.quantidadePropostas + ' propostas' }}</span>
-                @if (c.melhorOferta !== null) {
-                  <span class="ajuda numeros">menor {{ c.melhorOferta | currency: 'BRL' : 'symbol' : '1.0-0' }}</span>
-                }
-              </span>
-              <ui-status class="coluna-status" [tom]="status[c.status].tom">{{ status[c.status].texto }}</ui-status>
-              <ui-icone class="linha-seta" nome="avancar" [tamanho]="18" />
-            </a>
-          </li>
-        }
-      </ul>
-    } @else if (lista.length === 0) {
-      <div class="lista">
-        <div class="vazio">
-          <p class="vazio-titulo">Nenhuma cotação ainda</p>
-          <p>Publique o que você precisa comprar e receba propostas dos fornecedores.</p>
-          <a class="botao botao-primario" routerLink="/pages/cadastro-cotacao">Nova cotação</a>
-        </div>
-      </div>
+                <ui-status class="coluna-status" [tom]="status[c.status].tom">{{ status[c.status].texto }}</ui-status>
+                <ui-icone class="linha-seta" nome="avancar" [tamanho]="18" />
+              </a>
+            </li>
+          }
+        </ul>
+        <ui-carregar-mais [mostrando]="itens.length" [total]="lista.total()" [carregando]="lista.carregando()"
+                          singular="cotação" plural="cotações" (carregar)="lista.carregarMais()" />
+      } @else {
+        <div class="lista"><p class="vazio">Nenhuma cotação com esses filtros.</p></div>
+      }
     } @else {
-      <div class="lista"><p class="vazio">Nenhuma cotação com esses filtros.</p></div>
+      <div class="carregando-pagina" role="status"><span class="girando"></span><span class="visually-hidden">Carregando</span></div>
     }
-  } @else {
-    <div class="carregando-pagina" role="status"><span class="girando"></span><span class="visually-hidden">Carregando</span></div>
   }
 </div>

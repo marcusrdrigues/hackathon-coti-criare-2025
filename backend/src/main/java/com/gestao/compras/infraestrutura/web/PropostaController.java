@@ -1,7 +1,11 @@
 package com.gestao.compras.infraestrutura.web;
 
+import com.gestao.compartilhado.aplicacao.Pagina;
+import com.gestao.compartilhado.aplicacao.PedidoDePagina;
+import com.gestao.compartilhado.infraestrutura.web.PaginaResponse;
 import com.gestao.compras.aplicacao.PropostaMapper;
 import com.gestao.compras.aplicacao.PropostaService;
+import com.gestao.compras.aplicacao.SituacaoProposta;
 import com.gestao.compras.aplicacao.dto.PropostaRequest;
 import com.gestao.compras.aplicacao.dto.PropostaResponse;
 import com.gestao.compras.dominio.Proposta;
@@ -27,6 +31,9 @@ import java.util.UUID;
 @Tag(name = "Propostas", description = "Lances dos fornecedores para as cotações")
 public class PropostaController {
 
+    /** A ordem das propostas do fornecedor é fixa: negociações ativas primeiro, depois as mais recentes. */
+    private static final PedidoDePagina.Ordem RECENTES = new PedidoDePagina.Ordem("dataEnvio", false);
+
     private final PropostaService propostaService;
     private final PropostaMapper propostaMapper;
     private final UsuarioAtual usuarioAtual;
@@ -45,11 +52,19 @@ public class PropostaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(propostaMapper.toResponse(proposta));
     }
 
-    @Operation(summary = "Minhas propostas", description = "Perfil FORNECEDOR. Propostas enviadas pelo fornecedor do token")
+    @Operation(summary = "Minhas propostas", description = "Perfil FORNECEDOR. Propostas do fornecedor do token numa "
+            + "situação (ANDAMENTO ou HISTORICO), paginadas (page, size até 50): negociações ativas primeiro, depois "
+            + "as enviadas mais recentemente")
     @PreAuthorize("hasRole('FORNECEDOR')")
     @GetMapping("/minhas")
-    public ResponseEntity<List<PropostaResponse>> minhas() {
-        return ResponseEntity.ok(paraResposta(propostaService.listarPorFornecedor(usuarioAtual.obter().organizacaoId())));
+    public ResponseEntity<PaginaResponse<PropostaResponse>> minhas(
+            @Parameter(description = "ANDAMENTO ou HISTORICO") @RequestParam(defaultValue = "ANDAMENTO")
+            SituacaoProposta situacao,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pagina<Proposta> pagina = propostaService.buscarDoFornecedor(usuarioAtual.obter(), situacao,
+                new PedidoDePagina(page, size, RECENTES));
+        return ResponseEntity.ok(PaginaResponse.de(pagina.map(propostaMapper::toResponse)));
     }
 
     @Operation(summary = "Buscar proposta", description = "Só o fornecedor autor e a empresa dona da cotação")

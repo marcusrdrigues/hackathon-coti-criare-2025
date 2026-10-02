@@ -6,17 +6,17 @@
     </div>
   </header>
 
-  @if (erro(); as mensagem) {
+  @if (lista.erro(); as mensagem) {
     <p class="nota nota-erro" role="alert"><ui-icone nome="alerta" [tamanho]="18" />{{ mensagem }}</p>
   } @else {
     <div class="filtros">
       <ui-segmentado rotulo="Ordenar por" [opcoes]="ordens" [valor]="ordem()" (valorChange)="ordenar($event)" />
     </div>
 
-    @if (organizacoes(); as lista) {
-      @if (lista.length > 0) {
+    @if (lista.itens(); as itens) {
+      @if (itens.length > 0) {
         <ul class="lista" role="list">
-          @for (o of lista; track o.id) {
+          @for (o of itens; track o.id) {
             <li class="linha">
               <span class="inicial" aria-hidden="true">{{ iniciais(o.razaoSocial) }}</span>
               <div class="linha-principal">
@@ -33,8 +33,8 @@
             </li>
           }
         </ul>
-        <ui-carregar-mais [mostrando]="lista.length" [total]="total()" [carregando]="carregando()"
-                          singular="organização" plural="organizações" (carregar)="carregar()" />
+        <ui-carregar-mais [mostrando]="itens.length" [total]="lista.total()" [carregando]="lista.carregando()"
+                          singular="organização" plural="organizações" (carregar)="lista.carregarMais()" />
       } @else {
         <div class="lista">
           <div class="vazio">

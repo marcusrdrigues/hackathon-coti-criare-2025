@@ -1,5 +1,5 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Proposta } from '../../../core/models';
 import { aoReceberAviso, mudouNegociacao } from '../../../core/services/avisos.service';
@@ -7,6 +7,8 @@ import { NotificacaoService } from '../../../core/services/notificacao.service';
 import { PropostaService } from '../../../core/services/proposta.service';
 import { mensagemDeErro } from '../../../core/utils/erros';
 import { InfoStatus, iniciais } from '../../../core/utils/formatos';
+import { ListaPaginada } from '../../../core/utils/lista-paginada';
+import { CarregarMais } from '../../../ui/carregar-mais';
 import { ConfirmacaoService } from '../../../ui/confirmacao';
 import { Icone } from '../../../ui/icone';
 import { Status } from '../../../ui/status';
@@ -15,7 +17,7 @@ import { AbasPropostas } from '../../shared/abas-propostas';
 /** Propostas do fornecedor que ainda não tiveram desfecho. */
 @Component({
   selector: 'app-propostas-enviadas',
-  imports: [RouterLink, CurrencyPipe, DatePipe, Icone, Status, AbasPropostas],
+  imports: [RouterLink, CurrencyPipe, DatePipe, CarregarMais, Icone, Status, AbasPropostas],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './propostas-enviadas.html',
   styleUrl: './propostas-enviadas.css',
@@ -27,30 +29,18 @@ export class PropostasEnviadas implements OnInit {
 
   protected readonly iniciais = iniciais;
 
-  protected readonly propostas = signal<Proposta[] | null>(null);
-  protected readonly erro = signal<string | null>(null);
-
-  protected readonly enviadas = computed(() =>
-    (this.propostas() ?? [])
-      .filter((p) => this.emAndamento(p))
-      // Negociações ativas primeiro: são as que pedem resposta
-      .sort((a, b) => Number(!!b.negociacaoId) - Number(!!a.negociacaoId)),
+  /** Negociações ativas primeiro (são as que pedem resposta), na ordem da API */
+  protected readonly lista = new ListaPaginada<Proposta>((pagina, tamanho) =>
+    this.propostaService.minhas('ANDAMENTO', pagina, tamanho),
   );
 
   constructor() {
     // A situação de cada proposta muda quando a empresa abre, fecha ou encerra a negociação
-    aoReceberAviso(mudouNegociacao, () => this.carregar());
+    aoReceberAviso(mudouNegociacao, () => this.lista.recarregar());
   }
 
   ngOnInit(): void {
-    this.carregar();
-  }
-
-  carregar(): void {
-    this.propostaService.listarMinhas().subscribe({
-      next: (lista) => this.propostas.set(lista),
-      error: (e) => this.erro.set(mensagemDeErro(e)),
-    });
+    this.lista.recomecar();
   }
 
   situacao(p: Proposta): InfoStatus {
@@ -76,16 +66,9 @@ export class PropostasEnviadas implements OnInit {
     this.propostaService.retirar(p.id).subscribe({
       next: () => {
         this.notificacao.info('Proposta retirada.');
-        this.carregar();
+        this.lista.remover((outra) => outra.id !== p.id);
       },
       error: (e) => this.notificacao.erro(mensagemDeErro(e)),
     });
-  }
-
-  private emAndamento(p: Proposta): boolean {
-    if (p.negociacaoStatus) {
-      return p.negociacaoStatus === 'EM_ANDAMENTO';
-    }
-    return p.status === 'ENVIADA' || p.status === 'EM_ANALISE';
   }
 }

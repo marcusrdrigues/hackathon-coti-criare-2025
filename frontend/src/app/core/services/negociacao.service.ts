@@ -2,7 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL } from '../api.config';
-import { Mensagem, MensagemRequest, Negociacao } from '../models';
+import { Mensagem, MensagemRequest, NaoLidas, Negociacao, Pagina, SituacaoNegociacao } from '../models';
+import { parametrosDePagina } from './paginas';
 
 @Injectable({ providedIn: 'root' })
 export class NegociacaoService {
@@ -14,9 +15,15 @@ export class NegociacaoService {
     return this.http.post<Negociacao>(this.url, { propostaId });
   }
 
-  /** Negociações em que o usuário logado é uma das partes (mais recentes primeiro). */
-  listarMinhas(): Observable<Negociacao[]> {
-    return this.http.get<Negociacao[]>(`${this.url}/minhas`);
+  /** Uma página das negociações da organização logada: em andamento primeiro, depois as mais recentes. */
+  minhas(situacao: SituacaoNegociacao, pagina: number, tamanho?: number): Observable<Pagina<Negociacao>> {
+    const params = parametrosDePagina(pagina, tamanho).set('situacao', situacao);
+    return this.http.get<Pagina<Negociacao>>(`${this.url}/minhas`, { params });
+  }
+
+  /** Mensagens da outra parte ainda não vistas, em todas as negociações. */
+  naoLidas(): Observable<NaoLidas> {
+    return this.http.get<NaoLidas>(`${this.url}/nao-lidas`);
   }
 
   buscar(id: string): Observable<Negociacao> {

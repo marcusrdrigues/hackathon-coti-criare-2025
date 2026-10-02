@@ -4,14 +4,11 @@ import com.gestao.administracao.aplicacao.dto.OrganizacaoResumoResponse;
 import com.gestao.administracao.aplicacao.porta.ConsultasDaAdministracao;
 import com.gestao.compartilhado.aplicacao.Pagina;
 import com.gestao.compartilhado.aplicacao.PedidoDePagina;
+import com.gestao.compartilhado.infraestrutura.persistencia.PaginasJpa;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import java.util.Map;
-import java.util.Objects;
 
 /** Adaptador: as consultas do superadmin com JPQL, convertendo a paginação de e para o Spring Data. */
 @Repository
@@ -27,13 +24,8 @@ class ConsultasDaAdministracaoJpa implements ConsultasDaAdministracao {
 
     @Override
     public Pagina<OrganizacaoResumoResponse> organizacoes(PedidoDePagina pedido) {
-        String propriedade = Objects.requireNonNull(PROPRIEDADES.get(pedido.ordem().campo()), "ordem não permitida");
-        Sort ordem = Sort.by(pedido.ordem().crescente() ? Sort.Direction.ASC : Sort.Direction.DESC, propriedade)
-                .and(Sort.by("id")); // desempate: a mesma ordem em todas as páginas
-        Page<AdministracaoJpa.OrganizacaoComTotais> pagina =
-                jpa.organizacoes(PageRequest.of(pedido.numero(), pedido.tamanho(), ordem));
-        return Pagina.de(pagina.getContent().stream().map(ConsultasDaAdministracaoJpa::paraResposta).toList(),
-                pedido, pagina.getTotalElements());
+        return PaginasJpa.pagina(jpa.organizacoes(PaginasJpa.ordenada(pedido, PROPRIEDADES)), pedido)
+                .map(ConsultasDaAdministracaoJpa::paraResposta);
     }
 
     private static OrganizacaoResumoResponse paraResposta(AdministracaoJpa.OrganizacaoComTotais linha) {

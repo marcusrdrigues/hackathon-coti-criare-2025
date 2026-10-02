@@ -5,6 +5,7 @@ import com.gestao.compras.aplicacao.dto.CotacaoResponse;
 import com.gestao.compras.dominio.Cotacao;
 import com.gestao.compras.dominio.Proposta;
 import com.gestao.compras.dominio.StatusProposta;
+import com.gestao.identidade.aplicacao.UsuarioAutenticado;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -24,8 +25,9 @@ public class CotacaoMapper {
         return cotacao;
     }
 
+    /** A visão da empresa dona: com a melhor oferta. */
     public CotacaoResponse toResponse(Cotacao cotacao) {
-        List<Proposta> propostas = cotacao.getPropostas() != null ? cotacao.getPropostas() : List.of();
+        List<Proposta> propostas = propostas(cotacao);
 
         // Melhor oferta = menor valor entre as propostas que ainda estão no jogo
         BigDecimal melhorOferta = propostas.stream()
@@ -34,7 +36,33 @@ public class CotacaoMapper {
                 .filter(Objects::nonNull)
                 .min(BigDecimal::compareTo)
                 .orElse(null);
+        return resposta(cotacao, propostas.size(), melhorOferta, null);
+    }
 
+    /**
+     * A visão de quem pede: só a empresa dona vê a melhor oferta. Os outros não veem os lances,
+     * e o fornecedor vê a proposta que ele mesmo enviou.
+     */
+    public CotacaoResponse paraQuemPede(Cotacao cotacao, UsuarioAutenticado usuario) {
+        if (usuario.ehEmpresa() && cotacao.getEmpresa().getId().equals(usuario.organizacaoId())) {
+            return toResponse(cotacao);
+        }
+        List<Proposta> propostas = propostas(cotacao);
+        CotacaoResponse.MinhaProposta minha = propostas.stream()
+                .filter(p -> usuario.ehFornecedor() && p.getFornecedor() != null
+                        && usuario.organizacaoId().equals(p.getFornecedor().getId()))
+                .findFirst()
+                .map(p -> new CotacaoResponse.MinhaProposta(p.getId(), p.getValor(), p.getStatus()))
+                .orElse(null);
+        return resposta(cotacao, propostas.size(), null, minha);
+    }
+
+    private static List<Proposta> propostas(Cotacao cotacao) {
+        return cotacao.getPropostas() != null ? cotacao.getPropostas() : List.of();
+    }
+
+    private static CotacaoResponse resposta(Cotacao cotacao, long quantidade, BigDecimal melhorOferta,
+                                            CotacaoResponse.MinhaProposta minha) {
         return new CotacaoResponse(
                 cotacao.getId(),
                 cotacao.getNomeServico(),
@@ -47,8 +75,9 @@ public class CotacaoMapper {
                 cotacao.getStatus(),
                 cotacao.getEmpresa().getId(),
                 cotacao.getEmpresa().getRazaoSocial(),
-                propostas.size(),
-                melhorOferta
+                quantidade,
+                melhorOferta,
+                minha
         );
     }
 }

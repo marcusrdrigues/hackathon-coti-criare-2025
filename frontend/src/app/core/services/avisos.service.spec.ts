@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { Observable, Subject, of } from 'rxjs';
-import { Negociacao } from '../models';
+import { NaoLidas } from '../models';
 import { AvisoTempoReal, AvisosService, FILA_AVISOS, destinoDoAviso } from './avisos.service';
 import { NegociacaoService } from './negociacao.service';
 import { NotificacaoService } from './notificacao.service';
@@ -11,22 +11,22 @@ function aviso(parcial: Partial<AvisoTempoReal>): AvisoTempoReal {
   return { tipo: 'MENSAGEM', negociacaoId: 'n1', cotacaoId: 'c1', titulo: 'Hospital Santa Vida', texto: 'Olá', ...parcial };
 }
 
-function negociacao(id: string, naoLidas: number): Negociacao {
-  return { id, naoLidas } as Negociacao;
+function naoLidas(porNegociacao: Record<string, number>): NaoLidas {
+  return { total: Object.values(porNegociacao).reduce((a, b) => a + b, 0), porNegociacao };
 }
 
 describe('AvisosService', () => {
   let fila: Subject<AvisoTempoReal>;
   let destinoAssinado: string | null;
   let lidas: string[];
-  let servidor: Negociacao[];
+  let servidor: NaoLidas;
 
   beforeEach(() => {
     vi.useFakeTimers();
     fila = new Subject<AvisoTempoReal>();
     destinoAssinado = null;
     lidas = [];
-    servidor = [negociacao('n1', 2), negociacao('n2', 0), negociacao('n3', 1)];
+    servidor = naoLidas({ n1: 2, n2: 0, n3: 1 });
 
     TestBed.configureTestingModule({
       providers: [
@@ -43,7 +43,7 @@ describe('AvisosService', () => {
         {
           provide: NegociacaoService,
           useValue: {
-            listarMinhas: () => of(servidor),
+            naoLidas: () => of(servidor),
             marcarComoLida: (id: string) => {
               lidas.push(id);
               return of(undefined);

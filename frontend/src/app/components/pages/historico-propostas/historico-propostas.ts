@@ -1,9 +1,11 @@
 import { CurrencyPipe, DatePipe, NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Proposta } from '../../../core/models';
+import { DashboardService } from '../../../core/services/dashboard.service';
 import { PropostaService } from '../../../core/services/proposta.service';
-import { mensagemDeErro } from '../../../core/utils/erros';
+import { ListaPaginada } from '../../../core/utils/lista-paginada';
+import { CarregarMais } from '../../../ui/carregar-mais';
 import { Icone } from '../../../ui/icone';
 import { Status } from '../../../ui/status';
 import { AbasPropostas } from '../../shared/abas-propostas';
@@ -11,33 +13,27 @@ import { AbasPropostas } from '../../shared/abas-propostas';
 /** Propostas que já tiveram desfecho: vencidas ou perdidas. */
 @Component({
   selector: 'app-historico-propostas',
-  imports: [RouterLink, CurrencyPipe, DatePipe, NgTemplateOutlet, Icone, Status, AbasPropostas],
+  imports: [RouterLink, CurrencyPipe, DatePipe, NgTemplateOutlet, CarregarMais, Icone, Status, AbasPropostas],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './historico-propostas.html',
   styleUrl: './historico-propostas.css',
 })
 export class HistoricoPropostas implements OnInit {
   private readonly propostaService = inject(PropostaService);
+  private readonly dashboardService = inject(DashboardService);
 
-  protected readonly propostas = signal<Proposta[] | null>(null);
-  protected readonly erro = signal<string | null>(null);
-
-  protected readonly historico = computed(() =>
-    (this.propostas() ?? [])
-      .filter((p) => p.negociacaoStatus === 'FINALIZADA' || p.status === 'RECUSADA')
-      .sort((a, b) => (b.dataEnvio ?? '').localeCompare(a.dataEnvio ?? '')),
+  /** As mais recentes primeiro, na ordem da API */
+  protected readonly lista = new ListaPaginada<Proposta>((pagina, tamanho) =>
+    this.propostaService.minhas('HISTORICO', pagina, tamanho),
   );
-
-  protected readonly totalGanho = computed(() =>
-    this.historico()
-      .filter((p) => this.ganhou(p))
-      .reduce((soma, p) => soma + (p.valorFinal ?? 0), 0),
-  );
+  /** Soma de todos os negócios fechados (o painel já calcula, sem depender das páginas carregadas) */
+  protected readonly totalGanho = signal<number | null>(null);
 
   ngOnInit(): void {
-    this.propostaService.listarMinhas().subscribe({
-      next: (lista) => this.propostas.set(lista),
-      error: (e) => this.erro.set(mensagemDeErro(e)),
+    this.lista.recomecar();
+    this.dashboardService.fornecedor().subscribe({
+      next: (numeros) => this.totalGanho.set(numeros.valorTotalGanho),
+      error: () => undefined,
     });
   }
 

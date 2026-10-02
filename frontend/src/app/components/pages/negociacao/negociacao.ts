@@ -33,7 +33,7 @@ import { Icone } from '../../../ui/icone';
 import { Menu, MenuItem } from '../../../ui/menu';
 import { Painel } from '../../../ui/painel';
 import { Status } from '../../../ui/status';
-import { ListaNegociacoes, ordenarNegociacoes } from '../../shared/lista-negociacoes/lista-negociacoes';
+import { ListaNegociacoes } from '../../shared/lista-negociacoes/lista-negociacoes';
 
 /** Sem conexão em tempo real, a sala volta a consultar a API neste intervalo. */
 const ATUALIZACAO_SEM_CONEXAO_MS = 10_000;
@@ -55,6 +55,9 @@ interface GrupoDoDia {
  * contrapropostas; a empresa fecha o negócio ou encerra sem acordo; o fornecedor
  * pode aceitar a última oferta da empresa.
  */
+/** Quantas conversas a coluna da esquerda mostra (o máximo de uma página da API). */
+const CONVERSAS_NA_COLUNA = 50;
+
 @Component({
   selector: 'app-negociacao',
   imports: [
@@ -263,14 +266,12 @@ export class Negociacao implements OnInit {
     });
   }
 
+  /** A coluna de conversas mostra as mais relevantes: as em andamento e as mais recentes. */
   private carregarOutras(): void {
     this.negociacaoService
-      .listarMinhas()
+      .minhas('TODAS', 0, CONVERSAS_NA_COLUNA)
       .pipe(catchError(() => EMPTY))
-      .subscribe((lista) => {
-        this.outras.set(ordenarNegociacoes(lista));
-        this.avisos.atualizar(lista);
-      });
+      .subscribe((pagina) => this.outras.set(pagina.content));
   }
 
   /** Mensagem nova, mudança de status ou "digitando" da outra parte. */

@@ -1,5 +1,7 @@
 package com.gestao.compras.aplicacao;
 
+import com.gestao.compartilhado.aplicacao.Pagina;
+import com.gestao.compartilhado.aplicacao.PedidoDePagina;
 import com.gestao.compartilhado.dominio.RecursoNaoEncontradoException;
 import com.gestao.compartilhado.dominio.RegraDeNegocioException;
 import com.gestao.compras.aplicacao.porta.MensagemNegociacaoRepositorio;
@@ -97,11 +99,11 @@ public class NegociacaoService {
         return acesso.negociacaoVisivel(id, usuario);
     }
 
+    /** Uma página das negociações da organização de quem pede: as em andamento primeiro. */
     @Transactional(readOnly = true)
-    public List<Negociacao> listarDoUsuario(UsuarioAutenticado usuario) {
-        return usuario.ehEmpresa()
-                ? negociacaoRepositorio.listarDaEmpresa(usuario.organizacaoId())
-                : negociacaoRepositorio.listarDoFornecedor(usuario.organizacaoId());
+    public Pagina<Negociacao> buscarDoUsuario(UsuarioAutenticado usuario, SituacaoNegociacao situacao,
+                                              PedidoDePagina pedido) {
+        return negociacaoRepositorio.buscarDaOrganizacao(usuario.organizacaoId(), usuario.ehEmpresa(), situacao, pedido);
     }
 
     /**

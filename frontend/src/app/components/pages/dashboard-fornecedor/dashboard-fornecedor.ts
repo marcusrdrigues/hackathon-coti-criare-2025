@@ -4,13 +4,16 @@ import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { Cotacao, DashboardFornecedor as DashboardFornecedorModel, Negociacao } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
-import { AvisosService, aoReceberAviso, mudouNegociacao } from '../../../core/services/avisos.service';
+import { aoReceberAviso, mudouNegociacao } from '../../../core/services/avisos.service';
 import { CotacaoService } from '../../../core/services/cotacao.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { NegociacaoService } from '../../../core/services/negociacao.service';
 import { mensagemDeErro } from '../../../core/utils/erros';
 import { diasRestantes } from '../../../core/utils/formatos';
 import { Icone } from '../../../ui/icone';
+
+/** Quantas oportunidades do mural o painel mostra. */
+const OPORTUNIDADES_NO_PAINEL = 5;
 
 @Component({
   selector: 'app-dashboard-fornecedor',
@@ -23,7 +26,6 @@ export class DashboardFornecedor implements OnInit {
   private readonly cotacaoService = inject(CotacaoService);
   private readonly negociacaoService = inject(NegociacaoService);
   protected readonly auth = inject(AuthService);
-  private readonly avisos = inject(AvisosService);
 
   protected readonly numeros = signal<DashboardFornecedorModel | null>(null);
   protected readonly oportunidades = signal<Cotacao[]>([]);
@@ -44,14 +46,13 @@ export class DashboardFornecedor implements OnInit {
   private carregar(): void {
     forkJoin({
       numeros: this.dashboardService.fornecedor(),
-      abertas: this.cotacaoService.listarAbertas(),
-      negociacoes: this.negociacaoService.listarMinhas(),
+      abertas: this.cotacaoService.mural(0, {}, OPORTUNIDADES_NO_PAINEL),
+      negociacoes: this.negociacaoService.minhas('ANDAMENTO', 0),
     }).subscribe({
       next: ({ numeros, abertas, negociacoes }) => {
-        this.oportunidades.set(abertas.slice(0, 5));
-        this.negociacoes.set(negociacoes);
+        this.oportunidades.set(abertas.content);
+        this.negociacoes.set(negociacoes.content);
         this.numeros.set(numeros);
-        this.avisos.atualizar(negociacoes);
       },
       error: (e) => this.erro.set(mensagemDeErro(e)),
     });

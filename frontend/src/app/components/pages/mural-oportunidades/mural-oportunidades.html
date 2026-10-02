@@ -6,9 +6,9 @@
     </div>
   </header>
 
-  @if (erro(); as mensagem) {
+  @if (lista.erro(); as mensagem) {
     <p class="nota nota-erro" role="alert"><ui-icone nome="alerta" [tamanho]="18" />{{ mensagem }}</p>
-  } @else if (oportunidades(); as lista) {
+  } @else {
     <div class="filtros">
       <div class="busca">
         <ui-icone nome="buscar" [tamanho]="17" />
@@ -18,10 +18,11 @@
       <ui-seletor class="filtro-categoria" rotulo="Categoria" [opcoes]="categorias()" [(valor)]="categoria" />
     </div>
 
-    @if (filtradas().length > 0) {
+    @if (lista.itens(); as itens) {
+    @if (itens.length > 0) {
       <ul class="lista" role="list">
-        @for (item of filtradas(); track item.id) {
-          @let minha = minhasPropostas().get(item.id);
+        @for (item of itens; track item.id) {
+          @let minha = item.minhaProposta;
           @let dias = diasRestantes(item.dataLimite);
           <li class="linha oportunidade">
             <div class="linha-principal">
@@ -63,18 +64,21 @@
           </li>
         }
       </ul>
-    } @else if (lista.length === 0) {
+      <ui-carregar-mais [mostrando]="itens.length" [total]="lista.total()" [carregando]="lista.carregando()"
+                        singular="cotação" plural="cotações" (carregar)="lista.carregarMais()" />
+    } @else if (comFiltro()) {
+      <div class="lista"><p class="vazio">Nenhuma cotação com esses filtros.</p></div>
+    } @else {
       <div class="lista">
         <div class="vazio">
           <p class="vazio-titulo">Nenhuma cotação aberta agora</p>
           <p>Quando uma empresa publicar, ela aparece aqui.</p>
         </div>
       </div>
-    } @else {
-      <div class="lista"><p class="vazio">Nenhuma cotação com esses filtros.</p></div>
     }
-  } @else {
-    <div class="carregando-pagina" role="status"><span class="girando"></span><span class="visually-hidden">Carregando</span></div>
+    } @else {
+      <div class="carregando-pagina" role="status"><span class="girando"></span><span class="visually-hidden">Carregando</span></div>
+    }
   }
 </div>
 

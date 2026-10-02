@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, Subject, Subscription, filter } from 'rxjs';
-import { Negociacao } from '../models';
+import { NaoLidas } from '../models';
 import { NegociacaoService } from './negociacao.service';
 import { NotificacaoService } from './notificacao.service';
 import { TempoRealService } from './tempo-real.service';
@@ -23,7 +23,7 @@ const ESPERA_LEITURA_MS = 800;
 /**
  * Mensagens não lidas e avisos ao vivo, em qualquer tela.
  *
- * - O total por negociação vem da API (campo naoLidas) e é mantido ao vivo pela fila de avisos
+ * - O total por negociação vem da API (/negociacoes/nao-lidas) e é mantido ao vivo pela fila de avisos
  * - A negociação aberta na tela, com a aba visível, não acumula: o que chega já é visto
  * - Cada aviso vira um toast com atalho e é repassado às telas (recebidos$) para se atualizarem
  */
@@ -84,13 +84,12 @@ export class AvisosService {
     this.contagem.set({});
   }
 
-  /** Atualiza os totais com uma lista vinda da API (as telas que já buscam a lista aproveitam). */
-  atualizar(negociacoes: Negociacao[]): void {
+  /** Troca os totais pelos da API. A negociação aberta na tela não acumula. */
+  aplicar(naoLidas: NaoLidas): void {
     const contagem: Record<string, number> = {};
-    for (const n of negociacoes) {
-      const total = n.id === this.aberta && this.vendo(n.id) ? 0 : (n.naoLidas ?? 0);
-      if (total > 0) {
-        contagem[n.id] = total;
+    for (const [id, total] of Object.entries(naoLidas.porNegociacao)) {
+      if (total > 0 && !(id === this.aberta && this.vendo(id))) {
+        contagem[id] = total;
       }
     }
     this.contagem.set(contagem);
@@ -153,9 +152,10 @@ export class AvisosService {
     this.avisos.next(aviso);
   }
 
-  private sincronizar(): void {
-    this.negociacaoService.listarMinhas().subscribe({
-      next: (lista) => this.atualizar(lista),
+  /** Busca os totais na API (ao entrar, depois de uma queda da conexão ou quando uma tela pede). */
+  sincronizar(): void {
+    this.negociacaoService.naoLidas().subscribe({
+      next: (naoLidas) => this.aplicar(naoLidas),
       error: () => undefined,
     });
   }

@@ -8,12 +8,12 @@
 
   <app-abas-propostas atual="andamento" />
 
-  @if (erro(); as mensagem) {
+  @if (lista.erro(); as mensagem) {
     <p class="nota nota-erro" role="alert"><ui-icone nome="alerta" [tamanho]="18" />{{ mensagem }}</p>
-  } @else if (propostas() !== null) {
-    @if (enviadas().length > 0) {
+  } @else if (lista.itens(); as itens) {
+    @if (itens.length > 0) {
       <ul class="lista" role="list">
-        @for (p of enviadas(); track p.id) {
+        @for (p of itens; track p.id) {
           <li class="linha proposta">
             <span class="inicial" aria-hidden="true">{{ iniciais(p.empresaNome) }}</span>
             <div class="linha-principal">
@@ -34,6 +34,8 @@
           </li>
         }
       </ul>
+      <ui-carregar-mais [mostrando]="itens.length" [total]="lista.total()" [carregando]="lista.carregando()"
+                        singular="proposta" plural="propostas" (carregar)="lista.carregarMais()" />
     } @else {
       <div class="lista">
         <div class="vazio">

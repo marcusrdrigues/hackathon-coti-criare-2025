@@ -263,15 +263,21 @@ class SegurancaApiTest {
 
         mvc.perform(get("/api/v1/negociacoes/minhas").header(HttpHeaders.AUTHORIZATION, fornecedor))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].naoLidas").value(1));
+                .andExpect(jsonPath("$.content[0].naoLidas").value(1));
+        mvc.perform(get("/api/v1/negociacoes/nao-lidas").header(HttpHeaders.AUTHORIZATION, fornecedor))
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.porNegociacao['" + negociacao.getId() + "']").value(1));
         mvc.perform(get(url).header(HttpHeaders.AUTHORIZATION, fornecedor))
                 .andExpect(jsonPath("$.naoLidas").value(1));
 
         mvc.perform(patch(url + "/leitura").header(HttpHeaders.AUTHORIZATION, fornecedor))
                 .andExpect(status().isNoContent());
 
-        mvc.perform(get("/api/v1/negociacoes/minhas").header(HttpHeaders.AUTHORIZATION, fornecedor))
-                .andExpect(jsonPath("$[0].naoLidas").value(0));
+        mvc.perform(get("/api/v1/negociacoes/minhas").param("situacao", "ANDAMENTO")
+                        .header(HttpHeaders.AUTHORIZATION, fornecedor))
+                .andExpect(jsonPath("$.content[0].naoLidas").value(0));
+        mvc.perform(get("/api/v1/negociacoes/nao-lidas").header(HttpHeaders.AUTHORIZATION, fornecedor))
+                .andExpect(jsonPath("$.total").value(0));
         // Para a empresa, a própria mensagem nunca conta
         mvc.perform(get(url).header(HttpHeaders.AUTHORIZATION, bearer(login("empresa@api.com"))))
                 .andExpect(jsonPath("$.naoLidas").value(0));
