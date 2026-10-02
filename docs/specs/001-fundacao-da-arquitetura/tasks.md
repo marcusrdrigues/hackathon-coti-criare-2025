@@ -64,7 +64,7 @@ Cada passo é entregue com o CI verde (testes, ponta a ponta e quality gate) e c
 
 - [ ] Paginação nas listagens, com "Carregar mais" no front-end
 - [ ] Erros no formato Problem Details, com o front-end ajustado
-- [ ] ADR 0019
+- [ ] ADR 0020
 
 ## Passo 9 · Política de dados (R8)
 

@@ -82,7 +82,7 @@ sequenceDiagram
 | **Organizações e pessoas** | Empresa e fornecedor se cadastram com CNPJ; quem faz o cadastro vira a pessoa proprietária. Cada pessoa entra com o próprio e-mail e senha e age em nome da organização, com o painel e as telas do tipo dela. Cotações, propostas e mensagens registram quem as fez |
 | **Cotações** | A empresa publica o que precisa comprar, com categoria, prazo e orçamento opcional, e acompanha o status de cada uma |
 | **Propostas** | Fornecedores encontram as cotações no mural e enviam propostas; a empresa vê todas, com a melhor oferta destacada |
-| **Negociação** | Empresa e fornecedor trocam mensagens e contrapropostas numa linha do tempo até fechar o negócio ou encerrar sem acordo |
+| **Negociação** | Empresa e fornecedor trocam mensagens e ofertas numa conversa até fechar o negócio ou encerrar sem acordo. A oferta na mesa fica fixa acima do campo de mensagem, com a decisão de cada lado ("Fazer contraproposta", "Fechar por R$ …"); uma oferta nova abre num cartão próprio, que compara o valor com o da mesa e cujo botão diz o valor ("Enviar oferta de R$ …") |
 
 ---
 
@@ -112,7 +112,7 @@ sequenceDiagram
 ### 🔧 Em todas as telas
 
 - Login com JWT: a sessão sobrevive ao F5 e é renovada sozinha quando o token vence; *guards* de rota por perfil
-- Visual no padrão das interfaces da Apple, com **Liquid Glass** na camada que flutua: barra de abas em cápsula de vidro no celular, barra lateral e topo de vidro, menus e painéis translúcidos, botões em cápsula. O conteúdo continua sólido, e o vidro vira superfície sólida quando o sistema pede menos transparência ou mais contraste ([ADR 0018](docs/adr/0018-liquid-glass-na-camada-flutuante.md))
+- Visual no padrão das interfaces da Apple, com **Liquid Glass** na camada que flutua: barra de abas em cápsula de vidro no celular, barra lateral de vidro encostada na borda e **recolhível** aos ícones ([ADR 0019](docs/adr/0019-barra-lateral-encostada-e-recolhivel.md)), topo de vidro, menus e painéis translúcidos, botões em cápsula. O conteúdo continua sólido, e o vidro vira superfície sólida quando o sistema pede menos transparência ou mais contraste ([ADR 0018](docs/adr/0018-liquid-glass-na-camada-flutuante.md))
 - Componentes próprios (seletor, menu, controle segmentado, painel lateral, diálogo de confirmação), acessíveis pelo teclado e pelo leitor de tela
 - Avisos rápidos de sucesso e erro, com as mensagens que vêm da API
 - Moeda e datas no formato brasileiro (`R$ 1.234,56`, `31/12/2025`)
@@ -673,7 +673,7 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | `RastreioELogsTest` | Toda resposta com `X-Trace-Id`, o mesmo id no corpo dos erros (inclusive os do Spring Security), id enviado pelo cliente ignorado, e um fluxo inteiro (cadastro, senha errada, proposta, mensagem) sem senha, token, e-mail, nome de pessoa ou conteúdo sigiloso nos logs |
 | `GlobalExceptionHandlerTest` | Respostas de erro difíceis de provocar pela API: erro inesperado sem detalhes internos, violação de integridade, acesso negado por perfil e bloqueio de login com `Retry-After` |
 | `smoke-test-api.sh` | Contra a API real com PostgreSQL: login (inclusive de um membro da equipe), proteção das rotas, CORS, validações, regras de perfil e de posse, cotação → proposta → negociação → mensagens → fechamento, dashboards, refresh com rotação e reuso, logout e força bruta |
-| Playwright (`frontend/e2e`) | No navegador, com API e banco reais: empresa e fornecedor negociam do começo ao fim (publicar, propor pelo painel do mural, contraproposta, aceitar, fechar com confirmação), vendo um ao outro **ao vivo** (proposta e aviso chegando à empresa, contador de não lidas do fornecedor e atalho do aviso, "digitando…", aceite e fechamento sem recarregar), a proprietária convida, a pessoa aceita pelo link num outro navegador, trabalha como membro e perde o acesso ao ser removida, rota protegida, login com erro, cadastro com validação de CNPJ, sessão após F5, sair e tema claro/escuro. As telas de acesso rodam também num celular emulado |
+| Playwright (`frontend/e2e`) | No navegador, com API e banco reais: empresa e fornecedor negociam do começo ao fim (publicar, propor pelo painel do mural, contraproposta pelo cartão de oferta, aceitar, fechar com confirmação), vendo um ao outro **ao vivo** (proposta e aviso chegando à empresa, contador de não lidas do fornecedor e atalho do aviso, "digitando…", aceite e fechamento sem recarregar), a proprietária convida, a pessoa aceita pelo link num outro navegador, trabalha como membro e perde o acesso ao ser removida, rota protegida, login com erro, cadastro com validação de CNPJ, sessão após F5, sair, barra lateral recolhida e lembrada, e tema claro/escuro. As telas de acesso rodam também num celular emulado |
 | Front-end | Interceptor (token, renovação automática e expiração), guards por perfil, tema claro/escuro, seletor (teclado e busca por letra), controle segmentado, confirmação, máscara de CNPJ e componente raiz |
 
 O **GitHub Actions** (`.github/workflows/ci.yml`) roda a cada push: compila e testa o back-end (inclusive contra PostgreSQL com Testcontainers), sobe a API com PostgreSQL e executa o teste de fumaça, faz o build de produção e os testes do front-end, e roda os testes ponta a ponta com Playwright. O **CodeQL** procura vulnerabilidades no código Java e TypeScript, e o **Dependabot** abre PRs semanais com as atualizações de dependências.
@@ -751,6 +751,7 @@ A base que as próximas fases exigem, feita antes delas. Especificação: [spec 
 - [x] **Autorização por organização**, com teste de isolamento em todas as rotas e trava para rotas novas ([ADR 0016](docs/adr/0016-autorizacao-por-organizacao.md))
 - [x] **Equipe**: convite por link de uso único e gestão de membros ([ADR 0017](docs/adr/0017-equipe-com-convite-por-link.md))
 - [x] **Liquid Glass**: barra de abas em cápsula e barras de vidro, com versão sólida para acessibilidade ([ADR 0018](docs/adr/0018-liquid-glass-na-camada-flutuante.md))
+- [x] **Experiência da negociação**: oferta com valor no botão, oferta na mesa, barra lateral recolhível e revisão da escrita ([spec 002](docs/specs/002-experiencia-da-negociacao/spec.md), [ADR 0019](docs/adr/0019-barra-lateral-encostada-e-recolhivel.md))
 - [ ] **Superadmin**, criado só pela configuração do servidor
 - [ ] **Paginação** nas listagens e erros no padrão **Problem Details** (RFC 9457)
 - [ ] **Política de dados**: o que é sensível e onde cada dado pode aparecer (logs, auditoria, IA, demo)

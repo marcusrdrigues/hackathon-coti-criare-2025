@@ -1,6 +1,6 @@
 # 0018. Liquid Glass só na camada que flutua
 
-- **Status:** Aceita
+- **Status:** Aceita; a barra lateral flutuante foi substituída pelo [ADR 0019](0019-barra-lateral-encostada-e-recolhivel.md)
 - **Data:** 2026-10-02
 - **Complementa:** [ADR 0010](0010-design-tokens-e-tema-do-sistema.md) e [ADR 0011](0011-componentes-proprios-no-lugar-do-bootstrap.md)
 

@@ -7,7 +7,7 @@ Guia visual do Portal Criare. O front-end não usa biblioteca de componentes: os
 - **Hierarquia pela tipografia e pelo espaço, não por caixas.** Sem card dentro de card, sem borda colorida e sem sombra em tudo. O conteúdo fica direto no fundo, e o que é lista vira lista agrupada, como nos Ajustes do iPhone.
 - **Um ponto de cor.** A interface é em tons de cinza. O vermelho-sangue aparece na ação principal, no item ativo e no que é urgente. Status é um ponto colorido com texto, não uma pílula.
 - **Ícones só onde ajudam.** Na navegação, em botões sem texto (sempre com `aria-label`) e em avisos. Nunca como enfeite ao lado de um título.
-- **Texto direto.** Botões dizem o que fazem ("Publicar cotação", "Fechar negócio"). Frases normais, sem CAIXA ALTA.
+- **Texto direto.** Botões dizem o que fazem, com verbo e objeto ("Publicar cotação", "Cancelar convite", "Retirar proposta"), e trazem o valor quando há dinheiro em jogo ("Enviar oferta de R$ 54.000,00", "Fechar por R$ 55.000,00"). O botão de confirmação repete a ação do título ("Encerrar sem acordo?" → "Encerrar sem acordo"), nunca "OK" ou "Sim". Frases normais, sem CAIXA ALTA.
 - **Claro e escuro desde o início.** Toda tela funciona nos dois temas. O padrão é seguir o sistema, e a pessoa pode fixar um tema no menu da conta ou no canto das telas de acesso.
 - **Contraste medido.** Texto com pelo menos 4,5:1 e bordas de controles com pelo menos 3:1 (WCAG 2.x AA).
 - **Teclado e leitor de tela.** Todo controle funciona sem mouse, com foco visível e o papel ARIA certo.
@@ -74,7 +74,7 @@ Campos usam 16px: abaixo disso o iPhone dá zoom ao focar.
 
 ## Estrutura das telas
 
-- **Computador (a partir de 1024px):** barra lateral de vidro, afastada das bordas, com a marca, a navegação, a Equipe e o menu da conta (pessoa, organização e papel, aparência e sair).
+- **Computador (a partir de 1024px):** barra lateral de vidro encostada na borda, na altura toda da janela, com a marca, a navegação, a Equipe e o menu da conta (pessoa, organização e papel, aparência e sair). O botão no topo recolhe a barra aos ícones, e a escolha fica lembrada no navegador ([ADR 0019](adr/0019-barra-lateral-encostada-e-recolhivel.md)).
 - **Celular e tablet:** barra de topo de vidro com a marca e a conta, e barra de abas em cápsula de vidro, flutuando acima da borda, com 3 ou 4 destinos. A Equipe fica no menu da conta.
 
 ### Liquid Glass ([ADR 0018](adr/0018-liquid-glass-na-camada-flutuante.md))
@@ -107,7 +107,7 @@ Destinos: a empresa tem Início, Cotações e Negociações. O fornecedor tem In
 | `.colunas` | Duas colunas no computador, uma no celular |
 | `.lista` + `.linha` | Lista agrupada. A linha pode ser `<a>`/`<button>` (clicável) ou `<li>`. Partes: `.linha-principal`, `.linha-titulo`, `.linha-detalhe`, `.linha-texto` (2 linhas), `.linha-lateral`, `.linha-valor`, `.linha-acoes`, `.linha-seta` |
 | `.metricas` (`<dl>`) + `.metrica` | Números de destaque numa linha, separados por divisórias finas |
-| `.botao` + `.botao-primario` / `-secundario` / `-simples` / `-destrutivo` | Botões. Modificadores: `.botao-pequeno`, `.botao-icone`, `.botao-largo` |
+| `.botao` + `.botao-primario` / `-secundario` / `-simples` / `-destrutivo` / `-perigo` | Botões. `-destrutivo` é só texto vermelho (ação destrutiva discreta numa linha); `-perigo` tem fundo vermelho claro, para a ação destrutiva principal de um painel ("Encerrar sem acordo"). Modificadores: `.botao-pequeno`, `.botao-icone`, `.botao-largo` |
 | `.campo`, `.rotulo`, `.entrada`, `.grupo-entrada` + `.prefixo`, `.ajuda`, `.erro-campo` | Campos de formulário |
 | `.busca` | Campo de busca, com a lupa dentro |
 | `.formulario`, `.formulario-linha`, `.formulario-acoes` | Formulário em coluna, com campos lado a lado no computador |
