@@ -19,7 +19,8 @@ Como a [spec 004](spec.md) vira código.
 - O uso do link é uma atualização condicional (`usado_em IS NULL`): dois envios ao mesmo tempo não trocam a senha duas vezes.
 - `RedefinicaoDeSenhaService`:
   - **pedir(email):** normaliza o e-mail; se a conta existe, está ativa, tem vínculo ativo, não é superadmin, não é conta de exemplo e não passou do limite, invalida os links anteriores, grava o novo e publica `RedefinicaoPedida` com o token. Em qualquer outro caso, não faz nada. O retorno é sempre o mesmo.
-  - **consultar(token)** e **confirmar(token, senha):** buscam pelo hash, conferem prazo e uso, trocam o hash da senha (`Usuario.trocarSenha`), marcam o link como usado, revogam todas as sessões e zeram as tentativas de login.
+  - **consultar(token)** e **confirmar(token, senha):** buscam pelo hash, conferem prazo e uso, trocam o hash da senha (`Usuario.trocarSenha`), marcam o link como usado, encerram todas as sessões e zeram as tentativas de login.
+- **Encerrar todas as sessões** passa a apagar os refresh tokens da pessoa (antes eram marcados como revogados) e a publicar `SessoesEncerradasEvento`, que o tempo real ouve para fechar as conexões. Vale para a troca de senha, a saída da equipe, o superadmin da configuração e a detecção de reuso.
 - **Contas de exemplo:** a identidade não conhece o módulo da demo. Uma propriedade lista os domínios que não recebem e-mail (`app.redefinicao.dominios-sem-envio`, com `demo.com` no perfil da demo).
 - **Limite de 3 pedidos por hora por e-mail:** contador em memória, como o das tentativas de login, e pelo mesmo motivo (uma instância só).
 
@@ -56,5 +57,7 @@ Dois tipos novos em `EventoDeSeguranca.Tipo`: `REDEFINICAO_DE_SENHA_PEDIDA` (só
 |---|---|
 | E-mail cair no spam (remetente sem domínio próprio) | Texto simples e sem links além do de redefinição; a tela diz para conferir o spam. Com domínio próprio, configurar SPF e DKIM |
 | Esgotar a cota diária do provedor | Limite por e-mail; a cota de 300 por dia sobra para o porte atual |
-| Alguém descobrir e-mails pelo tempo de resposta | Envio assíncrono depois da resposta, em todos os casos |
+| Alguém descobrir e-mails pelo tempo de resposta | O envio sai depois da resposta. O pedido com conta ainda faz algumas consultas a mais; não vale igualar, porque o cadastro já diz se um e-mail está em uso |
+| Dois pedidos ao mesmo tempo deixarem dois links valendo | Os dois vão para o dono do e-mail, e os dois vencem em 30 minutos. Travar a pessoa durante o pedido resolveria, sem ganho prático aqui |
+| Aparelho antigo parecer roubo de token ao renovar depois da troca | A troca apaga as sessões em vez de marcá-las como revogadas: a detecção de reuso só vale para os tokens trocados na renovação |
 | Token vazar por log ou cabeçalho `Referer` | Token só no fragmento e no corpo, nunca na URL; a tela de redefinição apaga o fragmento ao abrir |

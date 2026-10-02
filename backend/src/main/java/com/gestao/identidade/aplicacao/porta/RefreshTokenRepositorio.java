@@ -13,8 +13,8 @@ public interface RefreshTokenRepositorio {
 
     Optional<RefreshToken> buscarPorHash(String tokenHash);
 
-    /** Revoga todas as sessões ativas do usuário; devolve quantas foram revogadas. */
-    int revogarTodosDoUsuario(UUID usuarioId, Instant agora);
+    /** Apaga todas as sessões do usuário, inclusive as já trocadas; devolve quantas foram apagadas. */
+    int apagarTodasDoUsuario(UUID usuarioId);
 
     /** Apaga as sessões vencidas antes do limite; devolve quantas foram apagadas. */
     int apagarExpiradosAntesDe(Instant limite);

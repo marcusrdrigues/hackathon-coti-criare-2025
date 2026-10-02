@@ -4,8 +4,10 @@ import com.gestao.compartilhado.dominio.EventoDeSeguranca;
 import com.gestao.compartilhado.dominio.NaoAutenticadoException;
 import com.gestao.identidade.aplicacao.porta.RefreshTokenRepositorio;
 import com.gestao.identidade.dominio.RefreshToken;
+import com.gestao.identidade.dominio.SessoesEncerradasEvento;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,12 +30,15 @@ public class RefreshTokenService {
 
     private final RefreshTokenRepositorio repositorio;
     private final EventosDaIdentidade eventos;
+    private final ApplicationEventPublisher publicador;
     private final Duration validade;
 
     public RefreshTokenService(RefreshTokenRepositorio repositorio, EventosDaIdentidade eventos,
+                               ApplicationEventPublisher publicador,
                                @Value("${app.jwt.expiracao-refresh}") Duration validade) {
         this.repositorio = repositorio;
         this.eventos = eventos;
+        this.publicador = publicador;
         this.validade = validade;
     }
 
@@ -69,7 +74,7 @@ public class RefreshTokenService {
         Instant agora = Instant.now();
 
         if (token.isRevogado()) {
-            repositorio.revogarTodosDoUsuario(token.getUsuarioId(), agora);
+            encerrarTodas(token.getUsuarioId());
             log.warn("Refresh token reutilizado para o usuário {}. Todas as sessões foram encerradas.",
                     token.getUsuarioId());
             eventos.publicar(EventoDeSeguranca.Tipo.SESSAO_REVOGADA_POR_REUSO, token.getUsuarioId(),
@@ -108,10 +113,21 @@ public class RefreshTokenService {
         }
     }
 
-    /** Encerra todas as sessões da pessoa (por exemplo, quando ela sai da organização). */
+    /**
+     * Encerra todas as sessões da pessoa (ela saiu da organização, trocou a senha). As sessões
+     * são apagadas, e não marcadas como revogadas: um aparelho antigo que tente renovar depois
+     * recebe só "sessão expirada", sem parecer roubo de token. Se parecesse, a detecção de reuso
+     * derrubaria também a sessão nova, aberta com a senha nova.
+     */
     @Transactional
     public void revogarTodas(UUID usuarioId) {
-        repositorio.revogarTodosDoUsuario(usuarioId, Instant.now());
+        encerrarTodas(usuarioId);
+    }
+
+    private void encerrarTodas(UUID usuarioId) {
+        repositorio.apagarTodasDoUsuario(usuarioId);
+        // As conexões em tempo real abertas em nome da pessoa fecham junto
+        publicador.publishEvent(new SessoesEncerradasEvento(usuarioId));
     }
 
     static String hash(String tokenBruto) {

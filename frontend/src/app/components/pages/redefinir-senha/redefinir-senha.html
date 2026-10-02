@@ -19,7 +19,11 @@
         <label for="senha" class="rotulo">Senha nova</label>
         <input id="senha" type="password" class="entrada" name="senha" autocomplete="new-password" maxlength="72"
                [ngModel]="senha()" (ngModelChange)="senha.set($event)"
-               [attr.aria-invalid]="tentouEnviar() && !!erros().senha" aria-describedby="senha-regras">
+               [attr.aria-invalid]="tentouEnviar() && !!erros().senha"
+               [attr.aria-describedby]="tentouEnviar() && erros().senha ? 'senha-erro senha-regras' : 'senha-regras'">
+        @if (tentouEnviar() && erros().senha; as erro) {
+          <p id="senha-erro" class="erro-campo">{{ erro }}</p>
+        }
         <ul id="senha-regras" class="requisitos">
           <li [class.cumprido]="senhaTemTamanho()">
             <span class="marcador" aria-hidden="true"></span>

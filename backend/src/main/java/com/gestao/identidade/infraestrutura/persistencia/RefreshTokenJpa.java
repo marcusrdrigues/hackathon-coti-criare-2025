@@ -15,9 +15,13 @@ interface RefreshTokenJpa extends JpaRepository<RefreshToken, UUID> {
 
     Optional<RefreshToken> findByTokenHash(String tokenHash);
 
-    @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("UPDATE RefreshToken r SET r.revogadoEm = :agora WHERE r.usuarioId = :usuarioId AND r.revogadoEm IS NULL")
-    int revogarTodosDoUsuario(@Param("usuarioId") UUID usuarioId, @Param("agora") Instant agora);
+    /**
+     * Sem {@code clearAutomatically}: quem chama costuma ter mudado a pessoa na mesma transação
+     * (senha nova, desativação), e limpar o contexto descartaria a mudança feita depois.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("DELETE FROM RefreshToken r WHERE r.usuarioId = :usuarioId")
+    int apagarTodasDoUsuario(@Param("usuarioId") UUID usuarioId);
 
     @Modifying
     @Query("DELETE FROM RefreshToken r WHERE r.expiraEm < :limite")

@@ -12,7 +12,7 @@ import com.gestao.compras.dominio.NegociacaoAlteradaEvento;
 import com.gestao.compras.dominio.Proposta;
 import com.gestao.compras.dominio.PropostaRecebidaEvento;
 import com.gestao.compras.dominio.TipoRemetente;
-import com.gestao.identidade.dominio.MembroRemovidoEvento;
+import com.gestao.identidade.dominio.SessoesEncerradasEvento;
 import com.gestao.temporeal.aplicacao.porta.CanalTempoReal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -69,9 +69,12 @@ public class NotificadorTempoReal {
         }
     }
 
-    /** Quem saiu da organização para de receber os avisos dela na hora. */
+    /**
+     * Sessões encerradas (saída da organização, senha redefinida, token reutilizado): as
+     * conexões abertas em nome da pessoa fecham na hora.
+     */
     @TransactionalEventListener
-    public void aoRemoverMembro(MembroRemovidoEvento evento) {
+    public void aoEncerrarSessoes(SessoesEncerradasEvento evento) {
         try {
             canal.encerrarConexoesDe(evento.usuarioId());
         } catch (RuntimeException e) {

@@ -34,7 +34,7 @@ Quem esquece a senha não tem como voltar a entrar no portal:
 
 - **Dado** a tela de login, **então** ela tem o link "Esqueci minha senha", que abre uma tela pedindo só o e-mail.
 - **Dado** um e-mail com conta ativa, **quando** a pessoa pede a redefinição, **então** recebe um e-mail com um link para criar a senha nova.
-- **Dado** qualquer e-mail, com conta ou sem, **quando** a pessoa pede a redefinição, **então** a resposta da tela é a mesma ("Se houver uma conta com este e-mail, enviamos um link"), no mesmo tempo aproximado.
+- **Dado** qualquer e-mail, com conta ou sem, **quando** a pessoa pede a redefinição, **então** a resposta da tela é a mesma ("Se houver uma conta com este e-mail, enviamos um link"), e o e-mail sai depois, fora da requisição.
 - **Dado** um e-mail sem conta ativa, uma conta de exemplo da demo ou o superadmin, **quando** a pessoa pede a redefinição, **então** nenhum e-mail é enviado, e a resposta é a mesma.
 - **Dado** um mesmo e-mail, **quando** os pedidos passam de 3 em uma hora, **então** os seguintes não enviam e-mail até a hora passar, e a resposta continua a mesma.
 
@@ -53,7 +53,8 @@ Quem esquece a senha não tem como voltar a entrar no portal:
 **Critérios de aceite**
 
 - **Dado** um link válido, **quando** a pessoa define a senha nova (com as mesmas regras do cadastro) e confirma, **então** a senha é trocada, o link deixa de valer e a pessoa volta para o login com o aviso "Senha alterada. Entre com a senha nova.".
-- **Dado** a troca, **então** todas as sessões abertas da pessoa deixam de valer, em qualquer aparelho.
+- **Dado** a troca, **então** todas as sessões abertas da pessoa deixam de valer, em qualquer aparelho, e as conexões em tempo real abertas em nome dela fecham. O acesso já emitido vence sozinho em até 15 minutos.
+- **Dado** um aparelho com a sessão de antes da troca, **quando** ele tenta renovar a sessão, **então** recebe "sessão expirada", sem derrubar a sessão aberta com a senha nova.
 - **Dado** a troca, **então** o bloqueio por excesso de tentativas de login daquele e-mail é zerado.
 - **Dado** uma senha nova que não segue as regras, **então** a tela mostra o erro no campo, e o link continua valendo.
 
@@ -85,3 +86,4 @@ Resolvidas antes da implementação, em 2026-10-02:
 
 1. **Provedor de e-mail: Brevo.** A hospedagem gratuita da API bloqueia as portas de SMTP, então o envio é pela API HTTP de um provedor. A Brevo envia 300 e-mails por dia no plano gratuito e aceita um remetente verificado por e-mail, sem domínio próprio. O código fica atrás de uma porta: trocar de provedor é trocar um adaptador.
 2. **O link vale por 30 minutos.** Quem pede a redefinição quer entrar agora.
+3. **Segurança na medida de um portfólio**, como na spec 003. O tempo de resposta do pedido não é igualado com conta ou sem (o cadastro já diz se um e-mail está em uso), o limite é por e-mail e não por endereço de rede, e o acesso já emitido não é revogado na hora (vence em até 15 minutos). Com um uso real, vale rever os três.

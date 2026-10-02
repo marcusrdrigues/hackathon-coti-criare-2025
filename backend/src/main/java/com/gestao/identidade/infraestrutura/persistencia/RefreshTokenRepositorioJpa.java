@@ -27,8 +27,8 @@ class RefreshTokenRepositorioJpa implements RefreshTokenRepositorio {
     }
 
     @Override
-    public int revogarTodosDoUsuario(UUID usuarioId, Instant agora) {
-        return jpa.revogarTodosDoUsuario(usuarioId, agora);
+    public int apagarTodasDoUsuario(UUID usuarioId) {
+        return jpa.apagarTodasDoUsuario(usuarioId);
     }
 
     @Override

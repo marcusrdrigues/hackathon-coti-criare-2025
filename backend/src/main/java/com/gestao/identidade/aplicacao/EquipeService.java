@@ -11,9 +11,7 @@ import com.gestao.identidade.aplicacao.porta.OrganizacaoRepositorio;
 import com.gestao.identidade.aplicacao.porta.UsuarioRepositorio;
 import com.gestao.identidade.dominio.Convite;
 import com.gestao.identidade.dominio.Membro;
-import com.gestao.identidade.dominio.MembroRemovidoEvento;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,7 +36,6 @@ public class EquipeService {
     private final UsuarioRepositorio usuarioRepositorio;
     private final CredenciaisService credenciais;
     private final RefreshTokenService sessoes;
-    private final ApplicationEventPublisher eventos;
     private final EventosDaIdentidade eventosDeSeguranca;
 
     /** O convite e o token do link, que só existe aqui: o banco guarda o hash. */
@@ -111,7 +108,6 @@ public class EquipeService {
 
         membro.remover(LocalDateTime.now());
         sessoes.revogarTodas(pessoa);
-        eventos.publishEvent(new MembroRemovidoEvento(pessoa));
         eventosDeSeguranca.publicarDaEquipe(Tipo.MEMBRO_REMOVIDO, usuario, membro.getUsuario().getEmail(),
                 "As sessões da pessoa foram encerradas.");
     }

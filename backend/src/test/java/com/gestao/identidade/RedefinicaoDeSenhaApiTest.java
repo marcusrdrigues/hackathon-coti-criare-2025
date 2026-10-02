@@ -44,9 +44,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * "Esqueci minha senha" (spec 004). Sem {@code @Transactional} de propósito: o e-mail só sai
  * depois de o link estar gravado, então cada pedido precisa confirmar a sua transação. Os
- * e-mails ficam numa caixa de saída de teste, e nenhum sai de verdade.
+ * e-mails ficam numa caixa de saída de teste, e nenhum sai de verdade. Num banco só desta
+ * classe, para as contas criadas aqui não aparecerem nas listas dos outros testes.
  */
-@SpringBootTest
+@SpringBootTest(properties =
+        "spring.datasource.url=jdbc:h2:mem:gestao-redefinicao;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1")
 @ExtendWith(OutputCaptureExtension.class)
 class RedefinicaoDeSenhaApiTest {
 
@@ -167,13 +169,20 @@ class RedefinicaoDeSenhaApiTest {
     }
 
     @Test
-    void falhaNoProvedorNaoMudaAResposta() throws Exception {
+    void falhaNoProvedorNaoMudaARespostaEVaiParaOLog(CapturedOutput saida) throws Exception {
         String comFalha = "falha@" + dominio;
         cadastrar(comFalha, "Pessoa Sem Sorte");
 
         pedir(comFalha);
 
         assertThat(links(comFalha)).isEqualTo(1);
+        // O envio é assíncrono: a falha aparece no log logo depois, com o e-mail mascarado
+        long limite = System.nanoTime() + Duration.ofSeconds(5).toNanos();
+        while (!saida.getAll().contains("não foi enviado") && System.nanoTime() < limite) {
+            Thread.sleep(50);
+        }
+        assertThat(saida.getAll()).contains("O e-mail de redefinição de senha para f***@" + dominio + " não foi enviado")
+                .doesNotContain(comFalha);
     }
 
     @Test
@@ -184,10 +193,16 @@ class RedefinicaoDeSenhaApiTest {
         consultar(token, 204);
         confirmar(token, SENHA_NOVA, 204);
 
-        // A sessão aberta com a senha antiga caiu, a senha antiga não entra mais e a nova entra
-        mvc.perform(post("/api/v1/auth/refresh").cookie(sessaoAntiga)).andExpect(status().isUnauthorized());
+        // A senha antiga não entra mais e a nova entra
         login(email, SENHA, 401);
-        login(email, SENHA_NOVA, 200);
+        Cookie sessaoNova = cookie(login(email, SENHA_NOVA, 200));
+
+        // A sessão de antes caiu. Um aparelho antigo tentando renovar não parece roubo de token:
+        // não derruba a sessão aberta com a senha nova nem gera alerta de reuso
+        mvc.perform(post("/api/v1/auth/refresh").cookie(sessaoAntiga)).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/v1/auth/refresh").cookie(sessaoNova)).andExpect(status().isOk());
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_evento_seguranca WHERE usuario_id = ? "
+                + "AND tipo = 'SESSAO_REVOGADA_POR_REUSO'", Long.class, idDaPessoa(email))).isZero();
 
         // O link não serve uma segunda vez
         confirmar(token, "maisUmaSenha789", 404).andExpect(jsonPath("$.detail").value(LINK_INVALIDO));
