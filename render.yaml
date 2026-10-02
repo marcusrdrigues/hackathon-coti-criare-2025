@@ -33,3 +33,7 @@ services:
         value: "5"
       - key: LOGGING_STRUCTURED_FORMAT_CONSOLE
         value: ecs # logs em JSON, com o traceId de cada requisição
+      - key: SUPERADMIN_EMAIL
+        sync: false # opcional: e-mail do superadmin da plataforma
+      - key: SUPERADMIN_SENHA
+        sync: false # opcional: senha do superadmin, com pelo menos 12 caracteres

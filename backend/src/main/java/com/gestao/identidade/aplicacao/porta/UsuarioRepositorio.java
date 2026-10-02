@@ -2,6 +2,7 @@ package com.gestao.identidade.aplicacao.porta;
 
 import com.gestao.identidade.dominio.Usuario;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,4 +16,6 @@ public interface UsuarioRepositorio {
     Optional<Usuario> buscarPorEmail(String email);
 
     boolean existeComEmail(String email);
+
+    List<Usuario> listarSuperadmins();
 }

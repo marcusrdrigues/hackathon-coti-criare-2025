@@ -3,8 +3,8 @@
 
 /** O lado da organização no negócio: quem compra ou quem fornece. */
 export type TipoOrganizacao = 'EMPRESA' | 'FORNECEDOR';
-/** O que a pessoa pode fazer dentro da organização. */
-export type Papel = 'PROPRIETARIO' | 'MEMBRO';
+/** O que a pessoa pode fazer: dentro da organização, ou na plataforma (superadmin, sem organização). */
+export type Papel = 'PROPRIETARIO' | 'MEMBRO' | 'SUPERADMIN';
 export type StatusCotacao = 'ABERTA' | 'EM_NEGOCIACAO' | 'FECHADA' | 'CANCELADA';
 export type StatusProposta = 'ENVIADA' | 'EM_ANALISE' | 'ACEITA' | 'RECUSADA';
 export type StatusNegociacao = 'EM_ANDAMENTO' | 'FINALIZADA' | 'CANCELADA';
@@ -17,14 +17,35 @@ export type CategoriaCotacao =
   | 'SERVICOS'
   | 'OUTROS';
 
-/** A pessoa que entrou no portal e a organização em nome de quem ela age. */
+/**
+ * A pessoa que entrou no portal e a organização em nome de quem ela age.
+ * O superadmin não tem organização: `tipo` e `organizacao` vêm nulos.
+ */
 export interface Usuario {
   id: string;
   nome: string;
   email: string;
-  tipo: TipoOrganizacao;
+  tipo: TipoOrganizacao | null;
   papel: Papel;
-  organizacao: OrganizacaoResumo;
+  organizacao: OrganizacaoResumo | null;
+}
+
+/** Uma página de uma lista paginada da API (mesmo formato do PagedModel do Spring Data). */
+export interface Pagina<T> {
+  content: T[];
+  page: { size: number; number: number; totalElements: number; totalPages: number };
+}
+
+/** Uma organização vista pelo superadmin, com os totais de uso. */
+export interface OrganizacaoAdmin {
+  id: string;
+  tipo: TipoOrganizacao;
+  razaoSocial: string;
+  cnpj: string;
+  criadaEm: string;
+  pessoas: number;
+  cotacoes: number;
+  propostas: number;
 }
 
 export interface OrganizacaoResumo {

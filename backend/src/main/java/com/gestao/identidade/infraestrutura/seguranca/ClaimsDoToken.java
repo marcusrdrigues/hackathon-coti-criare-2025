@@ -17,13 +17,13 @@ public final class ClaimsDoToken {
     public static final String ORGANIZACAO = "org";
     /** EMPRESA ou FORNECEDOR */
     public static final String TIPO = "tipo";
-    /** PROPRIETARIO ou MEMBRO */
+    /** PROPRIETARIO, MEMBRO ou SUPERADMIN (este sem "org" nem "tipo") */
     public static final String PAPEL = "papel";
 
     private ClaimsDoToken() {
     }
 
-    /** ROLE_EMPRESA / ROLE_FORNECEDOR, mais ROLE_PROPRIETARIO / ROLE_MEMBRO. */
+    /** ROLE_EMPRESA / ROLE_FORNECEDOR, mais ROLE_PROPRIETARIO / ROLE_MEMBRO; ou só ROLE_SUPERADMIN. */
     public static List<GrantedAuthority> autoridades(Jwt jwt) {
         List<GrantedAuthority> autoridades = new ArrayList<>();
         for (String claim : List.of(TIPO, PAPEL)) {

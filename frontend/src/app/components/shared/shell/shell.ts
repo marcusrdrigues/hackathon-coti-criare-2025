@@ -55,6 +55,8 @@ export class Shell {
   protected readonly iniciais = computed(() => iniciais(this.usuario()?.nome ?? ''));
   protected readonly perfil = computed(() => (this.auth.ehEmpresa() ? 'Empresa' : 'Fornecedor'));
   protected readonly papel = computed(() => (this.usuario()?.papel === 'PROPRIETARIO' ? 'Proprietário' : 'Membro'));
+  /** O superadmin não tem organização: navegação própria, sem equipe, sem abas e sem tempo real. */
+  protected readonly superadmin = this.auth.ehSuperadmin;
 
   private readonly url = toSignal(
     this.router.events.pipe(
@@ -64,8 +66,11 @@ export class Shell {
     { initialValue: this.router.url },
   );
 
-  protected readonly destinos = computed<Destino[]>(() =>
-    this.auth.ehEmpresa()
+  protected readonly destinos = computed<Destino[]>(() => {
+    if (this.superadmin()) {
+      return [{ rota: '/pages/admin', rotulo: 'Organizações', icone: 'organizacoes' }];
+    }
+    return this.auth.ehEmpresa()
       ? [
           { rota: '/pages/dashboard', rotulo: 'Início', icone: 'inicio' },
           {
@@ -93,8 +98,11 @@ export class Shell {
             comNaoLidas: true,
           },
           { rota: '/pages/propostas-enviadas', rotulo: 'Propostas', icone: 'propostas', inclui: ['/pages/historico-propostas'] },
-        ],
-  );
+        ];
+  });
+
+  /** Com um destino só, a barra de abas não ajuda: o celular fica só com o topo. */
+  protected readonly comAbas = computed(() => this.destinos().length > 1);
 
   /** Barra lateral só quando há largura para ela; abaixo disso, abas */
   protected readonly comLateral = signal(true);
@@ -105,7 +113,7 @@ export class Shell {
     // Tempo real (e os avisos que vêm por ele) enquanto houver sessão nas telas internas
     const tempoReal = inject(TempoRealService);
     effect(() => {
-      if (this.auth.logado()) {
+      if (this.auth.logado() && !this.superadmin()) {
         tempoReal.ligar();
         this.avisos.iniciar();
       } else {

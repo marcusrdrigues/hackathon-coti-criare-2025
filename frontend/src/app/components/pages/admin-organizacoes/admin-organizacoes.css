@@ -1,0 +1,14 @@
+.filtros {
+  margin-bottom: var(--esp-4);
+}
+
+.nota-admin {
+  margin-top: var(--esp-7);
+}
+
+@media (max-width: 599px) {
+  /* No celular, o CNPJ e a data quebram em linhas em vez de cortar */
+  .linha-principal .linha-detalhe {
+    white-space: normal;
+  }
+}

@@ -66,6 +66,8 @@ Não é preciso criar tabelas: na primeira inicialização o Flyway aplica as mi
    | `CORS_ALLOWED_ORIGINS` | por enquanto `https://localhost`; você troca no passo 4 |
 
    O `JWT_SECRET` é gerado pelo próprio Render (256 bits aleatórios), e o profile `demo` já vem ligado.
+
+   Opcional: para ter o superadmin da plataforma, preencha também `SUPERADMIN_EMAIL` e `SUPERADMIN_SENHA` (12 caracteres ou mais). Ele entra pela tela de login normal e cai na área administrativa. Sem as duas variáveis, não existe superadmin.
 4. Clique em **Apply**. O primeiro build leva alguns minutos (o Maven baixa as dependências).
 5. Quando o status ficar **Live**, anote o endereço do serviço, por exemplo `https://portal-criare-api.onrender.com`, e teste:
    - `https://portal-criare-api.onrender.com/actuator/health` deve responder `{"status":"UP"}`

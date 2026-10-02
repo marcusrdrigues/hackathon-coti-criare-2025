@@ -5,6 +5,7 @@ import com.gestao.identidade.dominio.Usuario;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -33,5 +34,10 @@ class UsuarioRepositorioJpa implements UsuarioRepositorio {
     @Override
     public boolean existeComEmail(String email) {
         return jpa.existsByEmail(email);
+    }
+
+    @Override
+    public List<Usuario> listarSuperadmins() {
+        return jpa.findBySuperadminTrue();
     }
 }

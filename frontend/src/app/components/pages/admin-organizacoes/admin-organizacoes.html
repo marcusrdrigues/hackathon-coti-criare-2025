@@ -1,0 +1,52 @@
+<div class="pagina">
+  <header class="cabecalho">
+    <div class="cabecalho-texto">
+      <h1 class="titulo-pagina">Organizações</h1>
+      <p class="subtitulo-pagina">Quem usa a plataforma e quanto usa</p>
+    </div>
+  </header>
+
+  @if (erro(); as mensagem) {
+    <p class="nota nota-erro" role="alert"><ui-icone nome="alerta" [tamanho]="18" />{{ mensagem }}</p>
+  } @else {
+    <div class="filtros">
+      <ui-segmentado rotulo="Ordenar por" [opcoes]="ordens" [valor]="ordem()" (valorChange)="ordenar($event)" />
+    </div>
+
+    @if (organizacoes(); as lista) {
+      @if (lista.length > 0) {
+        <ul class="lista" role="list">
+          @for (o of lista; track o.id) {
+            <li class="linha">
+              <span class="inicial" aria-hidden="true">{{ iniciais(o.razaoSocial) }}</span>
+              <div class="linha-principal">
+                <p class="linha-titulo">{{ o.razaoSocial }}</p>
+                <p class="linha-detalhe">
+                  {{ o.tipo === 'EMPRESA' ? 'Empresa' : 'Fornecedor' }} · CNPJ {{ o.cnpj | cnpj }} · desde
+                  {{ o.criadaEm | date: 'dd/MM/yyyy' }}
+                </p>
+              </div>
+              <div class="linha-lateral">
+                <span class="linha-valor">{{ uso(o) }}</span>
+                <span class="linha-detalhe">{{ pessoas(o) }}</span>
+              </div>
+            </li>
+          }
+        </ul>
+        <ui-carregar-mais [mostrando]="lista.length" [total]="total()" [carregando]="carregando()"
+                          singular="organização" plural="organizações" (carregar)="carregar()" />
+      } @else {
+        <div class="lista">
+          <div class="vazio">
+            <p class="vazio-titulo">Nenhuma organização ainda</p>
+            <p>Quando uma empresa ou um fornecedor se cadastrar, aparece aqui.</p>
+          </div>
+        </div>
+      }
+    } @else {
+      <div class="carregando-pagina" role="status"><span class="girando"></span><span class="visually-hidden">Carregando</span></div>
+    }
+
+    <p class="nota nota-admin"><ui-icone nome="info" [tamanho]="18" />Área somente leitura. O histórico de alterações e os eventos de segurança chegam com a auditoria.</p>
+  }
+</div>

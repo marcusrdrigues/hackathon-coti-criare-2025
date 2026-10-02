@@ -361,3 +361,8 @@
   line-height: 1.125rem;
   box-shadow: 0 0 0 2px var(--cor-superficie);
 }
+
+/* Sem barra de abas (o superadmin tem um destino só): o conteúdo não reserva espaço para ela */
+.app.sem-abas {
+  --altura-abas: 0rem;
+}

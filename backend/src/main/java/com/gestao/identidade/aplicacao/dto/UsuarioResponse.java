@@ -8,6 +8,7 @@ import java.util.UUID;
 /**
  * A pessoa autenticada e a organização em nome de quem ela age. O {@code tipo} define a
  * área do front-end; o {@code papel}, o que ela pode fazer dentro da organização.
+ * Para o superadmin, {@code papel} é {@code SUPERADMIN}, e {@code tipo} e {@code organizacao} vêm nulos.
  */
 public record UsuarioResponse(
         UUID id,

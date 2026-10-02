@@ -56,9 +56,9 @@ Cada passo é entregue com o CI verde (testes, ponta a ponta e quality gate) e c
 
 ## Passo 7 · Superadmin (R3)
 
-- [ ] Criação pela configuração do servidor
-- [ ] Área administrativa somente leitura, com a lista de organizações
-- [ ] Testes de acesso negado para usuários comuns
+- [x] Criação pela configuração do servidor
+- [x] Área administrativa somente leitura, com a lista de organizações
+- [x] Testes de acesso negado para usuários comuns
 
 ## Passo 8 · Padrões de API (R7)
 

@@ -12,18 +12,26 @@
       <span>{{ u.email }}</span>
     </div>
     <hr class="menu-separador" />
-    <!-- A organização em nome de quem a pessoa age, e o papel dela ali -->
-    <div class="menu-cabecalho">
-      <strong>{{ u.organizacao.razaoSocial }}</strong>
-      <span>{{ perfil() }} · {{ papel() }}</span>
-      <span>CNPJ {{ u.organizacao.cnpj | cnpj }}</span>
-    </div>
-    <hr class="menu-separador" />
-    <a class="menu-item" routerLink="/pages/equipe" data-fechar>
-      <ui-icone nome="equipe" [tamanho]="18" />
-      Equipe
-    </a>
-    <hr class="menu-separador" />
+    @if (u.organizacao; as org) {
+      <!-- A organização em nome de quem a pessoa age, e o papel dela ali -->
+      <div class="menu-cabecalho">
+        <strong>{{ org.razaoSocial }}</strong>
+        <span>{{ perfil() }} · {{ papel() }}</span>
+        <span>CNPJ {{ org.cnpj | cnpj }}</span>
+      </div>
+      <hr class="menu-separador" />
+      <a class="menu-item" routerLink="/pages/equipe" data-fechar>
+        <ui-icone nome="equipe" [tamanho]="18" />
+        Equipe
+      </a>
+      <hr class="menu-separador" />
+    } @else {
+      <div class="menu-cabecalho">
+        <strong>Administração da plataforma</strong>
+        <span>Sem organização · somente leitura</span>
+      </div>
+      <hr class="menu-separador" />
+    }
     <div class="menu-linha">
       <span>Aparência</span>
       <app-seletor-tema />
@@ -36,7 +44,8 @@
   }
 </ng-template>
 
-<div class="app" [class.com-lateral]="comLateral()" [class.lateral-recolhida]="comLateral() && recolhida()">
+<div class="app" [class.com-lateral]="comLateral()" [class.lateral-recolhida]="comLateral() && recolhida()"
+     [class.sem-abas]="!comLateral() && !comAbas()">
   @if (comLateral()) {
     <aside class="lateral">
       <div class="lateral-topo">
@@ -69,15 +78,17 @@
           }
         </ul>
         <!-- A organização: menos usado que o trabalho do dia a dia, por isso separado (no celular, fica no menu da conta) -->
-        <ul role="list" class="navegacao navegacao-secundaria">
-          <li>
-            <a class="nav-item" routerLink="/pages/equipe" [class.ativo]="naEquipe()" [attr.aria-current]="naEquipe() ? 'page' : null"
-               [attr.title]="recolhida() ? 'Equipe' : null">
-              <ui-icone nome="equipe" />
-              <span class="rotulo-lateral">Equipe</span>
-            </a>
-          </li>
-        </ul>
+        @if (!superadmin()) {
+          <ul role="list" class="navegacao navegacao-secundaria">
+            <li>
+              <a class="nav-item" routerLink="/pages/equipe" [class.ativo]="naEquipe()" [attr.aria-current]="naEquipe() ? 'page' : null"
+                 [attr.title]="recolhida() ? 'Equipe' : null">
+                <ui-icone nome="equipe" />
+                <span class="rotulo-lateral">Equipe</span>
+              </a>
+            </li>
+          </ul>
+        }
       </nav>
 
       <div class="lateral-rodape">
@@ -86,7 +97,7 @@
             <span class="inicial" aria-hidden="true">{{ iniciais() }}</span>
             <span class="conta-texto rotulo-lateral">
               <strong>{{ usuario()?.nome }}</strong>
-              <span>{{ usuario()?.organizacao?.razaoSocial }}</span>
+              <span>{{ usuario()?.organizacao?.razaoSocial ?? 'Administração' }}</span>
             </span>
             <ui-icone class="rotulo-lateral" nome="acima-abaixo" [tamanho]="16" />
           </span>
@@ -111,7 +122,7 @@
     <router-outlet />
   </main>
 
-  @if (!comLateral()) {
+  @if (!comLateral() && comAbas()) {
     <div class="borda-abas" aria-hidden="true"></div>
     <nav class="abas" aria-label="Navegação principal" [style.--colunas]="destinos().length">
       @for (d of destinos(); track d.rota) {

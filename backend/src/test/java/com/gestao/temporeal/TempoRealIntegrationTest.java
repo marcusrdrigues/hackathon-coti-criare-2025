@@ -119,6 +119,13 @@ class TempoRealIntegrationTest {
     }
 
     @Test
+    void superadminNaoAcompanhaNegociacoes() {
+        // O token do superadmin não tem organização: o WebSocket recusa a conexão
+        String token = authService.login("admin@plataforma.com", "senhaDoSuperadmin123").resposta().accessToken();
+        assertThrows(Exception.class, () -> conectar(token, new Erros()));
+    }
+
+    @Test
     void mensagemDoFornecedorChegaNaHoraParaAEquipeDaEmpresa() throws Exception {
         Negociacao negociacao = novaNegociacao();
         StompSession sessaoEmpresa = conectar(token("compras@hospital.com"), new Erros());

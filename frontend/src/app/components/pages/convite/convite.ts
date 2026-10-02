@@ -86,7 +86,7 @@ export class ConviteComponent implements OnInit {
     this.erroGeral.set(null);
     this.equipeService.aceitar(this.token, this.nome().trim(), this.senha()).subscribe({
       next: (usuario) => {
-        this.notificacao.sucesso(`Você entrou na equipe da ${usuario.organizacao.razaoSocial}.`);
+        this.notificacao.sucesso(`Você entrou na equipe da ${usuario.organizacao?.razaoSocial ?? 'organização'}.`);
         this.router.navigateByUrl(this.auth.rotaInicial());
       },
       error: (e) => {

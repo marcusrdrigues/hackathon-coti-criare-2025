@@ -20,6 +20,26 @@ export function perfilGuard(perfil?: TipoOrganizacao): CanActivateFn {
   };
 }
 
+/** Telas das organizações (os dois tipos): o superadmin, que não tem organização, volta para a área dele. */
+export const organizacaoGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const usuario = auth.usuario();
+  if (!usuario) {
+    return inject(Router).parseUrl('/pages/login');
+  }
+  return usuario.tipo ? true : inject(Router).parseUrl(auth.rotaInicial());
+};
+
+/** Área administrativa: só o superadmin. */
+export const superadminGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const usuario = auth.usuario();
+  if (!usuario) {
+    return inject(Router).parseUrl('/pages/login');
+  }
+  return usuario.papel === 'SUPERADMIN' ? true : inject(Router).parseUrl(auth.rotaInicial());
+};
+
 /** Login e cadastro: quem já está logado vai direto para o seu painel. */
 export const visitanteGuard: CanActivateFn = () => {
   const auth = inject(AuthService);

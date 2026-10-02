@@ -135,7 +135,7 @@ export class Equipe implements OnInit {
     try {
       await navigator.share({
         title: 'Convite para o Portal Criare',
-        text: `${convite.nome}, este é o seu convite para a equipe da ${this.auth.usuario()?.organizacao.razaoSocial}.`,
+        text: `${convite.nome}, este é o seu convite para a equipe da ${this.auth.usuario()?.organizacao?.razaoSocial}.`,
         url: link,
       });
     } catch {

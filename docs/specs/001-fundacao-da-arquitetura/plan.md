@@ -120,7 +120,7 @@ erDiagram
 4. Aponta as chaves estrangeiras para `tb_organizacao` e preenche `criada_por` e `enviada_por` com o proprietário.
 5. Apaga as sessões abertas: todos entram de novo, já com o token novo.
 
-O SQL precisa rodar no PostgreSQL e no H2 em modo PostgreSQL. O `MigracoesPostgresTest` valida no banco real, e um teste novo confere os dados migrados. As tabelas antigas (`tb_empresa`, `tb_fornecedor`, `tb_perfil`) só são removidas numa V4, no último passo.
+O SQL precisa rodar no PostgreSQL e no H2 em modo PostgreSQL. O `MigracoesPostgresTest` valida no banco real, e um teste novo confere os dados migrados. As tabelas antigas (`tb_empresa`, `tb_fornecedor`, `tb_perfil`) só são removidas numa V5, no último passo (a V4 ficou com os convites).
 
 ### Token e sessão
 
@@ -148,13 +148,19 @@ ADR: **0016 · Autorização por organização** (substitui o ADR 0005).
 
 ## Superadmin (R3)
 
-- Criado na subida do servidor a partir de variáveis de ambiente (e-mail e senha). Sem elas, não existe. Se a senha da variável mudar, o hash é atualizado.
-- Não pertence a nenhuma organização. Só acessa `/api/v1/admin/**`, que nesta fase é somente leitura (organizações com totais).
-- No front-end, a área administrativa tem navegação própria. O console completo de auditoria vem na fase 5.
+- **Nasce da configuração do servidor:** `SUPERADMIN_EMAIL` e `SUPERADMIN_SENHA` (no mínimo 12 caracteres). Na subida, o servidor sincroniza: cria o superadmin, atualiza o hash se a senha mudou (encerrando as sessões dele) e reativa a conta se estava desativada.
+- **Sem a configuração, nenhum superadmin fica ativo:** quem estava ativo e não bate com o e-mail configurado é desativado e tem as sessões revogadas. Trocar o e-mail na configuração troca o superadmin.
+- **Nunca promove uma conta existente:** se o e-mail configurado já é de uma pessoa de alguma organização, o servidor registra o erro no log e não cria nada. Nenhuma rota pública cria ou promove superadmin.
+- **Sem organização:** o token leva só `sub` e `papel=SUPERADMIN` (autoridade `ROLE_SUPERADMIN`), sem `org` nem `tipo`. Ele acessa só `/api/v1/admin/**` e `/api/v1/auth/me`; as demais rotas da API exigem `ROLE_EMPRESA` ou `ROLE_FORNECEDOR` já no filtro de segurança, e o WebSocket recusa a conexão.
+- **Módulo próprio, `administracao`**, só de leitura, como o `painel`: `GET /api/v1/admin/organizacoes` lista as organizações com o tipo, a data de entrada e os totais de pessoas ativas, cotações publicadas e propostas enviadas, paginado no padrão do passo 8.
+- **Demo:** o reset diário apaga as organizações e as pessoas, mas preserva o superadmin. Não há login de demonstração para ele.
+- **Front-end:** a área administrativa tem navegação própria (só "Organizações") e guard próprio; o superadmin não entra nas telas das organizações, e elas não abrem a área administrativa. O console completo de auditoria vem na fase 5.
 
 ## Padrões de API (R7)
 
-- **Paginação** com `Pageable` do Spring Data: padrão de 20 itens, máximo de 50, e uma lista de campos aceitos para ordenação por endpoint. A resposta usa o formato estável do Spring Data (`content` + `page`). No front-end, as listas ganham "Carregar mais".
+- **Paginação** com os parâmetros de sempre do Spring (`page`, `size`, `sort=campo,asc|desc`): padrão de 20 itens, máximo de 50 (acima disso, vale 50) e uma lista de campos aceitos para ordenação por endpoint; campo fora da lista responde 400. A resposta usa o formato estável do Spring Data, `{ content, page: { size, number, totalElements, totalPages } }`.
+- **Sem Spring Data na aplicação:** a regra de camadas (ArchUnit) não deixa a aplicação conhecer `Pageable`, então ela usa tipos próprios do módulo compartilhado (`PedidoDePagina` e `Pagina<T>`), e só a web e a persistência convertem de e para o Spring.
+- **Onde pagina:** as listas que crescem sem limite com o uso: cotações da empresa, mural, propostas do fornecedor, negociações e a lista de organizações do superadmin. Listas limitadas por natureza (propostas de uma cotação, mensagens de uma negociação, equipe) continuam inteiras. No front-end, as listas paginadas ganham "Carregar mais".
 - **Problem Details (RFC 9457)** com o `ProblemDetail` do Spring: `title`, `status`, `detail`, `instance`, mais `traceId` e `erros` (por campo). O front-end passa a ler `detail`.
 
 ADR: **0020 · Paginação e Problem Details**.

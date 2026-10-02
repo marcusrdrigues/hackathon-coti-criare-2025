@@ -34,6 +34,8 @@ export class AuthService {
   readonly logado = computed(() => this.usuarioAtual() !== null);
   readonly ehEmpresa = computed(() => this.usuarioAtual()?.tipo === 'EMPRESA');
   readonly ehFornecedor = computed(() => this.usuarioAtual()?.tipo === 'FORNECEDOR');
+  /** Administra a plataforma, sem organização: só a área administrativa. */
+  readonly ehSuperadmin = computed(() => this.usuarioAtual()?.papel === 'SUPERADMIN');
 
   get token(): string | null {
     return this.accessToken;
@@ -128,6 +130,9 @@ export class AuthService {
     const usuario = this.usuarioAtual();
     if (!usuario) {
       return '/pages/login';
+    }
+    if (usuario.papel === 'SUPERADMIN') {
+      return '/pages/admin';
     }
     return usuario.tipo === 'EMPRESA' ? '/pages/dashboard' : '/pages/dashboard-fornecedor';
   }

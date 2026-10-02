@@ -52,7 +52,28 @@ public class Usuario {
         this.criadoEm = LocalDateTime.now();
     }
 
+    /** O superadmin da plataforma. Só a configuração do servidor cria um (nenhuma rota faz isso). */
+    public static Usuario superadmin(String nome, String email, String senhaHash) {
+        Usuario usuario = new Usuario(nome, email, senhaHash);
+        usuario.superadmin = true;
+        return usuario;
+    }
+
     public boolean ativo() {
         return desativadoEm == null;
+    }
+
+    public void trocarSenha(String novoHash) {
+        this.senhaHash = novoHash;
+    }
+
+    public void desativar() {
+        if (desativadoEm == null) {
+            desativadoEm = LocalDateTime.now();
+        }
+    }
+
+    public void reativar() {
+        desativadoEm = null;
     }
 }

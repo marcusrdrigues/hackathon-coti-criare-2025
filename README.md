@@ -109,6 +109,12 @@ sequenceDiagram
 | **Propostas · Histórico** | Propostas vencidas e perdidas, com o motivo (fechou com outro fornecedor, cotação cancelada, negociação sem acordo…) e total em negócios fechados |
 | **Negociações** | Mesma sala da empresa: envia mensagens, faz ofertas pelo cartão de oferta e pode **aceitar R$ …** a última oferta da empresa |
 
+### 🛡️ Superadmin
+
+| Tela | O que faz |
+|---|---|
+| **Organizações** | Todas as organizações da plataforma, das mais recentes ou por nome, com o tipo, o CNPJ, a data de entrada e o uso (cotações publicadas ou propostas enviadas, e pessoas na equipe), carregadas aos poucos. Somente leitura; o superadmin não entra nas telas das organizações |
+
 ### 🔧 Em todas as telas
 
 - Login com JWT: a sessão sobrevive ao F5 e é renovada sozinha quando o token vence; *guards* de rota por perfil
@@ -192,7 +198,7 @@ sequenceDiagram
 
 | Camada | Como foi feito | Por quê |
 |---|---|---|
-| **Access token** | JWT assinado com HMAC-SHA256, válido por 15 minutos, contendo só identificadores: a pessoa (`sub`), a organização (`org`), o tipo dela (`EMPRESA`/`FORNECEDOR`) e o papel da pessoa (`PROPRIETARIO`/`MEMBRO`) | Vida curta limita o estrago se vazar; sem dado pessoal no token |
+| **Access token** | JWT assinado com HMAC-SHA256, válido por 15 minutos, contendo só identificadores: a pessoa (`sub`), a organização (`org`), o tipo dela (`EMPRESA`/`FORNECEDOR`) e o papel da pessoa (`PROPRIETARIO`/`MEMBRO`). O do superadmin leva só a pessoa e o papel `SUPERADMIN` | Vida curta limita o estrago se vazar; sem dado pessoal no token |
 | **Onde o front guarda** | Access token **só em memória**; nada de token no `localStorage` | Um script malicioso (XSS) não encontra o token salvo no navegador |
 | **Refresh token** | Valor aleatório de 256 bits num cookie `HttpOnly`, `SameSite=Strict`, restrito a `/api/v1/auth` | O JavaScript não lê o cookie, e ele não é enviado a partir de outros sites (CSRF) |
 | **No banco** | Só o **hash SHA-256** do refresh token | Quem acessar o banco não consegue usar as sessões gravadas |
@@ -205,6 +211,7 @@ sequenceDiagram
 | **Autorização por perfil** | `@PreAuthorize("hasRole('EMPRESA')")` nos endpoints | Fornecedor não cria cotação, empresa não envia proposta |
 | **Autorização por organização** | Uma política de acesso única no módulo de compras (`AcessoCompras`), usada pela API e pelo WebSocket. Recurso de outra organização responde **404**, igual a um id que não existe | Empresa só vê e altera as próprias cotações; fornecedor não vê o lance do concorrente nem cotações fora do mural em que não entrou; negociação só para as duas organizações participantes. O 404 não confirma que o id existe ([ADR 0016](docs/adr/0016-autorizacao-por-organizacao.md)) |
 | **Trava de rota nova** | Um teste lê todas as rotas da API que recebem id e exige, para cada uma, a tentativa de outra organização | Uma rota nova sem teste de isolamento quebra o build |
+| **Superadmin** | Nasce só da configuração do servidor (`SUPERADMIN_EMAIL` e `SUPERADMIN_SENHA`, 12+ caracteres); sem ela, nenhum fica ativo. Nunca promove uma conta existente, não tem organização e só alcança `/api/v1/admin/**`, somente leitura. As demais rotas exigem o perfil de uma organização já no filtro de segurança, e o WebSocket recusa a conexão dele | Nenhuma tela ou rota cria um administrador; um token sem organização não chega aos dados de compras |
 | **Identidade** | Quem é a pessoa e em nome de qual organização ela age vem **sempre do token**, nunca de um ID enviado no corpo | Ninguém consegue agir em nome de outra empresa trocando um ID |
 | **Chave de assinatura** | Lida da variável `JWT_SECRET`; sem ela, a API gera uma chave aleatória e avisa no log | Nenhum segredo fica no código |
 | **Rastreio** | Cada requisição tem um `traceId` (OpenTelemetry), que aparece em todas as linhas de log dela, no cabeçalho `X-Trace-Id` e no corpo dos erros. O front mostra o começo dele quando algo falha no servidor | Uma reclamação vira uma busca nos logs, sem expor detalhes do erro a quem usa |
@@ -237,6 +244,7 @@ hackathon-coti-criare-2025/
 │       ├── identidade/          Organizações, pessoas e papéis, cadastro, login, sessões (JWT + refresh token) e segurança da API
 │       ├── compras/             Cotações, propostas, negociações e mensagens
 │       ├── painel/              Números dos dashboards (só leitura)
+│       ├── administracao/       Área do superadmin: organizações e uso (só leitura)
 │       ├── temporeal/           WebSocket/STOMP: eventos de compras ao vivo
 │       ├── demonstracao/        Contas e dados da demo pública
 │       └── compartilhado/       Exceções de negócio, validação de CNPJ, CORS e Swagger
@@ -268,9 +276,10 @@ O back-end é um **monólito modular**: um único deploy, dividido em módulos d
 flowchart LR
     demonstracao --> compras & identidade
     painel --> compras & identidade
+    administracao --> identidade
     temporeal --> compras & identidade
     compras --> identidade
-    identidade & compras & painel & temporeal & demonstracao --> compartilhado
+    identidade & compras & painel & administracao & temporeal & demonstracao --> compartilhado
 ```
 
 ```text
@@ -452,6 +461,7 @@ Depois é só rodar o front-end como no passo 3.
 | `JWT_EXPIRACAO_REFRESH` | `7d` | Validade do refresh token |
 | `JWT_COOKIE_SECURE` | `false` | `true` em produção (HTTPS): o cookie só trafega por conexão segura |
 | `DB_POOL_SIZE` | `10` | Máximo de conexões com o banco |
+| `SUPERADMIN_EMAIL` e `SUPERADMIN_SENHA` | — (sem superadmin) | O superadmin da plataforma. A senha precisa de 12 caracteres ou mais. Trocar a senha atualiza a conta e encerra as sessões dela; trocar o e-mail troca o superadmin; apagar as duas desativa |
 | `DEMO_RESET_CRON` | `0 0 4 * * *` | Profile `demo`: quando os dados de exemplo voltam ao estado inicial (horário de Brasília) |
 | `LOGGING_STRUCTURED_FORMAT_CONSOLE` | — (texto) | `ecs` grava os logs em JSON, com o `traceId` de cada requisição (usado em produção) |
 | `MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT` | — (não exporta) | Endereço de um coletor OpenTelemetry (OTLP/HTTP) para receber os traces |
@@ -503,7 +513,7 @@ Com o repasse da Vercel, o navegador fala só com um domínio: o cookie da sess�
 
 Todos os endpoints ficam sob `/api/v1`. A documentação completa, com exemplos, está no Swagger.
 
-Legenda: 🌐 público · 🔑 qualquer usuário logado · 🏢 só empresa · 🚚 só fornecedor. As rotas marcadas como "dona" ou "participante" também conferem se o recurso é da organização do token; se não for, respondem `404`, como um id que não existe.
+Legenda: 🌐 público · 🔑 qualquer pessoa de uma organização · 🏢 só empresa · 🚚 só fornecedor · 🛡️ só o superadmin. As rotas marcadas como "dona" ou "participante" também conferem se o recurso é da organização do token; se não for, respondem `404`, como um id que não existe.
 
 <details>
 <summary><b>Autenticação e dashboard</b></summary>
@@ -590,6 +600,17 @@ Legenda: 🌐 público · 🔑 qualquer usuário logado · 🏢 só empresa · �
 
 </details>
 
+<details>
+<summary><b>Administração (superadmin)</b></summary>
+
+| Método | Endpoint | Acesso | Descrição |
+|---|---|---|---|
+| `GET` | `/admin/organizacoes` | 🛡️ | Organizações com o tipo, a data de entrada e os totais de pessoas ativas, cotações e propostas. Paginada: `page`, `size` (até 50) e `sort` (`razaoSocial` ou `criadaEm`, com `,asc` ou `,desc`); padrão: mais recentes |
+
+O superadmin não tem organização: `/auth/me` devolve `papel: "SUPERADMIN"`, com `tipo` e `organizacao` nulos.
+
+</details>
+
 ### Tempo real (WebSocket)
 
 Conexão STOMP em `/ws` (em produção, `wss://portal-criare-api.onrender.com/ws`), autenticada no CONNECT com o mesmo token: `Authorization: Bearer <accessToken>`. Detalhes e motivos em [ADR 0012](docs/adr/0012-tempo-real-com-websocket-e-stomp.md).
@@ -666,7 +687,8 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | `MigracoesPostgresTest` | Num PostgreSQL 16 real (Testcontainers): o Flyway aplica as migrações, o Hibernate valida o esquema e todas as tabelas existem |
 | `MigracaoPessoasEOrganizacoesTest` | As migrações V2_1 e V3 sobre dados no formato antigo, com as chaves nomeadas como o Hibernate nomeia, num PostgreSQL real: empresas e fornecedores viram organizações com o mesmo id, cada conta vira uma pessoa proprietária com a mesma senha, o negócio ganha autoria, nenhuma chave aponta mais para as tabelas antigas, as chaves novas apontam para as tabelas novas e as sessões antigas são encerradas |
 | `FluxoCotacaoPostgresTest` e `AutenticacaoPostgresTest` | Os mesmos cenários das duas suítes acima, agora no PostgreSQL real, para pegar diferenças que o H2 esconde |
-| `DemonstracaoApiTest` | Login de demonstração em um clique, health check e reset diário dos dados de exemplo |
+| `DemonstracaoApiTest` | Login de demonstração em um clique (nunca como superadmin), health check e reset diário dos dados de exemplo, preservando o superadmin |
+| `AdministracaoApiTest` | Superadmin vindo da configuração: token sem organização, renovação, lista de organizações com os totais e sem dado pessoal, paginação (tamanho máximo, ordem permitida, página inválida), pessoa de organização barrada na área administrativa, superadmin barrado nas rotas das organizações, cadastro público que não cria superadmin, configuração vazia, senha nova, e-mail novo, senha curta e e-mail de uma conta existente |
 | `EquipeApiTest` | Convidar, consultar e aceitar o convite (já logado como membro), link usado, vencido, cancelado ou adulterado sem criar conta, convite novo substituindo o anterior, e-mail já cadastrado, membro sem permissão de convidar ou remover, remoção revogando as sessões e mantendo o nome no histórico |
 | `IsolamentoEntreOrganizacoesTest` | Toda rota da API que recebe id, no caminho ou no corpo, tentada por outra organização: a resposta é `404` com a mesma mensagem de um id inexistente. Lê as rotas do Spring MVC e falha se uma rota com id não tiver caso cadastrado |
 | `ArquiteturaTest` | A arquitetura como teste: módulos sem ciclos e usando só a API uns dos outros (Spring Modulith), e camadas da Clean Architecture com as dependências apontando para dentro (ArchUnit) |
@@ -674,8 +696,8 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | `RastreioELogsTest` | Toda resposta com `X-Trace-Id`, o mesmo id no corpo dos erros (inclusive os do Spring Security), id enviado pelo cliente ignorado, e um fluxo inteiro (cadastro, senha errada, proposta, mensagem) sem senha, token, e-mail, nome de pessoa ou conteúdo sigiloso nos logs |
 | `GlobalExceptionHandlerTest` | Respostas de erro difíceis de provocar pela API: erro inesperado sem detalhes internos, violação de integridade, acesso negado por perfil e bloqueio de login com `Retry-After` |
 | `smoke-test-api.sh` | Contra a API real com PostgreSQL: login (inclusive de um membro da equipe), proteção das rotas, CORS, validações, regras de perfil e de posse, cotação → proposta → negociação → mensagens → fechamento, dashboards, refresh com rotação e reuso, logout e força bruta |
-| Playwright (`frontend/e2e`) | No navegador, com API e banco reais: empresa e fornecedor negociam do começo ao fim (publicar, propor pelo painel do mural, contraproposta pelo cartão de oferta, aceitar, fechar com confirmação), vendo um ao outro **ao vivo** (proposta e aviso chegando à empresa, contador de não lidas do fornecedor e atalho do aviso, "digitando…", aceite e fechamento sem recarregar), a proprietária convida, a pessoa aceita pelo link num outro navegador, trabalha como membro e perde o acesso ao ser removida, rota protegida, login com erro, cadastro com validação de CNPJ, sessão após F5, sair, barra lateral recolhida e lembrada, e tema claro/escuro. As telas de acesso rodam também num celular emulado |
-| Front-end | Interceptor (token, renovação automática e expiração), guards por perfil, tema claro/escuro, seletor (teclado e busca por letra), controle segmentado, confirmação, máscara de CNPJ, comparação de ofertas e componente raiz |
+| Playwright (`frontend/e2e`) | No navegador, com API e banco reais: empresa e fornecedor negociam do começo ao fim (publicar, propor pelo painel do mural, contraproposta pelo cartão de oferta, aceitar, fechar com confirmação), vendo um ao outro **ao vivo** (proposta e aviso chegando à empresa, contador de não lidas do fornecedor e atalho do aviso, "digitando…", aceite e fechamento sem recarregar), a proprietária convida, a pessoa aceita pelo link num outro navegador, trabalha como membro e perde o acesso ao ser removida, rota protegida, login com erro, cadastro com validação de CNPJ, sessão após F5, sair, barra lateral recolhida e lembrada, tema claro/escuro e o superadmin vendo as organizações sem alcançar as telas delas. As telas de acesso rodam também num celular emulado |
+| Front-end | Interceptor (token, renovação automática e expiração), guards por perfil (inclusive o superadmin fora das telas das organizações e vice-versa), tema claro/escuro, seletor (teclado e busca por letra), controle segmentado, confirmação, máscara de CNPJ, comparação de ofertas e componente raiz |
 
 O **GitHub Actions** (`.github/workflows/ci.yml`) roda a cada push: compila e testa o back-end (inclusive contra PostgreSQL com Testcontainers), sobe a API com PostgreSQL e executa o teste de fumaça, faz o build de produção e os testes do front-end, e roda os testes ponta a ponta com Playwright. O **CodeQL** procura vulnerabilidades no código Java e TypeScript, e o **Dependabot** abre PRs semanais com as atualizações de dependências.
 
@@ -753,7 +775,7 @@ A base que as próximas fases exigem, feita antes delas. Especificação: [spec 
 - [x] **Equipe**: convite por link de uso único e gestão de membros ([ADR 0017](docs/adr/0017-equipe-com-convite-por-link.md))
 - [x] **Liquid Glass**: barra de abas em cápsula e barras de vidro, com versão sólida para acessibilidade ([ADR 0018](docs/adr/0018-liquid-glass-na-camada-flutuante.md))
 - [x] **Experiência da negociação**: oferta com valor no botão, oferta na mesa, barra lateral recolhível e revisão da escrita ([spec 002](docs/specs/002-experiencia-da-negociacao/spec.md), [ADR 0019](docs/adr/0019-barra-lateral-encostada-e-recolhivel.md))
-- [ ] **Superadmin**, criado só pela configuração do servidor
+- [x] **Superadmin**, criado só pela configuração do servidor, com área administrativa somente leitura
 - [ ] **Paginação** nas listagens e erros no padrão **Problem Details** (RFC 9457)
 - [ ] **Política de dados**: o que é sensível e onde cada dado pode aparecer (logs, auditoria, IA, demo)
 

@@ -26,19 +26,21 @@ public class EmissorDeTokenJwt implements EmissorDeToken {
         Instant agora = Instant.now();
 
         // Só identificadores: a pessoa (sub), a organização, o lado no negócio e o papel. Nada de dado pessoal.
-        JwtClaimsSet claims = JwtClaimsSet.builder()
+        JwtClaimsSet.Builder claims = JwtClaimsSet.builder()
                 .issuer(propriedades.issuer())
                 .subject(usuario.usuarioId().toString())
-                .claim(ClaimsDoToken.ORGANIZACAO, usuario.organizacaoId().toString())
-                .claim(ClaimsDoToken.TIPO, usuario.tipo().name())
                 .claim(ClaimsDoToken.PAPEL, usuario.papel().name())
                 .issuedAt(agora)
                 .expiresAt(agora.plus(propriedades.expiracaoAcesso()))
-                .id(UUID.randomUUID().toString())
-                .build();
+                .id(UUID.randomUUID().toString());
+        // O superadmin não tem organização: o token dele não leva "org" nem "tipo"
+        if (!usuario.ehSuperadmin()) {
+            claims.claim(ClaimsDoToken.ORGANIZACAO, usuario.organizacaoId().toString())
+                    .claim(ClaimsDoToken.TIPO, usuario.tipo().name());
+        }
 
         JwsHeader cabecalho = JwsHeader.with(MacAlgorithm.HS256).build();
-        String token = jwtEncoder.encode(JwtEncoderParameters.from(cabecalho, claims)).getTokenValue();
+        String token = jwtEncoder.encode(JwtEncoderParameters.from(cabecalho, claims.build())).getTokenValue();
         return new TokenAcesso(token, propriedades.expiracaoAcesso().toSeconds());
     }
 }

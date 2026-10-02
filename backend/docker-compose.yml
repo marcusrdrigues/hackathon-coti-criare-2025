@@ -37,6 +37,9 @@ services:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
       # Defina para os tokens continuarem válidos depois de reiniciar (openssl rand -base64 32)
       JWT_SECRET: ${JWT_SECRET:-}
+      # Opcional: superadmin da plataforma (a senha precisa de 12 caracteres ou mais)
+      SUPERADMIN_EMAIL: ${SUPERADMIN_EMAIL:-}
+      SUPERADMIN_SENHA: ${SUPERADMIN_SENHA:-}
     networks:
       - gestaohackaton_network
 

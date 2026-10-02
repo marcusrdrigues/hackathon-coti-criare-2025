@@ -77,6 +77,19 @@ chamar GET "$V1/cotacoes/categorias" 200 >/dev/null
 [[ $(chamar GET "$V1/auth/me" 200 "" "$TOKEN_E" | jq -r .email) == "empresa@demo.com" ]] || falhar "/auth/me não identificou a empresa"
 passo "rotas protegidas exigem token válido"
 
+# 2b. Superadmin (só quando a API foi configurada com ele): área administrativa e nada mais
+if [[ -n "${SUPERADMIN_EMAIL:-}" && -n "${SUPERADMIN_SENHA:-}" ]]; then
+  LOGIN_ADMIN=$(chamar POST "$V1/auth/login" 200 "{\"email\":\"$SUPERADMIN_EMAIL\",\"senha\":\"$SUPERADMIN_SENHA\"}")
+  TOKEN_ADMIN=$(jq -r .accessToken <<<"$LOGIN_ADMIN")
+  [[ $(jq -r .usuario.papel <<<"$LOGIN_ADMIN") == "SUPERADMIN" ]] || falhar "o superadmin deveria entrar com o papel SUPERADMIN"
+  ORGS=$(chamar GET "$V1/admin/organizacoes?size=50" 200 "" "$TOKEN_ADMIN")
+  jq -e '.page.totalElements >= 2 and (.content | length) >= 2' <<<"$ORGS" >/dev/null \
+    || falhar "a lista de organizações do superadmin veio vazia"
+  chamar GET "$V1/cotacoes/abertas" 403 "" "$TOKEN_ADMIN" >/dev/null
+  chamar GET "$V1/admin/organizacoes" 403 "" "$TOKEN_E" >/dev/null
+  passo "superadmin vê as organizações e não entra nas rotas delas"
+fi
+
 # 3. CORS para o front-end Angular (com credenciais, por causa do cookie)
 CORS=$(curl -sS -o /dev/null -D - -X OPTIONS "$V1/cotacoes" \
   -H "Origin: $ORIGEM_FRONT" -H 'Access-Control-Request-Method: POST')

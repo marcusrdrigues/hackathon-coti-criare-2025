@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -36,6 +38,7 @@ class DemonstracaoApiTest {
     @Autowired private OrganizacaoRepositorio organizacaoRepositorio;
     @Autowired private CotacaoRepositorio cotacaoRepositorio;
     @Autowired private NegociacaoRepositorio negociacaoRepositorio;
+    @Autowired private JdbcTemplate jdbc;
 
     private MockMvc mvc;
 
@@ -71,6 +74,21 @@ class DemonstracaoApiTest {
     @Test
     void perfilInexistenteRetorna400() throws Exception {
         mvc.perform(post("/api/v1/auth/demo/ADMIN")).andExpect(status().isBadRequest());
+        // Não existe login de demonstração como superadmin
+        mvc.perform(post("/api/v1/auth/demo/SUPERADMIN")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void restaurarPreservaOSuperadminDaConfiguracao() throws Exception {
+        dadosDemonstracao.restaurar();
+
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM tb_usuario WHERE superadmin = TRUE AND desativado_em IS NULL", Integer.class))
+                .isEqualTo(1);
+        mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"admin@plataforma.com\",\"senha\":\"senhaDoSuperadmin123\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.usuario.papel").value("SUPERADMIN"));
     }
 
     @Test

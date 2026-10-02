@@ -9,6 +9,7 @@ import com.gestao.identidade.aplicacao.porta.MembroRepositorio;
 import com.gestao.identidade.aplicacao.porta.UsuarioRepositorio;
 import com.gestao.identidade.dominio.Membro;
 import com.gestao.identidade.dominio.Organizacao;
+import com.gestao.identidade.dominio.Papel;
 import com.gestao.identidade.dominio.Usuario;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -47,9 +48,9 @@ public class AuthService {
                     tentativas.registrarFalha(email);
                     return new NaoAutenticadoException(CREDENCIAIS_INVALIDAS);
                 });
-        Membro membro = vinculoAtivo(usuario.getId());
+        TokenResponse resposta = resposta(usuario);
         tentativas.limpar(email);
-        return new Sessao(resposta(membro), refreshTokenService.emitir(usuario.getId()));
+        return new Sessao(resposta, refreshTokenService.emitir(usuario.getId()));
     }
 
     /** Troca o refresh token (do cookie) por um access token novo e um refresh token novo. */
@@ -57,7 +58,7 @@ public class AuthService {
     public Sessao renovar(String refreshToken) {
         RefreshTokenService.Rotacao rotacao = refreshTokenService.rotacionar(refreshToken);
         // Saiu da organização ou foi desativado depois do login: a sessão deixa de valer
-        return new Sessao(resposta(vinculoAtivo(rotacao.usuarioId())), rotacao.novoToken());
+        return new Sessao(resposta(pessoa(rotacao.usuarioId())), rotacao.novoToken());
     }
 
     @Transactional
@@ -72,7 +73,33 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public UsuarioResponse usuario(UsuarioAutenticado atual) {
-        return paraResposta(vinculoAtivo(atual.usuarioId()));
+        Usuario usuario = pessoa(atual.usuarioId());
+        if (usuario.isSuperadmin()) {
+            return paraRespostaDoSuperadmin(superadminAtivo(usuario));
+        }
+        return paraResposta(vinculoAtivo(usuario.getId()));
+    }
+
+    private Usuario pessoa(UUID usuarioId) {
+        return usuarioRepositorio.buscarPorId(usuarioId).orElseThrow(() -> new NaoAutenticadoException(SEM_ACESSO));
+    }
+
+    /** O superadmin entra pela plataforma; as demais pessoas, pelo vínculo ativo com a organização. */
+    private TokenResponse resposta(Usuario usuario) {
+        if (!usuario.isSuperadmin()) {
+            return resposta(vinculoAtivo(usuario.getId()));
+        }
+        EmissorDeToken.TokenAcesso acesso = emissorDeToken.gerar(
+                UsuarioAutenticado.superadmin(superadminAtivo(usuario).getId()));
+        return new TokenResponse(acesso.valor(), "Bearer", acesso.expiraEmSegundos(), paraRespostaDoSuperadmin(usuario));
+    }
+
+    /** Desativado quando sai da configuração do servidor: a sessão deixa de valer na próxima renovação. */
+    private static Usuario superadminAtivo(Usuario usuario) {
+        if (!usuario.ativo()) {
+            throw new NaoAutenticadoException(SEM_ACESSO);
+        }
+        return usuario;
     }
 
     private Membro vinculoAtivo(UUID usuarioId) {
@@ -84,6 +111,10 @@ public class AuthService {
     private TokenResponse resposta(Membro membro) {
         EmissorDeToken.TokenAcesso acesso = emissorDeToken.gerar(UsuarioAutenticado.de(membro));
         return new TokenResponse(acesso.valor(), "Bearer", acesso.expiraEmSegundos(), paraResposta(membro));
+    }
+
+    private static UsuarioResponse paraRespostaDoSuperadmin(Usuario usuario) {
+        return new UsuarioResponse(usuario.getId(), usuario.getNome(), usuario.getEmail(), null, Papel.SUPERADMIN, null);
     }
 
     static UsuarioResponse paraResposta(Membro membro) {

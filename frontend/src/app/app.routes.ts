@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
-import { perfilGuard, visitanteGuard } from './core/auth.guards';
+import { organizacaoGuard, perfilGuard, superadminGuard, visitanteGuard } from './core/auth.guards';
 import { AuthService } from './core/services/auth.service';
 
 const empresa = perfilGuard('EMPRESA');
@@ -39,9 +39,19 @@ export const routes: Routes = [
     canActivate: [perfilGuard()],
     loadComponent: () => import('./components/shared/shell/shell').then((m) => m.Shell),
     children: [
+      // Superadmin: a área administrativa, sem as telas das organizações
+      {
+        path: 'admin',
+        canActivate: [superadminGuard],
+        title: 'Organizações | Portal Criare',
+        loadComponent: () =>
+          import('./components/pages/admin-organizacoes/admin-organizacoes').then((m) => m.AdminOrganizacoes),
+      },
+
       // Os dois perfis
       {
         path: 'equipe',
+        canActivate: [organizacaoGuard],
         title: 'Equipe | Portal Criare',
         loadComponent: () => import('./components/pages/equipe/equipe').then((m) => m.Equipe),
       },
@@ -114,11 +124,13 @@ export const routes: Routes = [
       // Os dois perfis
       {
         path: 'negociacoes',
+        canActivate: [organizacaoGuard],
         title: 'Negociações | Portal Criare',
         loadComponent: () => import('./components/pages/negociacoes/negociacoes').then((m) => m.Negociacoes),
       },
       {
         path: 'negociacao/:id',
+        canActivate: [organizacaoGuard],
         title: 'Negociação | Portal Criare',
         loadComponent: () => import('./components/pages/negociacao/negociacao').then((m) => m.Negociacao),
       },

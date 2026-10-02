@@ -5,6 +5,11 @@ on:
     branches-ignore: ['dependabot/**']   # as PRs do Dependabot já rodam pelo pull_request
   pull_request:
 
+# Superadmin que só existe no CI: a API sobe com ele para o teste de fumaça e os testes ponta a ponta
+env:
+  SUPERADMIN_EMAIL: admin@ci.local
+  SUPERADMIN_SENHA: senhaDoSuperadminDoCI
+
 jobs:
   backend:
     name: Backend (Spring Boot)

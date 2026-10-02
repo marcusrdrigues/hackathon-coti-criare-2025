@@ -129,6 +129,7 @@ Destinos: a empresa tem Início, Cotações e Negociações. O fornecedor tem In
 | `<ui-segmentado rotulo [opcoes] [(valor)] />` | Escolha entre poucas opções (filtros, tipo de conta, aparência) | Rádios nativos com legenda |
 | `<ui-painel titulo [(aberto)]>` + `[rodape]` | Painel lateral; vira folha de baixo para cima no celular | `<dialog>` modal: foco preso, Esc fecha |
 | `ConfirmacaoService.confirmar({...})` | Confirmação antes de ações importantes (no lugar do `confirm()`) | `alertdialog`; foco em "Cancelar" nas ações destrutivas |
+| `<ui-carregar-mais [mostrando] [total] singular plural (carregar)>` | Rodapé das listas paginadas: "20 de 42 organizações" e o botão "Carregar mais organizações", que some quando a lista está inteira | A contagem é anunciada (`aria-live`) quando muda |
 | `<ui-status [tom]>` | Status como ponto + texto. Tons: `neutro`, `sucesso`, `atencao`, `marca`, `erro` | A cor nunca vai sozinha |
 
 Exemplo de seletor com rótulo visível:

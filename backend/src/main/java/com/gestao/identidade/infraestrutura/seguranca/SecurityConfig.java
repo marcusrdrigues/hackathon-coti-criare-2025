@@ -32,6 +32,7 @@ import javax.crypto.spec.SecretKeySpec;
  * - rotas públicas só para login (inclusive o de demonstração), renovação de sessão,
  *   cadastro, documentação e health check
  * - o perfil (EMPRESA/FORNECEDOR) vira a role usada nos @PreAuthorize
+ * - o superadmin (sem organização) só alcança /api/v1/admin/** e /api/v1/auth/me
  */
 @Slf4j
 @Configuration
@@ -41,6 +42,7 @@ import javax.crypto.spec.SecretKeySpec;
 public class SecurityConfig {
 
     private static final int TAMANHO_MINIMO_CHAVE = 32; // 256 bits, exigido pelo HS256
+    private static final String SUPERADMIN = "SUPERADMIN";
     private static final SecureRandom ALEATORIO = new SecureRandom();
 
     @Bean
@@ -69,6 +71,11 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()
                         // Handshake do WebSocket: a autenticação acontece no CONNECT do STOMP (AutenticacaoStomp)
                         .requestMatchers("/ws", "/ws/**").permitAll()
+                        // O superadmin só entra na área administrativa (e consulta quem é)...
+                        .requestMatchers("/api/v1/admin/**").hasRole(SUPERADMIN)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
+                        // ...e o resto da API é das organizações: um token sem organização não passa daqui
+                        .requestMatchers("/api/v1/**").hasAnyRole("EMPRESA", "FORNECEDOR")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(conversorDePerfil()))

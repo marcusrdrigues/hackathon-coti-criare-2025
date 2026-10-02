@@ -36,6 +36,9 @@ public class UsuarioAtual {
         String organizacao = jwt.getClaimAsString(ClaimsDoToken.ORGANIZACAO);
         String tipo = jwt.getClaimAsString(ClaimsDoToken.TIPO);
         String papel = jwt.getClaimAsString(ClaimsDoToken.PAPEL);
+        if (Papel.SUPERADMIN.name().equals(papel)) {
+            return UsuarioAutenticado.superadmin(UUID.fromString(jwt.getSubject()));
+        }
         if (organizacao == null || tipo == null || papel == null) {
             throw new NaoAutenticadoException("Sessão antiga. Faça login novamente.");
         }

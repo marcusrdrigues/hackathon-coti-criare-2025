@@ -15,16 +15,19 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 class BaseDaDemonstracaoJdbc implements BaseDaDemonstracao {
 
-    /** Das tabelas que dependem para as que são referenciadas. */
+    /**
+     * Das tabelas que dependem para as que são referenciadas. O superadmin não é da demo:
+     * nasce da configuração do servidor e continua, com as sessões dele, depois do reset.
+     */
     private static final String[] LIMPEZA = {
             "DELETE FROM tb_mensagem_negociacao",
             "DELETE FROM tb_negociacao",
             "DELETE FROM tb_proposta",
             "DELETE FROM tb_cotacao",
-            "DELETE FROM tb_refresh_token",
+            "DELETE FROM tb_refresh_token WHERE usuario_id NOT IN (SELECT id FROM tb_usuario WHERE superadmin = TRUE)",
             "DELETE FROM tb_convite",
             "DELETE FROM tb_membro",
-            "DELETE FROM tb_usuario",
+            "DELETE FROM tb_usuario WHERE superadmin = FALSE",
             "DELETE FROM tb_organizacao"};
 
     private final JdbcTemplate jdbc;

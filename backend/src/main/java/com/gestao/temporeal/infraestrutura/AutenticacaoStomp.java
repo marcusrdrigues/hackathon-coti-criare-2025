@@ -70,7 +70,9 @@ public class AutenticacaoStomp implements ChannelInterceptor {
             Jwt jwt = jwtDecoder.decode(cabecalho.substring(PREFIXO_BEARER.length()).trim());
             String organizacao = jwt.getClaimAsString(ClaimsDoToken.ORGANIZACAO);
             if (organizacao == null) {
-                throw new MessageDeliveryException("Sessão antiga. Faça login novamente.");
+                // Token sem organização: o do superadmin, que não participa de negociações,
+                // ou um de antes da separação entre pessoa e organização
+                throw new MessageDeliveryException("Esta sessão não acompanha negociações.");
             }
             // O nome na sessão é a organização: os avisos de /user/{id}/queue/avisos chegam a toda a equipe
             return new JwtAuthenticationToken(jwt, ClaimsDoToken.autoridades(jwt), organizacao);
