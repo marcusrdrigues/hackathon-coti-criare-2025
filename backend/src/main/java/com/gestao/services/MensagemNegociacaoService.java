@@ -55,6 +55,8 @@ public class MensagemNegociacaoService {
 
         nova = mensagemRepository.save(nova);
         negociacao.getMensagens().add(nova);
+        // Quem responde já viu tudo o que veio antes
+        negociacaoService.registrarLeitura(negociacao, remetente);
 
         eventos.publishEvent(new MensagemEnviadaEvento(nova.getId()));
         return nova;

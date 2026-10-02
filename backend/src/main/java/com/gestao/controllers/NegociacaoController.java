@@ -6,6 +6,7 @@ import com.gestao.dtos.negociacao.NegociacaoResponse;
 import com.gestao.entities.Negociacao;
 import com.gestao.mappers.NegociacaoMapper;
 import com.gestao.security.UsuarioAtual;
+import com.gestao.security.UsuarioAutenticado;
 import com.gestao.services.NegociacaoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -18,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -42,16 +44,27 @@ public class NegociacaoController {
     @Operation(summary = "Minhas negociações", description = "Negociações em que o usuário do token participa")
     @GetMapping("/minhas")
     public ResponseEntity<List<NegociacaoResponse>> minhas() {
-        return ResponseEntity.ok(negociacaoService.listarDoUsuario(usuarioAtual.obter()).stream()
-                .map(negociacaoMapper::toResponse)
+        UsuarioAutenticado usuario = usuarioAtual.obter();
+        Map<UUID, Integer> naoLidas = negociacaoService.contarNaoLidas(usuario);
+        return ResponseEntity.ok(negociacaoService.listarDoUsuario(usuario).stream()
+                .map(n -> negociacaoMapper.toResponse(n, naoLidas.getOrDefault(n.getId(), 0)))
                 .toList());
     }
 
     @Operation(summary = "Buscar negociação", description = "Só a empresa e o fornecedor participantes")
     @GetMapping("/{id}")
     public ResponseEntity<NegociacaoResponse> buscarPorId(@Parameter(description = "ID da negociação") @PathVariable UUID id) {
-        return ResponseEntity.ok(negociacaoMapper.toResponse(
-                negociacaoService.buscarParaParticipante(id, usuarioAtual.obter())));
+        UsuarioAutenticado usuario = usuarioAtual.obter();
+        Negociacao negociacao = negociacaoService.buscarParaParticipante(id, usuario);
+        return ResponseEntity.ok(negociacaoMapper.toResponse(negociacao, negociacaoService.contarNaoLidas(negociacao, usuario)));
+    }
+
+    @Operation(summary = "Marcar como lida",
+            description = "Participante. As mensagens da outra parte enviadas até agora deixam de contar como não lidas")
+    @PatchMapping("/{id}/leitura")
+    public ResponseEntity<Void> marcarComoLida(@Parameter(description = "ID da negociação") @PathVariable UUID id) {
+        negociacaoService.marcarComoLida(id, usuarioAtual.obter());
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Negociação de uma proposta", description = "Só a empresa e o fornecedor participantes")

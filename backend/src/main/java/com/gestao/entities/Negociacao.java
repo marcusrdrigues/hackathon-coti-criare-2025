@@ -36,6 +36,14 @@ public class Negociacao {
     @Column(name = "datafinalizacao")
     private LocalDate dataFinalizacao;
 
+    /** Última vez que a empresa abriu a negociação (base das mensagens não lidas). */
+    @Column(name = "lida_empresa_em")
+    private LocalDateTime lidaEmpresaEm;
+
+    /** Última vez que o fornecedor abriu a negociação. */
+    @Column(name = "lida_fornecedor_em")
+    private LocalDateTime lidaFornecedorEm;
+
     @OneToOne
     @JoinColumn(name = "proposta_id", nullable = false, unique = true)
     private Proposta proposta;

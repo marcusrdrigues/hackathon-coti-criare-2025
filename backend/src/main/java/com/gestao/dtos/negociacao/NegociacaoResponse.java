@@ -24,5 +24,7 @@ public record NegociacaoResponse(
         UUID cotacaoId,
         String cotacaoNome,
         String cotacaoRequisitos,
-        StatusCotacao cotacaoStatus
+        StatusCotacao cotacaoStatus,
+        /* Mensagens da outra parte que quem pediu ainda não viu (null quando não se aplica) */
+        Integer naoLidas
 ) {}

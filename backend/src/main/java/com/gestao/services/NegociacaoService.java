@@ -24,7 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -64,6 +66,8 @@ public class NegociacaoService {
         negociacao.setFornecedor(proposta.getFornecedor());
         negociacao.setStatus(StatusNegociacao.EM_ANDAMENTO);
         negociacao.setDataInicio(LocalDateTime.now());
+        // Quem abre a negociação já leu a proposta que a originou
+        negociacao.setLidaEmpresaEm(negociacao.getDataInicio());
         negociacao = negociacaoRepository.save(negociacao);
         proposta.setNegociacao(negociacao);
 
@@ -164,6 +168,45 @@ public class NegociacaoService {
 
         eventos.publishEvent(new NegociacaoAlteradaEvento(negociacao.getId(), NegociacaoAlteradaEvento.Tipo.CANCELADA));
         return negociacaoRepository.save(negociacao);
+    }
+
+    /**
+     * Marca a negociação como lida agora por quem pediu: as mensagens da outra
+     * parte enviadas até este momento deixam de contar como não lidas.
+     */
+    @Transactional
+    public void marcarComoLida(UUID id, UsuarioAutenticado usuario) {
+        registrarLeitura(buscarParaParticipante(id, usuario), usuario);
+    }
+
+    /** Mensagens da outra parte que o usuário ainda não viu. */
+    @Transactional(readOnly = true)
+    public int contarNaoLidas(Negociacao negociacao, UsuarioAutenticado usuario) {
+        LocalDateTime lidaEm = usuario.ehEmpresa() ? negociacao.getLidaEmpresaEm() : negociacao.getLidaFornecedorEm();
+        TipoRemetente leitor = usuario.comoRemetente();
+        long total = lidaEm == null
+                ? mensagemRepository.countByNegociacaoIdAndTipoRemetenteNot(negociacao.getId(), leitor)
+                : mensagemRepository.countByNegociacaoIdAndTipoRemetenteNotAndDataEnvioAfter(negociacao.getId(), leitor, lidaEm);
+        return (int) total;
+    }
+
+    /** Não lidas de todas as negociações do usuário, numa consulta só (id da negociação → total). */
+    @Transactional(readOnly = true)
+    public Map<UUID, Integer> contarNaoLidas(UsuarioAutenticado usuario) {
+        List<MensagemNegociacaoRepository.NaoLidas> contagens = usuario.ehEmpresa()
+                ? mensagemRepository.contarNaoLidasDaEmpresa(usuario.id(), TipoRemetente.FORNECEDOR)
+                : mensagemRepository.contarNaoLidasDoFornecedor(usuario.id(), TipoRemetente.EMPRESA);
+        Map<UUID, Integer> porNegociacao = new HashMap<>();
+        contagens.forEach(c -> porNegociacao.put(c.getNegociacaoId(), c.getTotal().intValue()));
+        return porNegociacao;
+    }
+
+    void registrarLeitura(Negociacao negociacao, UsuarioAutenticado usuario) {
+        if (usuario.ehEmpresa()) {
+            negociacao.setLidaEmpresaEm(LocalDateTime.now());
+        } else {
+            negociacao.setLidaFornecedorEm(LocalDateTime.now());
+        }
     }
 
     void verificarParticipante(Negociacao negociacao, UsuarioAutenticado usuario) {

@@ -29,6 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -162,6 +164,41 @@ class FluxoCotacaoIntegrationTest {
         // Agora a empresa pode negociar com o outro fornecedor
         Negociacao segunda = negociacaoService.criarNegociacao(propostaB.getId(), empresa.getId());
         assertNotEquals(negociacao.getId(), segunda.getId());
+    }
+
+    @Test
+    void contaAsMensagensNaoLidasDeCadaLado() {
+        Cotacao cotacao = criarCotacao(5);
+        Proposta proposta = enviarProposta(fornecedorA, cotacao, "10000.00");
+        Negociacao negociacao = negociacaoService.criarNegociacao(proposta.getId(), empresa.getId());
+        UUID id = negociacao.getId();
+        UsuarioAutenticado daEmpresa = comoEmpresa();
+        UsuarioAutenticado doFornecedor = comoFornecedor(fornecedorA);
+
+        // A proposta que abriu a negociação já foi lida pela empresa, e é do próprio fornecedor
+        assertEquals(0, negociacaoService.contarNaoLidas(negociacao, daEmpresa));
+        assertEquals(0, negociacaoService.contarNaoLidas(negociacao, doFornecedor));
+
+        mensagemService.enviarMensagem(id, "Consegue fazer por 9 mil?", null, daEmpresa);
+        mensagemService.enviarMensagem(id, null, new BigDecimal("9000.00"), daEmpresa);
+        assertEquals(2, negociacaoService.contarNaoLidas(negociacao, doFornecedor));
+        assertEquals(Map.of(id, 2), negociacaoService.contarNaoLidas(doFornecedor));
+        // As próprias mensagens nunca contam
+        assertEquals(0, negociacaoService.contarNaoLidas(negociacao, daEmpresa));
+        assertTrue(negociacaoService.contarNaoLidas(daEmpresa).isEmpty());
+
+        // Responder conta como ter lido o que veio antes
+        mensagemService.enviarMensagem(id, "Fecho em 9.500", new BigDecimal("9500.00"), doFornecedor);
+        assertEquals(0, negociacaoService.contarNaoLidas(negociacao, doFornecedor));
+        assertEquals(1, negociacaoService.contarNaoLidas(negociacao, daEmpresa));
+
+        negociacaoService.marcarComoLida(id, daEmpresa);
+        assertEquals(0, negociacaoService.contarNaoLidas(negociacao, daEmpresa));
+        assertTrue(negociacaoService.contarNaoLidas(daEmpresa).isEmpty());
+
+        // Quem não participa não marca nada
+        UsuarioAutenticado outro = comoFornecedor(fornecedorB);
+        assertThrows(AcessoNegadoException.class, () -> negociacaoService.marcarComoLida(id, outro));
     }
 
     @Test

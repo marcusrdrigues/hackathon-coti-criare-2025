@@ -17,6 +17,7 @@ Restrições do deploy: o front-end fica na Vercel e chama a API pelo proxy dela
 - **Autorização no SUBSCRIBE e no SEND**: só as duas partes assinam `/topic/negociacoes/{id}` e enviam "digitando"; avisos só pela fila pessoal (`/user/queue/avisos`).
 - **Eventos de domínio depois do commit**: os services publicam `MensagemEnviadaEvento`, `NegociacaoAlteradaEvento` e `PropostaRecebidaEvento`; o `NotificadorTempoReal` escuta com `@TransactionalEventListener` e só envia depois que a transação foi gravada. Uma falha no envio é registrada no log e não desfaz a operação.
 - O que já existia por REST continua igual: o tempo real só avisa e entrega os dados novos.
+- **Mensagens não lidas por marca de leitura**: cada negociação guarda quando cada parte a abriu pela última vez (`lida_empresa_em`, `lida_fornecedor_em`, migração V2). Não lidas são as mensagens da outra parte enviadas depois disso, contadas numa consulta só para a lista inteira. Abrir a conversa (`PATCH /negociacoes/{id}/leitura`) ou responder nela atualiza a marca. O front soma os avisos que chegam e volta a buscar os totais na API depois de uma queda da conexão.
 
 ## Alternativas consideradas
 
@@ -28,6 +29,7 @@ Restrições do deploy: o front-end fica na Vercel e chama a API pelo proxy dela
 ## Consequências
 
 - Mensagens, ofertas, status e avisos chegam na hora, e "digitando…" passa a existir.
+- Uma marca de leitura por parte, e não uma por mensagem: não há "visto" individual, mas a contagem é barata e não cresce com o histórico.
 - Com mais de uma instância da API, cada uma teria o seu broker em memória: será preciso um broker externo (relay STOMP com RabbitMQ) ou Redis pub/sub. O mesmo vale para o limite de tentativas de login ([ADR 0003](0003-access-token-curto-e-refresh-token-opaco.md)).
 - O token vale 15 minutos, mas a sessão STOMP continua aberta depois disso; ao reconectar, o cliente renova o token antes.
 - No plano gratuito do Render a API dorme sem uso, e a conexão só volta quando ela acorda. O cliente reconecta sozinho, e a tela continua funcionando pelo REST enquanto isso.

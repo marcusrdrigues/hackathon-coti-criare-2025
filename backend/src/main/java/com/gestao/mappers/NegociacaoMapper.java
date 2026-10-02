@@ -10,6 +10,11 @@ import org.springframework.stereotype.Component;
 public class NegociacaoMapper {
 
     public NegociacaoResponse toResponse(Negociacao negociacao) {
+        return toResponse(negociacao, null);
+    }
+
+    /** Com o total de mensagens não lidas de quem está pedindo. */
+    public NegociacaoResponse toResponse(Negociacao negociacao, Integer naoLidas) {
         Proposta proposta = negociacao.getProposta();
         Cotacao cotacao = proposta.getCotacao();
 
@@ -29,7 +34,8 @@ public class NegociacaoMapper {
                 cotacao.getId(),
                 cotacao.getNomeServico(),
                 cotacao.getRequisitos(),
-                cotacao.getStatus()
+                cotacao.getStatus(),
+                naoLidas
         );
     }
 }
