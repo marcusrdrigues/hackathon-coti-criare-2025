@@ -8,6 +8,7 @@ import com.gestao.compartilhado.dominio.RecursoNaoEncontradoException;
 import com.gestao.compartilhado.dominio.RegraDeNegocioException;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,280 +18,115 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-@RestControllerAdvice
+/**
+ * Converte as exceções no mesmo JSON de erro para toda a API. Erros esperados (do
+ * cliente ou de regra) vão para o log como aviso; só o inesperado vira erro, com a
+ * pilha completa no log e uma mensagem genérica para quem chamou.
+ */
 @Slf4j
-@Hidden // Esconde do Swagger
+@Hidden
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // ========================================
-    // EXCEÇÕES CUSTOMIZADAS
-    // ========================================
+    static final String ACESSO_NEGADO_POR_PERFIL = "Seu perfil não tem permissão para esta ação.";
+    static final String ERRO_INTERNO = "Erro interno do servidor. Tente novamente mais tarde.";
 
     @ExceptionHandler(RecursoNaoEncontradoException.class)
-    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
-            RecursoNaoEncontradoException ex,
-            WebRequest request) {
-
-        log.error("RecursoNaoEncontradoException: {}", ex.getMessage());
-
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                ex.getMessage(),
-                LocalDateTime.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    public ResponseEntity<ErrorResponse> naoEncontrado(RecursoNaoEncontradoException ex) {
+        return resposta(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
-    @ExceptionHandler(RegraDeNegocioException.class)
-    public ResponseEntity<ErrorResponse> handleBusinessException(
-            RegraDeNegocioException ex,
-            WebRequest request) {
-
-        log.error("RegraDeNegocioException: {}", ex.getMessage());
-
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                ex.getMessage(),
-                LocalDateTime.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    @ExceptionHandler({RegraDeNegocioException.class, IllegalArgumentException.class})
+    public ResponseEntity<ErrorResponse> regraDeNegocio(RuntimeException ex) {
+        return resposta(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(NaoAutenticadoException.class)
-    public ResponseEntity<ErrorResponse> handleUnauthorizedException(
-            NaoAutenticadoException ex,
-            WebRequest request) {
-
-        log.warn("NaoAutenticadoException: {}", ex.getMessage());
-
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.UNAUTHORIZED.value(),
-                ex.getMessage(),
-                LocalDateTime.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    public ResponseEntity<ErrorResponse> naoAutenticado(NaoAutenticadoException ex) {
+        return resposta(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
+    /** AccessDeniedException vem do @PreAuthorize (perfil errado); a nossa traz a mensagem do caso de uso. */
     @ExceptionHandler({AcessoNegadoException.class, AccessDeniedException.class})
-    public ResponseEntity<ErrorResponse> handleAcessoNegado(
-            RuntimeException ex,
-            WebRequest request) {
-
-        log.warn("Acesso negado: {}", ex.getMessage());
-
-        // AccessDeniedException vem do @PreAuthorize (perfil errado); a nossa traz a mensagem do service
-        String mensagem = ex instanceof AcessoNegadoException
-                ? ex.getMessage()
-                : "Seu perfil não tem permissão para esta ação.";
-
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.FORBIDDEN.value(),
-                mensagem,
-                LocalDateTime.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    public ResponseEntity<ErrorResponse> acessoNegado(RuntimeException ex) {
+        String mensagem = ex instanceof AcessoNegadoException ? ex.getMessage() : ACESSO_NEGADO_POR_PERFIL;
+        return resposta(HttpStatus.FORBIDDEN, mensagem);
     }
 
     @ExceptionHandler(MuitasTentativasException.class)
-    public ResponseEntity<ErrorResponse> handleMuitasTentativas(
-            MuitasTentativasException ex,
-            WebRequest request) {
-
-        log.warn("Login bloqueado temporariamente: {}", ex.getMessage());
-
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.TOO_MANY_REQUESTS.value(),
-                ex.getMessage(),
-                LocalDateTime.now()
-        );
-
+    public ResponseEntity<ErrorResponse> muitasTentativas(MuitasTentativasException ex) {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getSegundosParaLiberar()))
-                .body(error);
+                .body(corpo(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage()));
     }
 
     @ExceptionHandler(RecursoDuplicadoException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicateResourceException(
-            RecursoDuplicadoException ex,
-            WebRequest request) {
-
-        log.error("RecursoDuplicadoException: {}", ex.getMessage());
-
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.CONFLICT.value(),
-                ex.getMessage(),
-                LocalDateTime.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    public ResponseEntity<ErrorResponse> duplicado(RecursoDuplicadoException ex) {
+        return resposta(HttpStatus.CONFLICT, ex.getMessage());
     }
-
-    // ========================================
-    // VALIDAÇÃO DE CAMPOS (@Valid)
-    // ========================================
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ValidationErrorResponse> handleValidationException(
-            MethodArgumentNotValidException ex) {
-
-        log.error("ValidationException: Erro de validação nos campos");
-
-        Map<String, String> errors = new HashMap<>();
-
-        ex.getBindingResult().getAllErrors().forEach((error) -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
-        });
-
-        ValidationErrorResponse validationError = new ValidationErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Erro de validação nos campos",
-                LocalDateTime.now(),
-                errors
-        );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(validationError);
-    }
-
-    // ========================================
-    // EXCEÇÕES GENÉRICAS
-    // ========================================
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
-            IllegalArgumentException ex,
-            WebRequest request) {
-
-        log.error("IllegalArgumentException: {}", ex.getMessage());
-
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                ex.getMessage(),
-                LocalDateTime.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    public ResponseEntity<ValidationErrorResponse> validacao(MethodArgumentNotValidException ex) {
+        Map<String, String> erros = new LinkedHashMap<>();
+        for (FieldError campo : ex.getBindingResult().getFieldErrors()) {
+            erros.put(campo.getField(), campo.getDefaultMessage());
+        }
+        log.warn("Erro de validação nos campos {}", erros.keySet());
+        return ResponseEntity.badRequest().body(new ValidationErrorResponse(
+                HttpStatus.BAD_REQUEST.value(), "Erro de validação nos campos", LocalDateTime.now(), erros));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
-            HttpMessageNotReadableException ex,
-            WebRequest request) {
-
-        log.warn("HttpMessageNotReadableException: {}", ex.getMessage());
-
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Corpo da requisição inválido. Verifique o formato do JSON, das datas e dos valores.",
-                LocalDateTime.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    public ResponseEntity<ErrorResponse> corpoInvalido(HttpMessageNotReadableException ex) {
+        return resposta(HttpStatus.BAD_REQUEST,
+                "Corpo da requisição inválido. Verifique o formato do JSON, das datas e dos valores.");
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorResponse> handleTypeMismatch(
-            MethodArgumentTypeMismatchException ex,
-            WebRequest request) {
-
-        log.warn("MethodArgumentTypeMismatchException: {}", ex.getMessage());
-
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Parâmetro '" + ex.getName() + "' com valor inválido.",
-                LocalDateTime.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    public ResponseEntity<ErrorResponse> parametroInvalido(MethodArgumentTypeMismatchException ex) {
+        return resposta(HttpStatus.BAD_REQUEST, "Parâmetro '" + ex.getName() + "' com valor inválido.");
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNoResourceFound(
-            NoResourceFoundException ex,
-            WebRequest request) {
+    public ResponseEntity<ErrorResponse> rotaInexistente(NoResourceFoundException ex) {
+        return resposta(HttpStatus.NOT_FOUND, "Endpoint não encontrado.");
+    }
 
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                "Endpoint não encontrado.",
-                LocalDateTime.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    /** Corrida entre duas gravações iguais: o banco barra o que a regra não chegou a ver. */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> integridade(DataIntegrityViolationException ex) {
+        String detalhe = ex.getMessage() != null ? ex.getMessage().toLowerCase() : "";
+        String mensagem;
+        if (detalhe.contains("unique") || detalhe.contains("duplicate key")) {
+            mensagem = "Já existe um registro com estes dados no sistema.";
+        } else if (detalhe.contains("foreign key") || detalhe.contains("referential integrity")) {
+            mensagem = "Não é possível realizar esta operação pois existem registros relacionados.";
+        } else {
+            mensagem = "Erro de integridade de dados. Verifique se não há registros duplicados ou relacionamentos inválidos.";
+        }
+        return resposta(HttpStatus.CONFLICT, mensagem);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleException(
-            Exception ex,
-            WebRequest request) {
-
-        // Detalhes vão só para o log; o cliente recebe uma mensagem genérica
-        log.error("Erro inesperado: {}", ex.getMessage(), ex);
-
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Erro interno do servidor. Tente novamente mais tarde.",
-                LocalDateTime.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    public ResponseEntity<ErrorResponse> inesperado(Exception ex) {
+        log.error("Erro inesperado", ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(corpo(HttpStatus.INTERNAL_SERVER_ERROR, ERRO_INTERNO));
     }
 
-    // ========================================
-    // EXCEÇÕES DE BANCO DE DADOS
-    // ========================================
-
-    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
-            org.springframework.dao.DataIntegrityViolationException ex,
-            WebRequest request) {
-
-        log.error("DataIntegrityViolationException: {}", ex.getMessage());
-
-        String message = "Erro de integridade de dados. Verifique se não há registros duplicados ou relacionamentos inválidos.";
-
-        // Tentar identificar o erro específico
-        String detalhe = ex.getMessage() != null ? ex.getMessage().toLowerCase() : "";
-        if (detalhe.contains("unique") || detalhe.contains("duplicate key")) {
-            message = "Já existe um registro com estes dados no sistema.";
-        } else if (detalhe.contains("foreign key") || detalhe.contains("referential integrity")) {
-            message = "Não é possível realizar esta operação pois existem registros relacionados.";
-        }
-
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.CONFLICT.value(),
-                message,
-                LocalDateTime.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    private static ResponseEntity<ErrorResponse> resposta(HttpStatus status, String mensagem) {
+        log.warn("{} {}", status.value(), mensagem);
+        return ResponseEntity.status(status).body(corpo(status, mensagem));
     }
 
-    @ExceptionHandler(org.springframework.dao.EmptyResultDataAccessException.class)
-    public ResponseEntity<ErrorResponse> handleEmptyResultDataAccess(
-            org.springframework.dao.EmptyResultDataAccessException ex,
-            WebRequest request) {
-
-        log.error("EmptyResultDataAccessException: {}", ex.getMessage());
-
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                "Registro não encontrado no banco de dados.",
-                LocalDateTime.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    private static ErrorResponse corpo(HttpStatus status, String mensagem) {
+        return new ErrorResponse(status.value(), mensagem, LocalDateTime.now());
     }
 }
