@@ -31,7 +31,8 @@ test.describe('Acesso', () => {
     const id = sufixo();
     await page.goto('/pages/cadastro');
     await page.locator('label[for="tipo-fornecedor"]').click();
-    await page.getByLabel('Nome ou razão social').fill(`Fornecedor E2E ${id}`);
+    await page.getByLabel('Razão social').fill(`Fornecedor E2E ${id}`);
+    await page.getByLabel('Seu nome').fill('Pessoa E2E');
 
     const cnpj = page.getByLabel('CNPJ');
     await cnpj.fill('11111111111111');
@@ -44,6 +45,8 @@ test.describe('Acesso', () => {
     await page.getByRole('button', { name: 'Criar conta' }).click();
 
     await expect(page).toHaveURL(/\/pages\/dashboard-fornecedor$/);
+    // A conta é da pessoa; a organização aparece no painel e no menu da conta
+    await expect(page.getByText(`Fornecedor E2E ${id}`).first()).toBeVisible();
   });
 
   test('sessão sobrevive ao recarregar a página', async ({ page }) => {

@@ -43,6 +43,7 @@ export class Shell {
   protected readonly usuario = this.auth.usuario;
   protected readonly iniciais = computed(() => iniciais(this.usuario()?.nome ?? ''));
   protected readonly perfil = computed(() => (this.auth.ehEmpresa() ? 'Empresa' : 'Fornecedor'));
+  protected readonly papel = computed(() => (this.usuario()?.papel === 'PROPRIETARIO' ? 'Proprietário' : 'Membro'));
 
   private readonly url = toSignal(
     this.router.events.pipe(

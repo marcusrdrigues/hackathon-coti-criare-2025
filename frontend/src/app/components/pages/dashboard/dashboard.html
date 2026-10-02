@@ -2,7 +2,7 @@
   <header class="cabecalho">
     <div class="cabecalho-texto">
       <h1 class="titulo-pagina">Início</h1>
-      <p class="subtitulo-pagina">{{ auth.usuario()?.nome }}</p>
+      <p class="subtitulo-pagina">{{ auth.usuario()?.organizacao?.razaoSocial }}</p>
     </div>
     <div class="cabecalho-acoes">
       <a class="botao botao-primario" routerLink="/pages/cadastro-cotacao">
@@ -99,7 +99,7 @@
                 <span class="inicial" aria-hidden="true">{{ iniciais(f.nome) }}</span>
                 <span class="linha-principal">
                   <span class="linha-titulo">{{ f.nome }}</span>
-                  <span class="linha-detalhe">{{ f.email }}</span>
+                  <span class="linha-detalhe">CNPJ {{ f.cnpj | cnpj }}</span>
                 </span>
                 <span class="texto-2 numeros">{{ f.totalPropostas === 1 ? '1 proposta' : f.totalPropostas + ' propostas' }}</span>
               </li>

@@ -2,19 +2,26 @@ import { provideHttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree, provideRouter } from '@angular/router';
 import { perfilGuard } from './auth.guards';
-import { TipoUsuario } from './models';
+import { TipoOrganizacao } from './models';
 import { AuthService } from './services/auth.service';
 
 describe('perfilGuard', () => {
   const executar = (guard: ReturnType<typeof perfilGuard>) =>
     TestBed.runInInjectionContext(() => guard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot));
 
-  const logarComo = (tipo: TipoUsuario) =>
+  const logarComo = (tipo: TipoOrganizacao) =>
     TestBed.inject(AuthService).iniciarSessao({
       accessToken: 'token',
       tokenType: 'Bearer',
       expiresIn: 900,
-      usuario: { id: '1', nome: 'Teste', email: 't@t.com', cnpj: '11222333000181', tipo },
+      usuario: {
+        id: '1',
+        nome: 'Teste',
+        email: 't@t.com',
+        tipo,
+        papel: 'PROPRIETARIO',
+        organizacao: { id: 'o1', razaoSocial: 'Org Teste', cnpj: '11222333000181' },
+      },
     });
 
   beforeEach(() => {

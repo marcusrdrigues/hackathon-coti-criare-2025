@@ -289,6 +289,11 @@ export class Negociacao implements OnInit {
     }
   }
 
+  /** Do meu lado da negociação: escrita por mim ou por alguém da minha organização */
+  protected ehDoMeuLado(m: Mensagem): boolean {
+    return m.tipoRemetente === this.auth.usuario()?.tipo;
+  }
+
   protected ehMinha(m: Mensagem): boolean {
     return m.remetenteId === this.auth.usuario()?.id;
   }

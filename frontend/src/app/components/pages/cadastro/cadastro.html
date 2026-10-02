@@ -26,12 +26,13 @@
     </fieldset>
 
     <div class="campo">
-      <label for="nome" class="rotulo">{{ tipo() === 'EMPRESA' ? 'Razão social' : 'Nome ou razão social' }}</label>
-      <input id="nome" type="text" class="entrada" name="nome" autocomplete="organization" maxlength="150"
-             [ngModel]="nome()" (ngModelChange)="alterar('nome', $event)" (blur)="tocar('nome')"
-             [attr.aria-invalid]="!!erroVisivel('nome')" aria-describedby="nome-erro">
-      @if (erroVisivel('nome'); as erro) {
-        <p id="nome-erro" class="erro-campo">{{ erro }}</p>
+      <label for="razao-social" class="rotulo">Razão social</label>
+      <input id="razao-social" type="text" class="entrada" name="razaoSocial" autocomplete="organization"
+             maxlength="200"
+             [ngModel]="razaoSocial()" (ngModelChange)="alterar('razaoSocial', $event)" (blur)="tocar('razaoSocial')"
+             [attr.aria-invalid]="!!erroVisivel('razaoSocial')" aria-describedby="razao-social-erro">
+      @if (erroVisivel('razaoSocial'); as erro) {
+        <p id="razao-social-erro" class="erro-campo">{{ erro }}</p>
       }
     </div>
 
@@ -43,6 +44,16 @@
              [attr.aria-invalid]="!!erroVisivel('cnpj')" aria-describedby="cnpj-erro">
       @if (erroVisivel('cnpj'); as erro) {
         <p id="cnpj-erro" class="erro-campo">{{ erro }}</p>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="nome" class="rotulo">Seu nome</label>
+      <input id="nome" type="text" class="entrada" name="nome" autocomplete="name" maxlength="150"
+             [ngModel]="nome()" (ngModelChange)="alterar('nome', $event)" (blur)="tocar('nome')"
+             [attr.aria-invalid]="!!erroVisivel('nome')" aria-describedby="nome-erro">
+      @if (erroVisivel('nome'); as erro) {
+        <p id="nome-erro" class="erro-campo">{{ erro }}</p>
       }
     </div>
 

@@ -10,7 +10,13 @@
     <div class="menu-cabecalho">
       <strong>{{ u.nome }}</strong>
       <span>{{ u.email }}</span>
-      <span>{{ perfil() }} · CNPJ {{ u.cnpj | cnpj }}</span>
+    </div>
+    <hr class="menu-separador" />
+    <!-- A organização em nome de quem a pessoa age, e o papel dela ali -->
+    <div class="menu-cabecalho">
+      <strong>{{ u.organizacao.razaoSocial }}</strong>
+      <span>{{ perfil() }} · {{ papel() }}</span>
+      <span>CNPJ {{ u.organizacao.cnpj | cnpj }}</span>
     </div>
     <hr class="menu-separador" />
     <div class="menu-linha">
@@ -56,7 +62,7 @@
             <span class="inicial" aria-hidden="true">{{ iniciais() }}</span>
             <span class="conta-texto">
               <strong>{{ usuario()?.nome }}</strong>
-              <span>{{ perfil() }}</span>
+              <span>{{ usuario()?.organizacao?.razaoSocial }}</span>
             </span>
             <ui-icone nome="acima-abaixo" [tamanho]="16" />
           </span>

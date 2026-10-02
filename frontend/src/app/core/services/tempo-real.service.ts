@@ -2,7 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Client, IMessage, ReconnectionTimeMode, StompSubscription } from '@stomp/stompjs';
 import { Observable, Subject, firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Mensagem, Negociacao, TipoUsuario } from '../models';
+import { Mensagem, Negociacao, TipoOrganizacao } from '../models';
 import { AuthService } from './auth.service';
 
 /** O que chega em /topic/negociacoes/{id} (ver EventoNegociacao.java). */
@@ -10,7 +10,7 @@ export interface EventoNegociacao {
   tipo: 'MENSAGEM' | 'STATUS' | 'DIGITANDO';
   mensagem: Mensagem | null;
   negociacao: Negociacao | null;
-  remetente: TipoUsuario | null;
+  remetente: TipoOrganizacao | null;
 }
 
 export type EstadoConexao = 'desligado' | 'conectando' | 'conectado';

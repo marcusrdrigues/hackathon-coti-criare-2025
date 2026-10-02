@@ -2,7 +2,7 @@
   <header class="cabecalho">
     <div class="cabecalho-texto">
       <h1 class="titulo-pagina">Início</h1>
-      <p class="subtitulo-pagina">{{ auth.usuario()?.nome }}</p>
+      <p class="subtitulo-pagina">{{ auth.usuario()?.organizacao?.razaoSocial }}</p>
     </div>
     <div class="cabecalho-acoes">
       <a class="botao botao-primario" routerLink="/pages/mural-oportunidades">Ver o mural</a>

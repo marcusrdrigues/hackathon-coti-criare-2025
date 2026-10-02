@@ -8,6 +8,7 @@ import { AvisosService, aoReceberAviso, chegouProposta, mudouNegociacao } from '
 import { CotacaoService } from '../../../core/services/cotacao.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { NegociacaoService } from '../../../core/services/negociacao.service';
+import { CnpjPipe } from '../../../core/utils/cnpj.pipe';
 import { mensagemDeErro } from '../../../core/utils/erros';
 import { diasRestantes, iniciais } from '../../../core/utils/formatos';
 import { Icone } from '../../../ui/icone';
@@ -21,7 +22,7 @@ interface Pendencia {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [RouterLink, DecimalPipe, Icone],
+  imports: [RouterLink, DecimalPipe, Icone, CnpjPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',

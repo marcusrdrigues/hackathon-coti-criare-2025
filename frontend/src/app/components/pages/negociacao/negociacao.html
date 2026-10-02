@@ -111,7 +111,7 @@
           @for (g of grupos(); track g.dia) {
             <p class="dia">{{ g.dia }}</p>
             @for (m of g.mensagens; track m.id) {
-              <div class="mensagem" [class.minha]="ehMinha(m)">
+              <div class="mensagem" [class.minha]="ehDoMeuLado(m)">
                 <div class="balao" [class.oferta]="m.valorOfertado !== null">
                   @if (m.valorOfertado !== null) {
                     <span class="oferta-rotulo">{{ ehPrimeira(m) ? 'Proposta inicial' : 'Oferta' }}</span>
@@ -122,8 +122,11 @@
                   }
                 </div>
                 <span class="hora">
-                  @if (!ehMinha(m)) {
-                    {{ m.remetenteNome }} ·
+                  <!-- Quem escreveu: a pessoa e a organização da outra parte, ou o colega do meu lado -->
+                  @if (!ehDoMeuLado(m)) {
+                    {{ m.remetentePessoa }}, {{ m.remetenteNome }} ·
+                  } @else if (!ehMinha(m)) {
+                    {{ m.remetentePessoa }} ·
                   }
                   {{ m.dataEnvio | date: 'HH:mm' }}
                 </span>

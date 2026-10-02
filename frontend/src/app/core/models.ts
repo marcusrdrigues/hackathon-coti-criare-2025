@@ -1,7 +1,10 @@
-// Tipos espelhando os DTOs da API (pacote com.gestao.dtos).
-// Quem é o usuário (empresa, fornecedor, remetente) a API descobre pelo token.
+// Tipos espelhando os DTOs da API (pacotes aplicacao.dto de cada módulo do back-end).
+// Quem é o usuário (a pessoa, a organização dela e o papel) a API descobre pelo token.
 
-export type TipoUsuario = 'EMPRESA' | 'FORNECEDOR';
+/** O lado da organização no negócio: quem compra ou quem fornece. */
+export type TipoOrganizacao = 'EMPRESA' | 'FORNECEDOR';
+/** O que a pessoa pode fazer dentro da organização. */
+export type Papel = 'PROPRIETARIO' | 'MEMBRO';
 export type StatusCotacao = 'ABERTA' | 'EM_NEGOCIACAO' | 'FECHADA' | 'CANCELADA';
 export type StatusProposta = 'ENVIADA' | 'EM_ANALISE' | 'ACEITA' | 'RECUSADA';
 export type StatusNegociacao = 'EM_ANDAMENTO' | 'FINALIZADA' | 'CANCELADA';
@@ -14,12 +17,20 @@ export type CategoriaCotacao =
   | 'SERVICOS'
   | 'OUTROS';
 
+/** A pessoa que entrou no portal e a organização em nome de quem ela age. */
 export interface Usuario {
   id: string;
   nome: string;
   email: string;
+  tipo: TipoOrganizacao;
+  papel: Papel;
+  organizacao: OrganizacaoResumo;
+}
+
+export interface OrganizacaoResumo {
+  id: string;
+  razaoSocial: string;
   cnpj: string;
-  tipo: TipoUsuario;
 }
 
 /** Resposta de login e de renovação. O refresh token vai num cookie HttpOnly, não aqui. */
@@ -32,7 +43,7 @@ export interface TokenResponse {
 
 /** Conta de demonstração (só existe quando a API roda com o profile "demo"). */
 export interface ContaDemo {
-  perfil: TipoUsuario;
+  perfil: TipoOrganizacao;
   nome: string;
   descricao: string;
 }
@@ -42,16 +53,12 @@ export interface LoginRequest {
   senha: string;
 }
 
-export interface EmpresaCadastroRequest {
+/** Cadastro público: a organização e a pessoa que vai ser a proprietária dela. */
+export interface CadastroRequest {
+  tipo: TipoOrganizacao;
   razaoSocial: string;
   cnpj: string;
-  email: string;
-  senha: string;
-}
-
-export interface FornecedorCadastroRequest {
-  nomeCompleto: string;
-  cnpj: string;
+  nome: string;
   email: string;
   senha: string;
 }
@@ -135,9 +142,13 @@ export interface Mensagem {
   id: string;
   mensagem: string;
   valorOfertado: number | null;
-  tipoRemetente: TipoUsuario;
+  tipoRemetente: TipoOrganizacao;
+  /** A pessoa que escreveu */
   remetenteId: string;
+  /** A organização dela */
   remetenteNome: string;
+  /** O nome da pessoa */
+  remetentePessoa: string;
   dataEnvio: string;
   negociacaoId: string;
 }
@@ -158,7 +169,7 @@ export interface CategoriaResumo {
 export interface FornecedorResumo {
   id: string;
   nome: string;
-  email: string;
+  cnpj: string;
   totalPropostas: number;
 }
 

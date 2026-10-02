@@ -173,6 +173,9 @@
 .conta-texto span {
   font-size: var(--texto-legenda);
   color: var(--cor-texto-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ---------- Celular e tablet: topo e abas translúcidos ---------- */

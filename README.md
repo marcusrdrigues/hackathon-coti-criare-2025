@@ -79,7 +79,7 @@ sequenceDiagram
 
 | Fluxo | Como funciona |
 |---|---|
-| **Perfis** | Empresa e fornecedor se cadastram com CNPJ e entram com e-mail e senha. Cada perfil tem o seu próprio painel e só acessa as próprias telas |
+| **Organizações e pessoas** | Empresa e fornecedor se cadastram com CNPJ; quem faz o cadastro vira a pessoa proprietária. Cada pessoa entra com o próprio e-mail e senha e age em nome da organização, com o painel e as telas do tipo dela. Cotações, propostas e mensagens registram quem as fez |
 | **Cotações** | A empresa publica o que precisa comprar, com categoria, prazo e orçamento opcional, e acompanha o status de cada uma |
 | **Propostas** | Fornecedores encontram as cotações no mural e enviam propostas; a empresa vê todas, com a melhor oferta destacada |
 | **Negociação** | Empresa e fornecedor trocam mensagens e contrapropostas numa linha do tempo até fechar o negócio ou encerrar sem acordo |
@@ -116,7 +116,9 @@ sequenceDiagram
 - Componentes próprios (seletor, menu, controle segmentado, painel lateral, diálogo de confirmação), acessíveis pelo teclado e pelo leitor de tela
 - Avisos rápidos de sucesso e erro, com as mensagens que vêm da API
 - Moeda e datas no formato brasileiro (`R$ 1.234,56`, `31/12/2025`)
-- Máscara de CNPJ no cadastro
+- Máscara de CNPJ no cadastro, que cria a organização e a pessoa proprietária juntas
+- Menu da conta com a pessoa, a organização e o papel dela (proprietária ou membro)
+- Na negociação, cada mensagem fica do lado da organização de quem escreveu e mostra o nome da pessoa
 - Sala de negociação **ao vivo** (WebSocket): mensagens e ofertas chegam na hora, com "digitando…" e indicador de conexão; sem conexão, volta a consultar a cada 10 segundos
 - **Mensagens não lidas** contadas na barra lateral, nas abas do celular e em cada negociação da lista; abrir a conversa zera o contador
 - **Avisos ao vivo em qualquer tela**: mensagem nova, proposta recebida, negociação aberta, fechada ou encerrada, com atalho para abrir; as telas abertas se atualizam sozinhas
@@ -189,7 +191,7 @@ sequenceDiagram
 
 | Camada | Como foi feito | Por quê |
 |---|---|---|
-| **Access token** | JWT assinado com HMAC-SHA256, válido por 15 minutos, contendo só o ID e o perfil (`EMPRESA`/`FORNECEDOR`) | Vida curta limita o estrago se vazar; sem dado pessoal no token |
+| **Access token** | JWT assinado com HMAC-SHA256, válido por 15 minutos, contendo só identificadores: a pessoa (`sub`), a organização (`org`), o tipo dela (`EMPRESA`/`FORNECEDOR`) e o papel da pessoa (`PROPRIETARIO`/`MEMBRO`) | Vida curta limita o estrago se vazar; sem dado pessoal no token |
 | **Onde o front guarda** | Access token **só em memória**; nada de token no `localStorage` | Um script malicioso (XSS) não encontra o token salvo no navegador |
 | **Refresh token** | Valor aleatório de 256 bits num cookie `HttpOnly`, `SameSite=Strict`, restrito a `/api/v1/auth` | O JavaScript não lê o cookie, e ele não é enviado a partir de outros sites (CSRF) |
 | **No banco** | Só o **hash SHA-256** do refresh token | Quem acessar o banco não consegue usar as sessões gravadas |
@@ -198,8 +200,8 @@ sequenceDiagram
 | **Força bruta** | 5 senhas erradas para o mesmo e-mail em 15 minutos bloqueiam o login (HTTP 429 com `Retry-After`) | Dificulta adivinhar senhas |
 | **Senhas** | BCrypt; cadastro exige 8+ caracteres com letras e números | Hash lento e com *salt*, resistente a vazamentos |
 | **Autorização por perfil** | `@PreAuthorize("hasRole('EMPRESA')")` nos endpoints | Fornecedor não cria cotação, empresa não envia proposta |
-| **Autorização por posse** | Os services conferem o dono de cada recurso | Empresa só vê e altera as próprias cotações; fornecedor não vê o lance do concorrente; negociação só para os dois participantes |
-| **Identidade** | Quem é o usuário vem **sempre do token**, nunca de um ID enviado no corpo | Ninguém consegue agir em nome de outra empresa trocando um ID |
+| **Autorização por posse** | Os services conferem a organização dona de cada recurso | Empresa só vê e altera as próprias cotações; fornecedor não vê o lance do concorrente; negociação só para as duas organizações participantes |
+| **Identidade** | Quem é a pessoa e em nome de qual organização ela age vem **sempre do token**, nunca de um ID enviado no corpo | Ninguém consegue agir em nome de outra empresa trocando um ID |
 | **Chave de assinatura** | Lida da variável `JWT_SECRET`; sem ela, a API gera uma chave aleatória e avisa no log | Nenhum segredo fica no código |
 | **Rastreio** | Cada requisição tem um `traceId` (OpenTelemetry), que aparece em todas as linhas de log dela, no cabeçalho `X-Trace-Id` e no corpo dos erros. O front mostra o começo dele quando algo falha no servidor | Uma reclamação vira uma busca nos logs, sem expor detalhes do erro a quem usa |
 | **Logs** | Em JSON (formato ECS) em produção; nunca registram senha, token, e-mail completo nem o conteúdo de propostas e mensagens. Um teste confere | Log é um destino a mais para dado vazar, e o sigilo comercial da negociação vale ali também |
@@ -227,7 +229,7 @@ hackathon-coti-criare-2025/
 │   │   └── smoke-test-api.sh    Percorre o fluxo completo via HTTP
 │   ├── src/main/resources/db/migration/   Esquema do banco versionado (Flyway)
 │   └── src/main/java/com/gestao/   Um módulo por pasta, cada um com dominio · aplicacao · infraestrutura
-│       ├── identidade/          Contas, login, sessões (JWT + refresh token) e segurança da API
+│       ├── identidade/          Organizações, pessoas e papéis, cadastro, login, sessões (JWT + refresh token) e segurança da API
 │       ├── compras/             Cotações, propostas, negociações e mensagens
 │       ├── painel/              Números dos dashboards (só leitura)
 │       ├── temporeal/           WebSocket/STOMP: eventos de compras ao vivo
@@ -284,17 +286,40 @@ As duas verificações estão em [`ArquiteturaTest`](backend/src/test/java/com/g
 
 ### Modelo de dados
 
+Uma **organização** é a empresa compradora ou o fornecedor; um **usuário** é a pessoa que entra no sistema; um **membro** liga a pessoa à organização, com um papel. Os dados do negócio pertencem à organização e registram a pessoa que agiu ([ADR 0015](docs/adr/0015-pessoas-e-organizacoes-separadas.md)).
+
 ```mermaid
 erDiagram
-    PERFIL ||--o{ EMPRESA : classifica
-    PERFIL ||--o{ FORNECEDOR : classifica
-    EMPRESA ||--o{ COTACAO : publica
+    ORGANIZACAO ||--o{ MEMBRO : "tem na equipe"
+    USUARIO ||--o{ MEMBRO : participa
+    ORGANIZACAO ||--o{ COTACAO : "publica (empresa)"
+    USUARIO ||--o{ COTACAO : cria
     COTACAO ||--o{ PROPOSTA : recebe
-    FORNECEDOR ||--o{ PROPOSTA : envia
+    ORGANIZACAO ||--o{ PROPOSTA : "envia (fornecedor)"
+    USUARIO ||--o{ PROPOSTA : envia
     PROPOSTA ||--o| NEGOCIACAO : origina
     NEGOCIACAO ||--o{ MENSAGEM_NEGOCIACAO : contem
-    EMPRESA ||--o{ REFRESH_TOKEN : "sessões"
-    FORNECEDOR ||--o{ REFRESH_TOKEN : "sessões"
+    USUARIO ||--o{ MENSAGEM_NEGOCIACAO : escreve
+    USUARIO ||--o{ REFRESH_TOKEN : "sessões"
+
+    ORGANIZACAO {
+        uuid id
+        enum tipo
+        string razao_social
+        string cnpj
+    }
+    USUARIO {
+        uuid id
+        string nome
+        string email
+        string senha_hash
+        boolean superadmin
+    }
+    MEMBRO {
+        uuid id
+        enum papel
+        datetime removido_em
+    }
 
     COTACAO {
         uuid id
@@ -328,12 +353,12 @@ erDiagram
     REFRESH_TOKEN {
         uuid id
         string token_hash
-        uuid usuario_id
-        enum tipo_usuario
         datetime expira_em
         datetime revogado_em
     }
 ```
+
+As tabelas antigas (`tb_empresa`, `tb_fornecedor` e `tb_perfil`) ficam no banco, sem uso, até a migração V4, depois da validação em produção.
 
 ---
 
@@ -426,20 +451,22 @@ Com o profile `demo`, a tela de login ganha os botões **Entrar como empresa** e
 
 A API popula o banco na primeira inicialização (se estiver vazio) e **volta os dados ao estado inicial todo dia às 4h**, para a demo pública não ficar bagunçada pelo uso dos visitantes.
 
-| Perfil | E-mail | Senha |
-|---|---|---|
-| Empresa — Criare Consulting | `empresa@demo.com` | `demo1234` |
-| Empresa — Hospital Santa Vida | `hospital@demo.com` | `demo1234` |
-| Fornecedor — Tech Soluções Ltda | `fornecedor@demo.com` | `demo1234` |
-| Fornecedor — InfoWorld Distribuidora | `infoworld@demo.com` | `demo1234` |
-| Fornecedor — Limpa Bem Serviços | `limpabem@demo.com` | `demo1234` |
-| Fornecedor — Clima Frio Ar-Condicionado | `climafrio@demo.com` | `demo1234` |
+| Organização | Pessoa | E-mail | Senha |
+|---|---|---|---|
+| Empresa — Criare Consulting | Ana Ribeiro (proprietária) | `empresa@demo.com` | `demo1234` |
+| Empresa — Criare Consulting | Bruno Costa (membro) | `bruno.compras@demo.com` | `demo1234` |
+| Empresa — Hospital Santa Vida | Helena Duarte (proprietária) | `hospital@demo.com` | `demo1234` |
+| Fornecedor — Tech Soluções Ltda | Carlos Mendes (proprietário) | `fornecedor@demo.com` | `demo1234` |
+| Fornecedor — Tech Soluções Ltda | Daniela Rocha (membro) | `daniela.vendas@demo.com` | `demo1234` |
+| Fornecedor — InfoWorld Distribuidora | Eduardo Lima (proprietário) | `infoworld@demo.com` | `demo1234` |
+| Fornecedor — Limpa Bem Serviços | Fernanda Alves (proprietária) | `limpabem@demo.com` | `demo1234` |
+| Fornecedor — Clima Frio Ar-Condicionado | Gustavo Pires (proprietário) | `climafrio@demo.com` | `demo1234` |
 
-O cenário inclui cotações abertas das duas empresas, uma **negociação em andamento** (notebooks, com contraproposta da Criare) e um **negócio já fechado** (licenças de software), para os dashboards e o histórico não começarem vazios.
+Os botões de um clique entram como Ana (Criare) e Carlos (Tech). O cenário inclui cotações abertas das duas empresas, uma **negociação em andamento** (notebooks, com contraproposta da Ana e resposta da Daniela) e um **negócio já fechado** (licenças de software, negociado pelo Bruno), para os dashboards e o histórico não começarem vazios.
 
 **Roteiro sugerido:** abra duas janelas (uma anônima), entre como empresa numa e como fornecedor na outra, e continuem a negociação dos notebooks. A sala de negociação se atualiza sozinha.
 
-Para cadastrar contas novas, use um CNPJ válido (por exemplo `33.445.566/0001-86`) e uma senha com 8+ caracteres, letras e números.
+Para cadastrar organizações novas, use um CNPJ válido (por exemplo `33.445.566/0001-86`) e uma senha com 8+ caracteres, letras e números. O mesmo CNPJ pode ser cadastrado uma vez como empresa e uma vez como fornecedor.
 
 ---
 
@@ -471,7 +498,7 @@ Legenda: 🌐 público · 🔑 qualquer usuário logado · 🏢 só empresa · �
 | `POST` | `/auth/login` | 🌐 | Devolve `accessToken`, `expiresIn` e o usuário; grava o cookie `refresh_token` |
 | `POST` | `/auth/refresh` | 🌐 (cookie) | Troca o refresh token do cookie por um access token novo |
 | `POST` | `/auth/logout` | 🌐 (cookie) | Revoga o refresh token e apaga o cookie |
-| `GET` | `/auth/me` | 🔑 | Dados do usuário do token |
+| `GET` | `/auth/me` | 🔑 | A pessoa do token (`id`, `nome`, `email`), o `tipo` e o `papel`, e a `organizacao` (`id`, `razaoSocial`, `cnpj`). O login e a renovação devolvem o mesmo objeto em `usuario` |
 | `GET` | `/dashboard/empresa` | 🏢 | Indicadores, demandas por categoria e top fornecedores |
 | `GET` | `/dashboard/fornecedor` | 🚚 | Indicadores e valor total fechado |
 
@@ -482,7 +509,7 @@ Legenda: 🌐 público · 🔑 qualquer usuário logado · 🏢 só empresa · �
 
 | Método | Endpoint | Acesso | Descrição |
 |---|---|---|---|
-| `POST` | `/empresas` · `/fornecedores` | 🌐 | Cadastro (os dados da conta voltam em `/auth/me`) |
+| `POST` | `/cadastro` | 🌐 | Cria a organização (`tipo`: `EMPRESA` ou `FORNECEDOR`, `razaoSocial`, `cnpj`) e a pessoa proprietária (`nome`, `email`, `senha`) juntas. Devolve `201` com o mesmo objeto de `/auth/me`; `409` para e-mail já usado ou CNPJ já cadastrado com o mesmo tipo |
 
 </details>
 
@@ -599,19 +626,20 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 
 | Suíte | O que cobre |
 |---|---|
-| `FluxoCotacaoIntegrationTest` | Cadastro, login, CNPJ inválido, e-mail duplicado, proposta duplicada, negociação, contrapropostas, fechamento, cancelamento, prazo vencido, dashboards e regras de posse (empresa concorrente, fornecedor concorrente, intruso na negociação) |
+| `FluxoCotacaoIntegrationTest` | Cadastro de organização e proprietário, login com papel, membro da equipe agindo pela organização e registrado como autor, CNPJ único por tipo, CNPJ inválido, e-mail duplicado, proposta duplicada, negociação, contrapropostas, fechamento, cancelamento, prazo vencido, dashboards e regras de posse (empresa concorrente, fornecedor concorrente, intruso na negociação) |
 | `ComprasApiTest` | O contrato HTTP de compras, como o front-end usa: publicar, editar, propor, retirar, recusar, negociar, conversar, fechar e cancelar, painéis, e o formato das respostas de erro (validação por campo, 404, id malformado, JSON inválido, cadastro repetido) |
-| `AutenticacaoIntegrationTest` | Conteúdo do JWT, token adulterado, refresh gravado como hash, rotação, detecção de reuso, logout e bloqueio de força bruta |
-| `SegurancaApiTest` | Pela camada HTTP: 401 sem token e com token inválido, rotas públicas, cookie `HttpOnly`/`SameSite`, 403 por perfil e por posse, identidade vinda do token, refresh pelo cookie, logout e CORS |
-| `TempoRealIntegrationTest` | WebSocket de verdade (STOMP): conexão sem token ou com token inválido recusada, mensagem e aviso entregues na hora, "digitando…" e quem não participa não consegue assinar a negociação |
+| `AutenticacaoIntegrationTest` | Conteúdo do JWT (pessoa, organização, tipo e papel), token de antes da separação recusado, login de um membro, token adulterado, refresh gravado como hash, rotação, detecção de reuso, logout e bloqueio de força bruta |
+| `SegurancaApiTest` | Pela camada HTTP: cadastro público (201, 409 e validação por campo), formato de `/auth/me`, 401 sem token e com token inválido, rotas públicas, cookie `HttpOnly`/`SameSite`, 403 por perfil e por posse, identidade vinda do token, refresh pelo cookie, logout e CORS |
+| `TempoRealIntegrationTest` | WebSocket de verdade (STOMP): conexão sem token ou com token inválido recusada, mensagem e aviso entregues na hora (o aviso chega a toda a equipe da organização), "digitando…" e quem não participa não consegue assinar a negociação |
 | `MigracoesPostgresTest` | Num PostgreSQL 16 real (Testcontainers): o Flyway aplica as migrações, o Hibernate valida o esquema e todas as tabelas existem |
+| `MigracaoPessoasEOrganizacoesTest` | A migração V3 sobre dados no formato antigo, num PostgreSQL real: empresas e fornecedores viram organizações com o mesmo id, cada conta vira uma pessoa proprietária com a mesma senha, o negócio ganha autoria, as chaves apontam para as tabelas novas e as sessões antigas são encerradas |
 | `FluxoCotacaoPostgresTest` e `AutenticacaoPostgresTest` | Os mesmos cenários das duas suítes acima, agora no PostgreSQL real, para pegar diferenças que o H2 esconde |
 | `DemonstracaoApiTest` | Login de demonstração em um clique, health check e reset diário dos dados de exemplo |
 | `ArquiteturaTest` | A arquitetura como teste: módulos sem ciclos e usando só a API uns dos outros (Spring Modulith), e camadas da Clean Architecture com as dependências apontando para dentro (ArchUnit) |
 | `DocumentosTest` | Validação de CNPJ e normalização de dados |
-| `RastreioELogsTest` | Toda resposta com `X-Trace-Id`, o mesmo id no corpo dos erros (inclusive os do Spring Security), id enviado pelo cliente ignorado, e um fluxo inteiro (cadastro, senha errada, proposta, mensagem) sem senha, token, e-mail ou conteúdo sigiloso nos logs |
+| `RastreioELogsTest` | Toda resposta com `X-Trace-Id`, o mesmo id no corpo dos erros (inclusive os do Spring Security), id enviado pelo cliente ignorado, e um fluxo inteiro (cadastro, senha errada, proposta, mensagem) sem senha, token, e-mail, nome de pessoa ou conteúdo sigiloso nos logs |
 | `GlobalExceptionHandlerTest` | Respostas de erro difíceis de provocar pela API: erro inesperado sem detalhes internos, violação de integridade, acesso negado por perfil e bloqueio de login com `Retry-After` |
-| `smoke-test-api.sh` | Contra a API real com PostgreSQL: login, proteção das rotas, CORS, validações, regras de perfil e de posse, cotação → proposta → negociação → mensagens → fechamento, dashboards, refresh com rotação e reuso, logout e força bruta |
+| `smoke-test-api.sh` | Contra a API real com PostgreSQL: login (inclusive de um membro da equipe), proteção das rotas, CORS, validações, regras de perfil e de posse, cotação → proposta → negociação → mensagens → fechamento, dashboards, refresh com rotação e reuso, logout e força bruta |
 | Playwright (`frontend/e2e`) | No navegador, com API e banco reais: empresa e fornecedor negociam do começo ao fim (publicar, propor pelo painel do mural, contraproposta, aceitar, fechar com confirmação), vendo um ao outro **ao vivo** (proposta e aviso chegando à empresa, contador de não lidas do fornecedor e atalho do aviso, "digitando…", aceite e fechamento sem recarregar), rota protegida, login com erro, cadastro com validação de CNPJ, sessão após F5, sair e tema claro/escuro. As telas de acesso rodam também num celular emulado |
 | Front-end | Interceptor (token, renovação automática e expiração), guards por perfil, tema claro/escuro, seletor (teclado e busca por letra), controle segmentado, confirmação, máscara de CNPJ e componente raiz |
 
@@ -686,7 +714,7 @@ A base que as próximas fases exigem, feita antes delas. Especificação: [spec 
 - [x] **Spec-Driven Development**: processo e modelo de especificação em [`docs/specs/`](docs/specs/README.md)
 - [x] **Monólito modular com Clean Architecture**: módulos de negócio com domínio, aplicação e infraestrutura, portas e adaptadores, e fronteiras verificadas por teste (Spring Modulith + ArchUnit)
 - [x] **Rastreio por requisição** (OpenTelemetry) e logs em JSON, sem dados sensíveis, verificados por teste
-- [ ] **Pessoas e organizações**: várias pessoas por empresa ou fornecedor, com papéis, e registro de quem fez cada ação
+- [x] **Pessoas e organizações**: várias pessoas por empresa ou fornecedor, com papéis, e registro de quem fez cada ação ([ADR 0015](docs/adr/0015-pessoas-e-organizacoes-separadas.md))
 - [ ] **Autorização por organização**, com teste de isolamento em todas as rotas e trava para rotas novas
 - [ ] **Equipe**: convite por link de uso único e gestão de membros
 - [ ] **Superadmin**, criado só pela configuração do servidor

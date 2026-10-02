@@ -16,7 +16,14 @@ describe('authInterceptor', () => {
     accessToken,
     tokenType: 'Bearer',
     expiresIn: 900,
-    usuario: { id: '1', nome: 'Criare', email: 'e@e.com', cnpj: '11222333000181', tipo: 'EMPRESA' },
+    usuario: {
+      id: '1',
+      nome: 'Ana',
+      email: 'e@e.com',
+      tipo: 'EMPRESA',
+      papel: 'PROPRIETARIO',
+      organizacao: { id: 'o1', razaoSocial: 'Criare', cnpj: '11222333000181' },
+    },
   });
 
   beforeEach(() => {

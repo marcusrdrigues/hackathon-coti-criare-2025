@@ -3,7 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, catchError, finalize, map, of, shareReplay } from 'rxjs';
 import { API_URL } from '../api.config';
-import { ContaDemo, LoginRequest, TipoUsuario, TokenResponse, Usuario } from '../models';
+import { ContaDemo, LoginRequest, TipoOrganizacao, TokenResponse, Usuario } from '../models';
 import { NotificacaoService } from './notificacao.service';
 
 /**
@@ -51,7 +51,7 @@ export class AuthService {
   }
 
   /** Login de um clique numa conta de demonstração. */
-  entrarDemo(perfil: TipoUsuario): Observable<Usuario> {
+  entrarDemo(perfil: TipoOrganizacao): Observable<Usuario> {
     return this.http
       .post<TokenResponse>(`${API_URL}/auth/demo/${perfil}`, {}, { withCredentials: true })
       .pipe(map((resposta) => this.iniciarSessao(resposta)));

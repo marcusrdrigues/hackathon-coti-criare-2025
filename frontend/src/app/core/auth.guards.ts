@@ -1,10 +1,10 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { TipoUsuario } from './models';
+import { TipoOrganizacao } from './models';
 import { AuthService } from './services/auth.service';
 
 /** Exige login. Se o perfil for informado, também exige que o usuário seja daquele tipo. */
-export function perfilGuard(perfil?: TipoUsuario): CanActivateFn {
+export function perfilGuard(perfil?: TipoOrganizacao): CanActivateFn {
   return () => {
     const auth = inject(AuthService);
     const router = inject(Router);

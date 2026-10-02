@@ -2,7 +2,7 @@ import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
-import { ContaDemo, TipoUsuario, Usuario } from '../../../core/models';
+import { ContaDemo, TipoOrganizacao, Usuario } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
 import { mensagemDeErro } from '../../../core/utils/erros';
 import { LayoutAcesso } from '../../shared/layout-acesso/layout-acesso';
@@ -23,7 +23,7 @@ export class Login implements OnInit {
 
   credenciais = { email: '', senha: '' };
   protected readonly carregando = signal(false);
-  protected readonly entrandoComo = signal<TipoUsuario | null>(null);
+  protected readonly entrandoComo = signal<TipoOrganizacao | null>(null);
   protected readonly servidorLento = signal(false);
   protected readonly erro = signal<string | null>(null);
   protected readonly contasDemo = signal<ContaDemo[]>([]);
@@ -40,11 +40,11 @@ export class Login implements OnInit {
     this.entrar(this.auth.login(this.credenciais));
   }
 
-  rotuloPerfil(perfil: TipoUsuario): string {
+  rotuloPerfil(perfil: TipoOrganizacao): string {
     return perfil === 'EMPRESA' ? 'empresa' : 'fornecedor';
   }
 
-  entrarDemo(perfil: TipoUsuario): void {
+  entrarDemo(perfil: TipoOrganizacao): void {
     this.entrandoComo.set(perfil);
     this.entrar(this.auth.entrarDemo(perfil));
   }

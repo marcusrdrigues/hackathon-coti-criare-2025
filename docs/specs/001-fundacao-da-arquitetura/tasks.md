@@ -30,13 +30,13 @@ Cada passo é entregue com o CI verde (testes, ponta a ponta e quality gate) e c
 
 ## Passo 4 · Pessoas e organizações (R1)
 
-- [ ] Migração V3 com os dados existentes preservados, testada no PostgreSQL
-- [ ] Cadastro cria organização e proprietário juntos
-- [ ] Token com pessoa, organização, tipo e papel
-- [ ] Cotação, proposta e mensagem registram a pessoa
-- [ ] Front-end: cadastro, menu da conta e nome da pessoa nas mensagens
-- [ ] Demo com duas pessoas em cada organização
-- [ ] ADR 0015
+- [x] Migração V3 com os dados existentes preservados, testada no PostgreSQL
+- [x] Cadastro cria organização e proprietário juntos
+- [x] Token com pessoa, organização, tipo e papel
+- [x] Cotação, proposta e mensagem registram a pessoa
+- [x] Front-end: cadastro, menu da conta e nome da pessoa nas mensagens
+- [x] Demo com duas pessoas na Criare e na Tech (as contas de um clique e as negociações de exemplo)
+- [x] ADR 0015
 
 ## Passo 5 · Autorização por organização (R4)
 
