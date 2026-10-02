@@ -1,0 +1,69 @@
+# 001 · Tarefas
+
+Cada passo é entregue com o CI verde (testes, ponta a ponta e quality gate) e com o roadmap do README atualizado.
+
+## Passo 1 · Spec, plano e roadmap
+
+- [x] Processo de SDD documentado em [`docs/specs/`](../README.md)
+- [x] Spec, plano e tarefas da fundação
+- [x] Roadmap do README reorganizado em fases
+- [ ] Decisões em aberto da spec resolvidas
+
+## Passo 2 · Módulos (R5)
+
+- [ ] Conferir o Spring Modulith com o Spring Boot 4 (ou cair para ArchUnit)
+- [ ] Mover o código para os módulos `identidade`, `cotacao`, `proposta`, `negociacao`, `temporeal`, `painel`, `demonstracao` e `compartilhado`
+- [ ] Teste que verifica as fronteiras entre módulos
+- [ ] ADR 0013 e seção de arquitetura do README
+
+## Passo 3 · Rastreio e logs (R6)
+
+- [ ] `traceId` em todos os logs da requisição e no cabeçalho `X-Trace-Id`
+- [ ] Logs em JSON no perfil de produção
+- [ ] Teste que garante que os logs não trazem senha, token, e-mail completo nem conteúdo de negociação
+- [ ] ADR 0014
+
+## Passo 4 · Pessoas e organizações (R1)
+
+- [ ] Migração V3 com os dados existentes preservados, testada no PostgreSQL
+- [ ] Cadastro cria organização e proprietário juntos
+- [ ] Token com pessoa, organização, tipo e papel
+- [ ] Cotação, proposta e mensagem registram a pessoa
+- [ ] Front-end: cadastro, menu da conta e nome da pessoa nas mensagens
+- [ ] Demo com duas pessoas em cada organização
+- [ ] ADR 0015
+
+## Passo 5 · Autorização por organização (R4)
+
+- [ ] Política de acesso única por módulo, usada pelo REST e pelo WebSocket
+- [ ] 404 para recurso de outra organização
+- [ ] Teste de isolamento em todas as rotas com id, com trava para rota nova
+- [ ] ADR 0016, que substitui o 0005
+
+## Passo 6 · Equipe (R2)
+
+- [ ] Convite por link de uso único (72 horas, guardado como hash)
+- [ ] Aceitar convite, listar e remover membros, com revogação das sessões
+- [ ] Telas de equipe e de aceitar convite
+- [ ] Teste ponta a ponta: convidar, aceitar e operar como membro
+
+## Passo 7 · Superadmin (R3)
+
+- [ ] Criação pela configuração do servidor
+- [ ] Área administrativa somente leitura, com a lista de organizações
+- [ ] Testes de acesso negado para usuários comuns
+
+## Passo 8 · Padrões de API (R7)
+
+- [ ] Paginação nas listagens, com "Carregar mais" no front-end
+- [ ] Erros no formato Problem Details, com o front-end ajustado
+- [ ] ADR 0017
+
+## Passo 9 · Política de dados (R8)
+
+- [ ] `docs/dados.md` com a classificação e as regras por destino
+
+## Passo 10 · Fechamento
+
+- [ ] Migração V4 removendo as tabelas antigas, depois da validação em produção
+- [ ] Spec marcada como concluída e fase 4 fechada no README

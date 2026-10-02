@@ -216,7 +216,8 @@ hackathon-coti-criare-2025/
 │   └── dependabot.yml           Atualização semanal de dependências
 ├── render.yaml                  Deploy da API no Render (Blueprint)
 ├── docs/                        Deploy, gravação da demo e design system
-│   └── adr/                     Registros das decisões de arquitetura
+│   ├── adr/                     Registros das decisões de arquitetura
+│   └── specs/                   Especificações de cada fase (Spec-Driven Development)
 │
 ├── backend/                     API REST · Spring Boot 4 · Java 21
 │   ├── docker-compose.yml       PostgreSQL 16 + API
@@ -607,7 +608,7 @@ As decisões maiores têm um registro próprio, com contexto, alternativas e con
 
 ## 🗺️ Roadmap
 
-O projeto nasceu num hackathon de 24 horas e continua em evolução. Este é o plano, em ordem de prioridade:
+O projeto nasceu num hackathon de 24 horas e continua em evolução, com direção: primeiro a base, depois governança, produto e IA. A partir da fase 4, cada fase começa por uma especificação em [`docs/specs/`](docs/specs/README.md) (*Spec-Driven Development*): o que muda e como se verifica é combinado antes do código.
 
 ### Fase 1 · Demo pública &nbsp;`em andamento`
 
@@ -633,25 +634,62 @@ Deixar o projeto mais fácil de manter e com qualidade medida.
 - [x] **ADRs** em [`docs/adr/`](docs/adr/README.md): registros curtos das decisões de arquitetura (ex.: por que o refresh token é opaco)
 - [x] **Testes ponta a ponta com Playwright** no CI, simulando empresa e fornecedor no navegador
 
-### Fase 3 · Produto &nbsp;`em andamento`
+### Fase 3 · Tempo real &nbsp;`concluída`
 
-Funcionalidades que aproximam a plataforma de um uso real.
+A negociação acontece ao vivo, sem recarregar a página.
 
-- [x] **Tempo real** na negociação com WebSocket e STOMP ([ADR 0012](docs/adr/0012-tempo-real-com-websocket-e-stomp.md))
+- [x] **Tempo real** com WebSocket e STOMP ([ADR 0012](docs/adr/0012-tempo-real-com-websocket-e-stomp.md))
   - [x] Back-end: conexão autenticada com o JWT, só as partes acompanham a negociação, avisos enviados depois do commit e "digitando"
   - [x] Sala de negociação ao vivo: mensagens e ofertas sem recarregar, "digitando…" e indicador de conexão
   - [x] Mensagens não lidas (contador na navegação e na lista) e avisos de proposta nova, negociação aberta e negócio fechado
-- [ ] **IA com Spring AI**: resumir e comparar propostas, sugerir contrapropostas e ajudar a escrever os requisitos da cotação
-- [ ] **Contrato em PDF** gerado ao fechar o negócio, com as partes, o objeto e o valor acordado
+
+### Fase 4 · Fundação da arquitetura &nbsp;`em andamento`
+
+A base que as próximas fases exigem, feita antes delas. Especificação: [spec 001](docs/specs/001-fundacao-da-arquitetura/spec.md).
+
+- [x] **Spec-Driven Development**: processo e modelo de especificação em [`docs/specs/`](docs/specs/README.md)
+- [ ] **Monólito modular**: código organizado por módulo de negócio, com as fronteiras verificadas por teste (Spring Modulith)
+- [ ] **Rastreio por requisição** e logs estruturados, sem dados sensíveis
+- [ ] **Pessoas e organizações**: várias pessoas por empresa ou fornecedor, com papéis, e registro de quem fez cada ação
+- [ ] **Autorização por organização**, com teste de isolamento em todas as rotas e trava para rotas novas
+- [ ] **Equipe**: convite por link de uso único e gestão de membros
+- [ ] **Superadmin**, criado só pela configuração do servidor
+- [ ] **Paginação** nas listagens e erros no padrão **Problem Details** (RFC 9457)
+- [ ] **Política de dados**: o que é sensível e onde cada dado pode aparecer (logs, auditoria, IA, demo)
+
+### Fase 5 · Auditoria e administração &nbsp;`planejada`
+
+Saber quem fez o quê, visível só para o superadmin.
+
+- [ ] **Histórico de alterações com Hibernate Envers**: quem mudou, quando e qual era o valor anterior
+- [ ] **Eventos de segurança**: logins, falhas, sessões revogadas e as ações do próprio superadmin
+- [ ] **Registro de consumo de IA**: tokens, custo e latência por organização e por funcionalidade
+- [ ] Registros só de acréscimo, com retenção definida e dados sensíveis mascarados
+- [ ] **Console do superadmin** para consultar tudo isso
+
+### Fase 6 · Produto &nbsp;`planejada`
+
 - [ ] **Comparador de propostas** com nota ponderada (preço, prazo, garantia)
-- [ ] **Auditoria com Hibernate Envers**: histórico de quem alterou o quê
+- [ ] **Contrato em PDF** gerado ao fechar o negócio, com as partes, o objeto e o valor acordado
+- [ ] **Modelos de leitura** para o comparador e os painéis (CQRS no mesmo banco)
+
+### Fase 7 · Inteligência artificial &nbsp;`planejada`
+
+Em níveis, cada um com avaliação automatizada antes de chegar ao usuário.
+
+- [ ] **Nível 0 · Plataforma de IA**: Spring AI, prompts versionados, saída estruturada, limite de gasto, mascaramento de dados e avaliações no CI
+- [ ] **Nível 1 · Assistentes pontuais**: ajudar a escrever os requisitos da cotação e resumir a negociação
+- [ ] **Nível 2 · RAG** sobre o histórico da própria organização (pgvector), respeitando o isolamento entre organizações
+- [ ] **Nível 3 · Agente de negociação** com ferramentas: consulta, compara e rascunha; agir exige confirmação de uma pessoa
+- [ ] **Nível 4 · Servidor MCP**: a plataforma acessível a clientes de IA, com as permissões de quem está usando
+- [ ] Defesas do **OWASP Top 10 para LLMs**, como *prompt injection* vinda do texto das propostas e vazamento de dados entre organizações
 
 ### Depois
 
-- [ ] Paginação nas listagens
-- [ ] Recuperação de senha e confirmação de e-mail
+- [ ] Recuperação de senha, confirmação de e-mail e convites por e-mail
 - [ ] Anexos nas cotações e propostas (especificações, catálogos)
-- [ ] Limite de tentativas de login e tempo real compartilhados entre instâncias (Redis ou RabbitMQ), para rodar mais de uma API
+- [ ] Uma pessoa em mais de uma organização
+- [ ] Tempo real e limite de tentativas compartilhados entre instâncias (Redis ou RabbitMQ), para rodar mais de uma API
 
 ---
 
