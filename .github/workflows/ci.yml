@@ -60,17 +60,23 @@ jobs:
           python3 - <<'PY'
           import csv, os
           linhas = cobertas = ramos = ramos_cobertos = 0
+          classes = []
           with open('target/site/jacoco/jacoco.csv') as f:
               for l in csv.DictReader(f):
                   cobertas += int(l['LINE_COVERED'])
                   linhas += int(l['LINE_COVERED']) + int(l['LINE_MISSED'])
                   ramos_cobertos += int(l['BRANCH_COVERED'])
                   ramos += int(l['BRANCH_COVERED']) + int(l['BRANCH_MISSED'])
+                  classes.append((int(l['LINE_MISSED']), f"{l['PACKAGE'].removeprefix('com.gestao.')}.{l['CLASS']}"))
           pl = 100 * cobertas / linhas; pr = 100 * ramos_cobertos / ramos
           texto = f'Linhas: {pl:.1f}% · Ramos: {pr:.1f}%'
           print(f'::notice title=Cobertura do back-end::{texto}')
+          # Onde estão as linhas sem teste, para saber por onde começar
+          descobertas = sorted((c for c in classes if c[0]), reverse=True)[:12]
+          lista = ' · '.join(f'{nome} ({faltam})' for faltam, nome in descobertas)
+          print(f'::notice title=Mais linhas sem teste::{lista}')
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as resumo:
-              resumo.write(f'### Cobertura do back-end (JaCoCo)\n\n{texto}\n')
+              resumo.write(f'### Cobertura do back-end (JaCoCo)\n\n{texto}\n\nMais linhas sem teste: {lista}\n')
           PY
 
       - name: Guardar o relatório de cobertura
