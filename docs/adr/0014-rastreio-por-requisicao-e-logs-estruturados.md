@@ -12,7 +12,7 @@ Os logs também são um destino de dados: o que é sigiloso na API (senha, token
 ## Decisão
 
 - **OpenTelemetry pelo Micrometer Tracing** (`spring-boot-starter-opentelemetry`): cada requisição HTTP ganha um trace, e o `traceId` vai para o MDC, ou seja, para toda linha de log daquela requisição.
-- O filtro `RastreioDeRequisicao` devolve o `traceId` no cabeçalho **`X-Trace-Id`**, antes do Spring Security, para valer também nos 401 e 403. Sem tracing ativo (nos testes, por exemplo), ele mesmo gera um id no mesmo formato. **O valor nunca vem do cliente**, para ninguém injetar texto nos logs.
+- O filtro `RastreioDeRequisicao` devolve o `traceId` no cabeçalho **`X-Trace-Id`**, antes do Spring Security, para valer também nos 401 e 403. Sem tracing ativo, ele mesmo gera um id no mesmo formato. Um `X-Trace-Id` enviado pelo cliente é ignorado, para ninguém injetar texto nos logs; só vale o cabeçalho padrão `traceparent` (W3C), cujo formato é validado.
 - Os erros da API trazem o mesmo **`traceId` no corpo**, e o front-end mostra o começo dele quando uma falha é do servidor: "Código para o suporte: 4bf92f35".
 - **Logs em JSON (formato ECS) em produção**, ligados por variável de ambiente (`LOGGING_STRUCTURED_FORMAT_CONSOLE=ecs`). Em desenvolvimento, texto com o `traceId` entre colchetes.
 - **Traces não são exportados** até alguém configurar um coletor (`MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT`). O envio de métricas por OTLP fica desligado.

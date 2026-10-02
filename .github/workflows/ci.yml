@@ -125,6 +125,12 @@ jobs:
           # Toda resposta devolve o identificador de rastreio
           curl -sI http://localhost:8085/api/v1/cotacoes/categorias | grep -iq '^x-trace-id: [0-9a-f]\{32\}' \
             || { echo "::error title=Rastreio::A resposta não trouxe o cabeçalho X-Trace-Id"; exit 1; }
+          # O id do cabeçalho é o mesmo do corpo do erro
+          curl -s -D cabecalhos.txt -o erro.json -H 'Authorization: Bearer invalido' http://localhost:8085/api/v1/cotacoes/minhas
+          cabecalho=$(grep -i '^x-trace-id:' cabecalhos.txt | tr -d '\r' | awk '{print $2}')
+          corpo=$(python3 -c "import json; print(json.load(open('erro.json'))['traceId'])")
+          [ -n "$cabecalho" ] && [ "$cabecalho" = "$corpo" ] \
+            || { echo "::error title=Rastreio::Cabeçalho ($cabecalho) e corpo ($corpo) com ids diferentes"; exit 1; }
           python3 - <<'PY'
           import json, sys
           linhas = [l for l in open('api.log', encoding='utf-8') if l.strip()]

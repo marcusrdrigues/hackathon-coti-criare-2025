@@ -20,7 +20,8 @@ import java.util.HexFormat;
  *
  * <p>Com o OpenTelemetry ativo, o identificador é o traceId do trace da requisição, que o
  * Micrometer Tracing já colocou no MDC. Sem ele (por exemplo, nos testes), este filtro gera
- * um no mesmo formato. O valor nunca vem do cliente, para ninguém injetar texto nos logs.
+ * um no mesmo formato. Um {@value Rastreio#CABECALHO} enviado pelo cliente é ignorado, para
+ * ninguém injetar texto nos logs (o {@code traceparent} do W3C, validado pelo OpenTelemetry, vale).
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 2) // depois do filtro de observação do Spring, antes da segurança

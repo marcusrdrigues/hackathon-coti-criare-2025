@@ -3,6 +3,7 @@ package com.gestao.compartilhado;
 import com.gestao.compartilhado.infraestrutura.web.Rastreio;
 import com.gestao.compartilhado.infraestrutura.web.RastreioDeRequisicao;
 import com.jayway.jsonpath.JsonPath;
+import io.micrometer.observation.ObservationRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +19,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.filter.ServerHttpObservationFilter;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -51,9 +53,11 @@ class RastreioELogsTest {
 
     @BeforeEach
     void setUp() {
-        // O MockMvc não registra os filtros sozinho: o de rastreio entra antes do Spring Security, como na aplicação
+        // O MockMvc não registra os filtros sozinho. Aqui entram na mesma ordem da aplicação:
+        // a observação da requisição (que abre o trace), o rastreio e, por fim, o Spring Security
         mvc = MockMvcBuilders.webAppContextSetup(contexto)
-                .addFilters(contexto.getBean(RastreioDeRequisicao.class))
+                .addFilters(new ServerHttpObservationFilter(contexto.getBean(ObservationRegistry.class)),
+                        contexto.getBean(RastreioDeRequisicao.class))
                 .apply(springSecurity())
                 .build();
     }
