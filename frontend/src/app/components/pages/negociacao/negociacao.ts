@@ -15,14 +15,15 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { EMPTY, catchError, forkJoin, interval, switchMap } from 'rxjs';
+import { EMPTY, catchError, filter, forkJoin, interval, pairwise, switchMap } from 'rxjs';
 import { Mensagem, Negociacao as NegociacaoModel } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
 import { NegociacaoService } from '../../../core/services/negociacao.service';
 import { NotificacaoService } from '../../../core/services/notificacao.service';
+import { EventoNegociacao, TempoRealService } from '../../../core/services/tempo-real.service';
 import { mensagemDeErro } from '../../../core/utils/erros';
 import { STATUS_NEGOCIACAO } from '../../../core/utils/formatos';
 import { ConfirmacaoService } from '../../../ui/confirmacao';
@@ -31,8 +32,14 @@ import { Painel } from '../../../ui/painel';
 import { Status } from '../../../ui/status';
 import { ListaNegociacoes, ordenarNegociacoes } from '../../shared/lista-negociacoes/lista-negociacoes';
 
-/** Intervalo para buscar mensagens novas da outra parte (o tempo real com WebSocket fica para a Fase 3). */
-const ATUALIZACAO_MS = 10_000;
+/** Sem conexão em tempo real, a sala volta a consultar a API neste intervalo. */
+const ATUALIZACAO_SEM_CONEXAO_MS = 10_000;
+
+/** "Digitando…" some se nenhum sinal novo chegar nesse tempo. */
+const DIGITANDO_EXPIRA_MS = 4_000;
+
+/** Intervalo mínimo entre dois sinais de "digitando" enviados. */
+const DIGITANDO_INTERVALO_MS = 2_500;
 
 /** Mensagens agrupadas por dia, como no Mensagens do iPhone. */
 interface GrupoDoDia {
@@ -68,7 +75,15 @@ export class Negociacao implements OnInit {
   private readonly confirmacao = inject(ConfirmacaoService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
+  private readonly tempoReal = inject(TempoRealService);
   protected readonly auth = inject(AuthService);
+
+  /** Ligado ao servidor: a sala atualiza na hora, sem consultar de tempos em tempos. */
+  protected readonly aoVivo = this.tempoReal.conectado;
+  /** A outra parte está escrevendo agora. */
+  protected readonly outraDigitando = signal(false);
+  private fimDoDigitando: ReturnType<typeof setTimeout> | undefined;
+  private ultimoSinalDigitando = 0;
 
   readonly id = input.required<string>();
 
@@ -139,9 +154,29 @@ export class Negociacao implements OnInit {
         this.mensagens.set([]);
         this.texto.set('');
         this.valor.set(null);
+        this.outraDigitando.set(false);
         this.carregar();
       });
     });
+
+    // Eventos da negociação aberta, ao vivo; troca de assinatura quando muda de conversa
+    toObservable(this.id)
+      .pipe(
+        switchMap((id) => this.tempoReal.negociacao(id)),
+        takeUntilDestroyed(),
+      )
+      .subscribe((evento) => this.aoReceber(evento));
+
+    // Voltou a conexão depois de uma queda: busca o que pode ter chegado nesse meio-tempo
+    toObservable(this.aoVivo)
+      .pipe(
+        pairwise(),
+        filter(([antes, agora]) => !antes && agora && this.negociacao() !== null),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => this.carregar());
+
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.fimDoDigitando));
 
     // Rola até a mensagem mais nova sempre que chegar mensagem
     effect(() => {
@@ -156,8 +191,10 @@ export class Negociacao implements OnInit {
       .pipe(catchError(() => EMPTY))
       .subscribe((lista) => this.outras.set(ordenarNegociacoes(lista)));
 
-    interval(ATUALIZACAO_MS)
+    // Plano B: sem tempo real (servidor acordando, rede instável), consulta de tempos em tempos
+    interval(ATUALIZACAO_SEM_CONEXAO_MS)
       .pipe(
+        filter(() => !this.aoVivo()),
         // Falha momentânea de rede não deve interromper a atualização automática
         switchMap(() => this.negociacaoService.buscar(this.id()).pipe(catchError(() => EMPTY))),
         takeUntilDestroyed(this.destroyRef),
@@ -186,6 +223,49 @@ export class Negociacao implements OnInit {
       },
       error: (e) => this.erro.set(mensagemDeErro(e)),
     });
+  }
+
+  /** Mensagem nova, mudança de status ou "digitando" da outra parte. */
+  private aoReceber(evento: EventoNegociacao): void {
+    if (evento.tipo === 'DIGITANDO') {
+      if (evento.remetente !== this.auth.usuario()?.tipo) {
+        this.mostrarDigitando();
+      }
+      return;
+    }
+    if (evento.negociacao) {
+      this.negociacao.set(evento.negociacao);
+    }
+    if (evento.tipo === 'MENSAGEM' && evento.mensagem) {
+      this.adicionarMensagem(evento.mensagem);
+      if (evento.mensagem.tipoRemetente !== this.auth.usuario()?.tipo) {
+        this.outraDigitando.set(false);
+      }
+    }
+  }
+
+  /** Acrescenta sem duplicar: a própria mensagem chega pela resposta do POST e pelo tópico. */
+  private adicionarMensagem(mensagem: Mensagem): void {
+    if (this.mensagens().some((m) => m.id === mensagem.id)) {
+      return;
+    }
+    this.mensagens.update((lista) => [...lista, mensagem].sort((a, b) => a.dataEnvio.localeCompare(b.dataEnvio)));
+  }
+
+  private mostrarDigitando(): void {
+    this.outraDigitando.set(true);
+    clearTimeout(this.fimDoDigitando);
+    this.fimDoDigitando = setTimeout(() => this.outraDigitando.set(false), DIGITANDO_EXPIRA_MS);
+  }
+
+  /** Ao escrever, avisa a outra parte (no máximo um sinal a cada 2,5 s). */
+  protected aoDigitar(texto: string): void {
+    this.texto.set(texto);
+    const agora = Date.now();
+    if (texto.trim() && agora - this.ultimoSinalDigitando > DIGITANDO_INTERVALO_MS) {
+      this.ultimoSinalDigitando = agora;
+      this.tempoReal.avisarDigitando(this.id());
+    }
   }
 
   protected ehMinha(m: Mensagem): boolean {
@@ -266,11 +346,14 @@ export class Negociacao implements OnInit {
     this.enviando.set(true);
     // Quem envia a API descobre pelo token
     this.negociacaoService.enviarMensagem({ negociacaoId: this.id(), mensagem, valorOfertado }).subscribe({
-      next: () => {
+      next: (mensagem) => {
         this.texto.set('');
         this.valor.set(null);
         this.enviando.set(false);
-        this.carregar();
+        this.ultimoSinalDigitando = 0;
+        this.adicionarMensagem(mensagem);
+        // A última oferta pode ter mudado; o tópico também avisa, mas sem conexão é a resposta que vale
+        this.negociacaoService.buscar(this.id()).subscribe((n) => this.negociacao.set(n));
       },
       error: (e) => {
         this.notificacao.erro(mensagemDeErro(e));

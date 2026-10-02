@@ -75,6 +75,11 @@
             <p>{{ n.cotacaoNome }}</p>
           }
         </div>
+        @if (emAndamento()) {
+          <span class="conexao" [class.ao-vivo]="aoVivo()" [attr.title]="aoVivo() ? 'Mensagens chegam na hora' : 'Tentando reconectar; a conversa é atualizada a cada 10 segundos'">
+            <span class="conexao-texto">{{ aoVivo() ? 'Ao vivo' : 'Reconectando…' }}</span>
+          </span>
+        }
         @if (negociacao(); as n) {
           <ui-status class="topo-status" [tom]="status[n.status].tom">{{ status[n.status].texto }}</ui-status>
         }
@@ -135,6 +140,14 @@
           }
         </div>
 
+        <!-- Região viva sempre presente, para o leitor de tela anunciar quando a outra parte começa a escrever -->
+        <p class="digitando" role="status">
+          @if (outraDigitando() && emAndamento()) {
+            <span class="pontos" aria-hidden="true"><span></span><span></span><span></span></span>
+            {{ outraParte() }} está digitando…
+          }
+        </p>
+
         @if (emAndamento()) {
           <!-- Decisão sobre a oferta na mesa -->
           @if (ehEmpresa() || ofertaDaOutraParte()) {
@@ -170,7 +183,7 @@
               maxlength="1000"
               placeholder="Mensagem"
               [ngModel]="texto()"
-              (ngModelChange)="texto.set($event)"
+              (ngModelChange)="aoDigitar($event)"
               (keydown)="teclaNaMensagem($event)"
             ></textarea>
             <div class="grupo-entrada campo-valor">

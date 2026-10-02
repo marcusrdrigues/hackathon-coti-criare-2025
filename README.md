@@ -117,7 +117,7 @@ sequenceDiagram
 - Avisos rápidos de sucesso e erro, com as mensagens que vêm da API
 - Moeda e datas no formato brasileiro (`R$ 1.234,56`, `31/12/2025`)
 - Máscara de CNPJ no cadastro
-- Sala de negociação atualiza sozinha a cada 10 segundos
+- Sala de negociação **ao vivo** (WebSocket): mensagens e ofertas chegam na hora, com "digitando…" e indicador de conexão; sem conexão, volta a consultar a cada 10 segundos
 - Telas carregadas sob demanda (*lazy loading*)
 - **Modo claro e escuro**: segue o tema do sistema e pode ser fixado no menu do usuário ou no canto das telas de acesso
 - Layout responsivo, do celular ao monitor largo; login e cadastro cabem na tela sem rolagem
@@ -506,6 +506,16 @@ Legenda: 🌐 público · 🔑 qualquer usuário logado · 🏢 só empresa · �
 
 </details>
 
+### Tempo real (WebSocket)
+
+Conexão STOMP em `/ws` (em produção, `wss://portal-criare-api.onrender.com/ws`), autenticada no CONNECT com o mesmo token: `Authorization: Bearer <accessToken>`. Detalhes e motivos em [ADR 0012](docs/adr/0012-tempo-real-com-websocket-e-stomp.md).
+
+| Destino | Direção | Quem pode | O que trafega |
+|---|---|---|---|
+| `/topic/negociacoes/{id}` | servidor → cliente | as duas partes da negociação | `MENSAGEM` (mensagem + negociação atualizada), `STATUS` (fechada ou encerrada) e `DIGITANDO` |
+| `/user/queue/avisos` | servidor → cliente | o próprio usuário | mensagem nova, proposta recebida, negociação aberta, fechada ou encerrada |
+| `/app/negociacoes/{id}/digitando` | cliente → servidor | as duas partes da negociação | sinal de "digitando", repassado à outra parte |
+
 ### Formato dos erros
 
 ```json
@@ -564,7 +574,7 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | `DemonstracaoApiTest` | Login de demonstração em um clique, health check e reset diário dos dados de exemplo |
 | `DocumentosTest` | Validação de CNPJ e normalização de dados |
 | `smoke-test-api.sh` | Contra a API real com PostgreSQL: login, proteção das rotas, CORS, validações, regras de perfil e de posse, cotação → proposta → negociação → mensagens → fechamento, dashboards, refresh com rotação e reuso, logout e força bruta |
-| Playwright (`frontend/e2e`) | No navegador, com API e banco reais: empresa e fornecedor negociam do começo ao fim (publicar, propor pelo painel do mural, contraproposta, aceitar, fechar com confirmação), rota protegida, login com erro, cadastro com validação de CNPJ, sessão após F5, sair e tema claro/escuro. As telas de acesso rodam também num celular emulado |
+| Playwright (`frontend/e2e`) | No navegador, com API e banco reais: empresa e fornecedor negociam do começo ao fim (publicar, propor pelo painel do mural, contraproposta, aceitar, fechar com confirmação), vendo um ao outro **ao vivo** ("digitando…", aceite e fechamento sem recarregar), rota protegida, login com erro, cadastro com validação de CNPJ, sessão após F5, sair e tema claro/escuro. As telas de acesso rodam também num celular emulado |
 | Front-end | Interceptor (token, renovação automática e expiração), guards por perfil, tema claro/escuro, seletor (teclado e busca por letra), controle segmentado, confirmação, máscara de CNPJ e componente raiz |
 
 O **GitHub Actions** (`.github/workflows/ci.yml`) roda a cada push: compila e testa o back-end (inclusive contra PostgreSQL com Testcontainers), sobe a API com PostgreSQL e executa o teste de fumaça, faz o build de produção e os testes do front-end, e roda os testes ponta a ponta com Playwright. O **CodeQL** procura vulnerabilidades no código Java e TypeScript, e o **Dependabot** abre PRs semanais com as atualizações de dependências.
@@ -626,7 +636,7 @@ Funcionalidades que aproximam a plataforma de um uso real.
 
 - [ ] **Tempo real** na negociação com WebSocket e STOMP ([ADR 0012](docs/adr/0012-tempo-real-com-websocket-e-stomp.md))
   - [x] Back-end: conexão autenticada com o JWT, só as partes acompanham a negociação, avisos enviados depois do commit e "digitando"
-  - [ ] Sala de negociação ao vivo: mensagens e ofertas sem recarregar, "digitando…" e indicador de conexão
+  - [x] Sala de negociação ao vivo: mensagens e ofertas sem recarregar, "digitando…" e indicador de conexão
   - [ ] Mensagens não lidas (contador na navegação e na lista) e avisos de proposta nova, negociação aberta e negócio fechado
 - [ ] **IA com Spring AI**: resumir e comparar propostas, sugerir contrapropostas e ajudar a escrever os requisitos da cotação
 - [ ] **Contrato em PDF** gerado ao fechar o negócio, com as partes, o objeto e o valor acordado

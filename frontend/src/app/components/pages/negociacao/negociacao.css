@@ -78,6 +78,91 @@
   white-space: nowrap;
 }
 
+/* ---------- Conexão em tempo real ---------- */
+.conexao {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
+  font-size: var(--texto-legenda);
+  color: var(--cor-texto-2);
+}
+
+.conexao::before {
+  content: '';
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  background: var(--cor-texto-3);
+}
+
+.conexao.ao-vivo::before {
+  background: var(--cor-sucesso);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cor-sucesso) 22%, transparent);
+}
+
+.conexao:not(.ao-vivo)::before {
+  animation: piscar 1.4s ease-in-out infinite;
+}
+
+/* ---------- "Digitando…" ---------- */
+.digitando {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 0;
+  padding: 0 var(--esp-5);
+  font-size: var(--texto-legenda);
+  color: var(--cor-texto-2);
+}
+
+.digitando:not(:empty) {
+  padding-block: 0 var(--esp-3);
+}
+
+.pontos {
+  display: inline-flex;
+  gap: 3px;
+  padding: 0.4375rem 0.625rem;
+  border-radius: 1rem;
+  background: var(--cor-balao-outro);
+}
+
+.pontos span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cor-texto-2);
+  animation: saltar 1.2s ease-in-out infinite;
+}
+
+.pontos span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.pontos span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes saltar {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    transform: none;
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes piscar {
+  50% {
+    opacity: 0.3;
+  }
+}
+
 /* ---------- Escada de valores (assinatura do produto) ---------- */
 .escada {
   display: flex;
@@ -339,6 +424,20 @@
 @media (max-width: 639.98px) {
   .topo-status {
     display: none;
+  }
+
+  /* No celular fica só o ponto; o texto continua para o leitor de tela */
+  .conexao-texto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .digitando {
+    padding-inline: var(--esp-4);
   }
 
   .escada {

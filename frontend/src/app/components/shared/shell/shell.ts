@@ -1,9 +1,10 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
+import { TempoRealService } from '../../../core/services/tempo-real.service';
 import { CnpjPipe } from '../../../core/utils/cnpj.pipe';
 import { iniciais } from '../../../core/utils/formatos';
 import { Icone, NomeIcone } from '../../../ui/icone';
@@ -71,6 +72,11 @@ export class Shell {
   protected readonly comLateral = signal(true);
 
   constructor() {
+    // Tempo real enquanto houver sessão nas telas internas
+    const tempoReal = inject(TempoRealService);
+    effect(() => (this.auth.logado() ? tempoReal.ligar() : tempoReal.desligar()));
+    inject(DestroyRef).onDestroy(() => tempoReal.desligar());
+
     if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
       const midia = window.matchMedia(LARGURA_COM_LATERAL);
       this.comLateral.set(midia.matches);

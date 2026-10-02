@@ -4,7 +4,8 @@ import { entrarComoDemo, sufixo } from './apoio';
 /**
  * O fluxo principal com as duas partes ao mesmo tempo, cada uma no seu
  * navegador: a empresa publica, o fornecedor propõe, as duas negociam e a
- * empresa fecha o negócio.
+ * empresa fecha o negócio. Depois que a sala abre, ninguém recarrega a página:
+ * tudo chega pelo tempo real (WebSocket).
  */
 test('empresa e fornecedor negociam até fechar o negócio', async ({ browser, baseURL }) => {
   const titulo = `Cotação E2E ${sufixo()}`;
@@ -45,6 +46,7 @@ test('empresa e fornecedor negociam até fechar o negócio', async ({ browser, b
     // Confirmação no diálogo do próprio sistema, não no confirm() do navegador
     await empresa.getByRole('alertdialog').getByRole('button', { name: 'Negociar' }).click();
     await expect(empresa).toHaveURL(/\/pages\/negociacao\//);
+    await expect(empresa.getByText('Ao vivo')).toBeVisible();
 
     await empresa.getByLabel('Mensagem', { exact: true }).fill('Fechamos em 10.800 com o mesmo prazo?');
     await empresa.getByLabel('Valor da contraproposta (opcional)').fill('10800');
@@ -52,16 +54,24 @@ test('empresa e fornecedor negociam até fechar o negócio', async ({ browser, b
     await expect(empresa.getByText('Fechamos em 10.800 com o mesmo prazo?')).toBeVisible();
   });
 
-  await test.step('fornecedor aceita a oferta', async () => {
+  await test.step('fornecedor abre a sala e a empresa vê que ele está digitando', async () => {
     await fornecedor.goto(empresa.url().replace(/^https?:\/\/[^/]+/, ''));
-    await fornecedor.getByRole('button', { name: /Aceitar R\$\s?10\.800,00/ }).click();
-    await expect(fornecedor.getByText('Aceito a sua oferta')).toBeVisible();
+    await expect(fornecedor.getByText('Ao vivo')).toBeVisible();
+    await fornecedor.getByLabel('Mensagem', { exact: true }).pressSequentially('Deixa eu ver', { delay: 50 });
+    await expect(empresa.getByText(/está digitando/)).toBeVisible();
   });
 
-  await test.step('empresa fecha o negócio', async () => {
-    await empresa.reload();
+  await test.step('fornecedor aceita e a empresa recebe na hora', async () => {
+    await fornecedor.getByRole('button', { name: /Aceitar R\$\s?10\.800,00/ }).click();
+    await expect(fornecedor.getByText('Aceito a sua oferta')).toBeVisible();
+    // Sem recarregar: chegou pelo WebSocket
+    await expect(empresa.getByText('Aceito a sua oferta')).toBeVisible();
+  });
+
+  await test.step('empresa fecha o negócio e o fornecedor vê na hora', async () => {
     await empresa.getByRole('button', { name: /Fechar por R\$\s?10\.800,00/ }).click();
     await empresa.getByRole('alertdialog').getByRole('button', { name: 'Fechar negócio' }).click();
     await expect(empresa.getByText(/Negócio fechado em/)).toBeVisible();
+    await expect(fornecedor.getByText(/Negócio fechado em/)).toBeVisible();
   });
 });

@@ -5,4 +5,6 @@
  */
 export const environment = {
   apiUrl: '/api/v1',
+  // Tempo real: o proxy da Vercel não repassa WebSocket, então a conexão vai direto na API (ver docs/adr/0012)
+  wsUrl: 'wss://portal-criare-api.onrender.com/ws',
 };
