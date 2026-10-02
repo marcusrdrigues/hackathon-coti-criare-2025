@@ -1,6 +1,6 @@
 package com.gestao.temporeal.infraestrutura;
 
-import com.gestao.compras.aplicacao.NegociacaoService;
+import com.gestao.compras.aplicacao.AcessoCompras;
 import com.gestao.identidade.aplicacao.UsuarioAutenticado;
 import com.gestao.identidade.infraestrutura.seguranca.ClaimsDoToken;
 import com.gestao.identidade.infraestrutura.seguranca.UsuarioAtual;
@@ -40,7 +40,7 @@ public class AutenticacaoStomp implements ChannelInterceptor {
     private static final String PREFIXO_ENVIO_NEGOCIACAO = "/app/negociacoes/";
 
     private final JwtDecoder jwtDecoder;
-    private final NegociacaoService negociacaoService;
+    private final AcessoCompras acessoCompras;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -99,14 +99,15 @@ public class AutenticacaoStomp implements ChannelInterceptor {
         exigirParticipante(barra < 0 ? resto : resto.substring(0, barra), usuario);
     }
 
+    /**
+     * A mesma política de acesso da API REST (ADR 0016). Id inválido, inexistente ou de
+     * outra organização recebem a mesma recusa, para não revelar quais ids existem.
+     */
     private void exigirParticipante(String id, UsuarioAutenticado usuario) {
         try {
-            // Lança AcessoNegadoException se o usuário não for uma das partes
-            negociacaoService.buscarParaParticipante(UUID.fromString(id), usuario);
-        } catch (IllegalArgumentException e) {
-            throw new MessageDeliveryException("Negociação inválida.");
+            acessoCompras.negociacaoVisivel(UUID.fromString(id), usuario);
         } catch (RuntimeException e) {
-            throw new MessageDeliveryException("Você não participa desta negociação.");
+            throw new MessageDeliveryException("Negociação não encontrada.");
         }
     }
 

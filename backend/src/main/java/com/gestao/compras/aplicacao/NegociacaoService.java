@@ -1,6 +1,5 @@
 package com.gestao.compras.aplicacao;
 
-import com.gestao.compartilhado.dominio.AcessoNegadoException;
 import com.gestao.compartilhado.dominio.RecursoNaoEncontradoException;
 import com.gestao.compartilhado.dominio.RegraDeNegocioException;
 import com.gestao.compras.aplicacao.porta.MensagemNegociacaoRepositorio;
@@ -37,6 +36,7 @@ public class NegociacaoService {
     private final PropostaRepositorio propostaRepositorio;
     private final MensagemNegociacaoRepositorio mensagemRepositorio;
     private final PropostaService propostaService;
+    private final AcessoCompras acesso;
     private final ApplicationEventPublisher eventos;
 
     /**
@@ -45,9 +45,8 @@ public class NegociacaoService {
      * transação), e a cotação passa para EM_NEGOCIACAO.
      */
     @Transactional
-    public Negociacao criarNegociacao(UUID propostaId, UUID empresaId) {
-        Proposta proposta = propostaService.buscarPorId(propostaId);
-        propostaService.verificarEmpresaDaCotacao(proposta, empresaId);
+    public Negociacao criarNegociacao(UUID propostaId, UsuarioAutenticado usuario) {
+        Proposta proposta = acesso.propostaRecebida(propostaId, usuario);
 
         if (negociacaoRepositorio.existeParaProposta(propostaId)) {
             throw new RegraDeNegocioException("Já existe uma negociação para esta proposta!");
@@ -85,18 +84,17 @@ public class NegociacaoService {
         return negociacao;
     }
 
+    /** Sem checar quem pede: para uso interno do sistema. Quem atende um usuário passa pelo {@link AcessoCompras}. */
     @Transactional(readOnly = true)
     public Negociacao buscarPorId(UUID id) {
         return negociacaoRepositorio.buscarPorId(id)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Negociação não encontrada!"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException(AcessoCompras.NEGOCIACAO_NAO_ENCONTRADA));
     }
 
     /** Só a empresa e o fornecedor da negociação podem vê-la. */
     @Transactional(readOnly = true)
     public Negociacao buscarParaParticipante(UUID id, UsuarioAutenticado usuario) {
-        Negociacao negociacao = buscarPorId(id);
-        verificarParticipante(negociacao, usuario);
-        return negociacao;
+        return acesso.negociacaoVisivel(id, usuario);
     }
 
     @Transactional(readOnly = true)
@@ -111,9 +109,8 @@ public class NegociacaoService {
      * propostas que ainda estavam pendentes.
      */
     @Transactional
-    public Negociacao finalizarNegociacao(UUID id, BigDecimal valorFinal, UUID empresaId) {
-        Negociacao negociacao = buscarPorId(id);
-        verificarEmpresa(negociacao, empresaId);
+    public Negociacao finalizarNegociacao(UUID id, BigDecimal valorFinal, UsuarioAutenticado usuario) {
+        Negociacao negociacao = acesso.negociacaoDaEmpresa(id, usuario);
 
         if (negociacao.getStatus() != StatusNegociacao.EM_ANDAMENTO) {
             throw new RegraDeNegocioException("Negociação não está em andamento!");
@@ -143,9 +140,8 @@ public class NegociacaoService {
      * volta a ficar aberta para negociar com outro fornecedor.
      */
     @Transactional
-    public Negociacao cancelarNegociacao(UUID id, UUID empresaId) {
-        Negociacao negociacao = buscarPorId(id);
-        verificarEmpresa(negociacao, empresaId);
+    public Negociacao cancelarNegociacao(UUID id, UsuarioAutenticado usuario) {
+        Negociacao negociacao = acesso.negociacaoDaEmpresa(id, usuario);
 
         if (negociacao.getStatus() != StatusNegociacao.EM_ANDAMENTO) {
             throw new RegraDeNegocioException("Negociação não está em andamento!");
@@ -198,22 +194,6 @@ public class NegociacaoService {
             negociacao.setLidaEmpresaEm(LocalDateTime.now());
         } else {
             negociacao.setLidaFornecedorEm(LocalDateTime.now());
-        }
-    }
-
-    void verificarParticipante(Negociacao negociacao, UsuarioAutenticado usuario) {
-        UUID participante = usuario.ehEmpresa()
-                ? negociacao.getEmpresa().getId()
-                : negociacao.getFornecedor().getId();
-        if (!participante.equals(usuario.organizacaoId())) {
-            throw new AcessoNegadoException("Você não participa desta negociação.");
-        }
-    }
-
-    /** Fechar ou encerrar é decisão da empresa compradora. */
-    private void verificarEmpresa(Negociacao negociacao, UUID empresaId) {
-        if (!negociacao.getEmpresa().getId().equals(empresaId)) {
-            throw new AcessoNegadoException("Só a empresa desta negociação pode fechá-la ou encerrá-la.");
         }
     }
 }

@@ -64,21 +64,21 @@ public class PropostaController {
     @GetMapping("/cotacao/{cotacaoId}")
     public ResponseEntity<List<PropostaResponse>> listarPorCotacao(
             @Parameter(description = "ID da cotação") @PathVariable UUID cotacaoId) {
-        return ResponseEntity.ok(paraResposta(propostaService.listarPorCotacao(cotacaoId, usuarioAtual.obter().organizacaoId())));
+        return ResponseEntity.ok(paraResposta(propostaService.listarPorCotacao(cotacaoId, usuarioAtual.obter())));
     }
 
     @Operation(summary = "Recusar proposta", description = "Perfil EMPRESA, dona da cotação")
     @PreAuthorize("hasRole('EMPRESA')")
     @PatchMapping("/{id}/recusar")
     public ResponseEntity<PropostaResponse> recusarProposta(@Parameter(description = "ID da proposta") @PathVariable UUID id) {
-        return ResponseEntity.ok(propostaMapper.toResponse(propostaService.recusarProposta(id, usuarioAtual.obter().organizacaoId())));
+        return ResponseEntity.ok(propostaMapper.toResponse(propostaService.recusarProposta(id, usuarioAtual.obter())));
     }
 
     @Operation(summary = "Retirar proposta", description = "Perfil FORNECEDOR, autor. Só enquanto não foi aceita")
     @PreAuthorize("hasRole('FORNECEDOR')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletarProposta(@Parameter(description = "ID da proposta") @PathVariable UUID id) {
-        propostaService.deletarProposta(id, usuarioAtual.obter().organizacaoId());
+        propostaService.deletarProposta(id, usuarioAtual.obter());
         return ResponseEntity.noContent().build();
     }
 

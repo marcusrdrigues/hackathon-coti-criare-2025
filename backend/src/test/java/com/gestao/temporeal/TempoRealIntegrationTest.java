@@ -148,7 +148,7 @@ class TempoRealIntegrationTest {
         StompSession sessaoFornecedor = conectar(token("contato@limpabem.com"), new Erros());
         BlockingQueue<String> avisos = assinar(sessaoFornecedor, AVISOS);
 
-        negociacaoService.criarNegociacao(proposta.getId(), empresa.organizacaoId());
+        negociacaoService.criarNegociacao(proposta.getId(), empresa);
 
         String aviso = avisos.poll(ESPERA_S, TimeUnit.SECONDS);
         assertNotNull(aviso, "o fornecedor deveria ser avisado da negociação");
@@ -222,7 +222,7 @@ class TempoRealIntegrationTest {
     }
 
     private Negociacao novaNegociacao() {
-        return negociacaoService.criarNegociacao(novaProposta().getId(), empresa.organizacaoId());
+        return negociacaoService.criarNegociacao(novaProposta().getId(), empresa);
     }
 
     private Proposta novaProposta() {

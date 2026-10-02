@@ -1,6 +1,5 @@
 package com.gestao.compras.aplicacao;
 
-import com.gestao.compartilhado.dominio.AcessoNegadoException;
 import com.gestao.compartilhado.dominio.RecursoNaoEncontradoException;
 import com.gestao.compartilhado.dominio.RegraDeNegocioException;
 import com.gestao.compras.aplicacao.porta.PropostaRepositorio;
@@ -25,15 +24,15 @@ import java.util.UUID;
 public class PropostaService {
 
     private final PropostaRepositorio propostaRepositorio;
-    private final CotacaoService cotacaoService;
     private final OrganizacaoService organizacaoService;
+    private final AcessoCompras acesso;
     private final ApplicationEventPublisher eventos;
 
     /** Envia em nome do fornecedor de quem está logado, registrando quem enviou. */
     @Transactional
     public Proposta criarProposta(Proposta proposta, UsuarioAutenticado autor, UUID cotacaoId) {
         UUID fornecedorId = autor.organizacaoId();
-        Cotacao cotacao = cotacaoService.buscarPorId(cotacaoId);
+        Cotacao cotacao = acesso.cotacaoVisivel(cotacaoId, autor);
 
         if (cotacao.getStatus() != StatusCotacao.ABERTA) {
             throw new RegraDeNegocioException("Cotação não está mais aberta para propostas!");
@@ -56,23 +55,17 @@ public class PropostaService {
         return salva;
     }
 
+    /** Sem checar quem pede: para uso interno do sistema. Quem atende um usuário passa pelo {@link AcessoCompras}. */
     @Transactional(readOnly = true)
     public Proposta buscarPorId(UUID id) {
         return propostaRepositorio.buscarPorId(id)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Proposta não encontrada!"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException(AcessoCompras.PROPOSTA_NAO_ENCONTRADA));
     }
 
     /** Só o fornecedor que enviou e a empresa dona da cotação podem ver a proposta. */
     @Transactional(readOnly = true)
     public Proposta buscarParaUsuario(UUID id, UsuarioAutenticado usuario) {
-        Proposta proposta = buscarPorId(id);
-        boolean autor = usuario.ehFornecedor() && proposta.getFornecedor().getId().equals(usuario.organizacaoId());
-        boolean empresaDaCotacao = usuario.ehEmpresa()
-                && proposta.getCotacao().getEmpresa().getId().equals(usuario.organizacaoId());
-        if (!autor && !empresaDaCotacao) {
-            throw new AcessoNegadoException("Você não tem acesso a esta proposta.");
-        }
-        return proposta;
+        return acesso.propostaVisivel(id, usuario);
     }
 
     /**
@@ -80,8 +73,8 @@ public class PropostaService {
      * fornecedor não pode descobrir o lance dos concorrentes.
      */
     @Transactional(readOnly = true)
-    public List<Proposta> listarPorCotacao(UUID cotacaoId, UUID empresaId) {
-        cotacaoService.buscarDaEmpresa(cotacaoId, empresaId);
+    public List<Proposta> listarPorCotacao(UUID cotacaoId, UsuarioAutenticado usuario) {
+        acesso.cotacaoDaEmpresa(cotacaoId, usuario);
         return propostaRepositorio.listarDaCotacao(cotacaoId);
     }
 
@@ -118,9 +111,8 @@ public class PropostaService {
     }
 
     @Transactional
-    public Proposta recusarProposta(UUID id, UUID empresaId) {
-        Proposta proposta = buscarPorId(id);
-        verificarEmpresaDaCotacao(proposta, empresaId);
+    public Proposta recusarProposta(UUID id, UsuarioAutenticado usuario) {
+        Proposta proposta = acesso.propostaRecebida(id, usuario);
 
         if (proposta.getStatus() != StatusProposta.ENVIADA && proposta.getStatus() != StatusProposta.EM_ANALISE) {
             throw new RegraDeNegocioException("Só é possível recusar propostas que ainda aguardam análise!");
@@ -132,25 +124,12 @@ public class PropostaService {
 
     /** O fornecedor pode retirar a proposta enquanto ela não foi aceita. */
     @Transactional
-    public void deletarProposta(UUID id, UUID fornecedorId) {
-        Proposta proposta = buscarPorId(id);
-        verificarAutor(proposta, fornecedorId);
+    public void deletarProposta(UUID id, UsuarioAutenticado usuario) {
+        Proposta proposta = acesso.propostaEnviada(id, usuario);
 
         if (proposta.getStatus() == StatusProposta.ACEITA) {
             throw new RegraDeNegocioException("Propostas aceitas não podem ser excluídas!");
         }
         propostaRepositorio.excluir(proposta);
-    }
-
-    void verificarEmpresaDaCotacao(Proposta proposta, UUID empresaId) {
-        if (!proposta.getCotacao().getEmpresa().getId().equals(empresaId)) {
-            throw new AcessoNegadoException("Esta proposta foi enviada para a cotação de outra empresa.");
-        }
-    }
-
-    private void verificarAutor(Proposta proposta, UUID fornecedorId) {
-        if (!proposta.getFornecedor().getId().equals(fornecedorId)) {
-            throw new AcessoNegadoException("Esta proposta pertence a outro fornecedor.");
-        }
     }
 }

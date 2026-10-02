@@ -40,8 +40,8 @@ class GlobalExceptionHandlerTest {
     void acessoNegadoPorPerfilUsaMensagemPadrao() {
         assertThat(mensagem(handler.acessoNegado(new AccessDeniedException("Access Denied"))))
                 .isEqualTo(GlobalExceptionHandler.ACESSO_NEGADO_POR_PERFIL);
-        assertThat(mensagem(handler.acessoNegado(new AcessoNegadoException("Você não participa desta negociação."))))
-                .isEqualTo("Você não participa desta negociação.");
+        String doCasoDeUso = "Só a empresa desta negociação pode fechá-la ou encerrá-la.";
+        assertThat(mensagem(handler.acessoNegado(new AcessoNegadoException(doCasoDeUso)))).isEqualTo(doCasoDeUso);
     }
 
     @Test

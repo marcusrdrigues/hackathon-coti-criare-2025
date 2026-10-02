@@ -1,6 +1,5 @@
 package com.gestao.compras.aplicacao;
 
-import com.gestao.compartilhado.dominio.AcessoNegadoException;
 import com.gestao.compartilhado.dominio.RecursoNaoEncontradoException;
 import com.gestao.compartilhado.dominio.RegraDeNegocioException;
 import com.gestao.compras.aplicacao.porta.CotacaoRepositorio;
@@ -27,6 +26,7 @@ public class CotacaoService {
     private final CotacaoRepositorio cotacaoRepositorio;
     private final PropostaRepositorio propostaRepositorio;
     private final OrganizacaoService organizacaoService;
+    private final AcessoCompras acesso;
 
     /** Publica em nome da empresa de quem está logado, registrando quem publicou. */
     @Transactional
@@ -44,31 +44,17 @@ public class CotacaoService {
         return cotacaoRepositorio.salvar(cotacao);
     }
 
+    /** Sem checar quem pede: para uso interno do sistema. Quem atende um usuário passa pelo {@link AcessoCompras}. */
     @Transactional(readOnly = true)
     public Cotacao buscarPorId(UUID id) {
         return cotacaoRepositorio.buscarPorId(id)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Cotação não encontrada!"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException(AcessoCompras.COTACAO_NAO_ENCONTRADA));
     }
 
-    /**
-     * Fornecedores enxergam qualquer cotação (é o que aparece no mural);
-     * empresas só enxergam as próprias.
-     */
+    /** A cotação, se o usuário pode vê-la (ver {@link AcessoCompras#cotacaoVisivel}). */
     @Transactional(readOnly = true)
     public Cotacao buscarParaUsuario(UUID id, UsuarioAutenticado usuario) {
-        Cotacao cotacao = buscarPorId(id);
-        if (usuario.ehEmpresa()) {
-            verificarDona(cotacao, usuario.organizacaoId());
-        }
-        return cotacao;
-    }
-
-    /** Busca a cotação garantindo que ela pertence à empresa informada. */
-    @Transactional(readOnly = true)
-    public Cotacao buscarDaEmpresa(UUID id, UUID empresaId) {
-        Cotacao cotacao = buscarPorId(id);
-        verificarDona(cotacao, empresaId);
-        return cotacao;
+        return acesso.cotacaoVisivel(id, usuario);
     }
 
     @Transactional(readOnly = true)
@@ -83,8 +69,8 @@ public class CotacaoService {
     }
 
     @Transactional
-    public Cotacao atualizarCotacao(UUID id, UUID empresaId, Cotacao cotacaoAtualizada) {
-        Cotacao cotacao = buscarDaEmpresa(id, empresaId);
+    public Cotacao atualizarCotacao(UUID id, UsuarioAutenticado usuario, Cotacao cotacaoAtualizada) {
+        Cotacao cotacao = acesso.cotacaoDaEmpresa(id, usuario);
 
         if (cotacao.getStatus() != StatusCotacao.ABERTA) {
             throw new RegraDeNegocioException("Só é possível editar cotações abertas!");
@@ -107,8 +93,8 @@ public class CotacaoService {
      * passam para RECUSADA, para o fornecedor ver o desfecho no histórico.
      */
     @Transactional
-    public Cotacao cancelarCotacao(UUID id, UUID empresaId) {
-        Cotacao cotacao = buscarDaEmpresa(id, empresaId);
+    public Cotacao cancelarCotacao(UUID id, UsuarioAutenticado usuario) {
+        Cotacao cotacao = acesso.cotacaoDaEmpresa(id, usuario);
 
         if (cotacao.getStatus() == StatusCotacao.EM_NEGOCIACAO) {
             throw new RegraDeNegocioException("Encerre a negociação em andamento antes de cancelar a cotação.");
@@ -125,12 +111,6 @@ public class CotacaoService {
 
         cotacao.setStatus(StatusCotacao.CANCELADA);
         return cotacaoRepositorio.salvar(cotacao);
-    }
-
-    private void verificarDona(Cotacao cotacao, UUID empresaId) {
-        if (!cotacao.getEmpresa().getId().equals(empresaId)) {
-            throw new AcessoNegadoException("Esta cotação pertence a outra empresa.");
-        }
     }
 
     private void validarDataLimite(LocalDateTime dataLimite) {

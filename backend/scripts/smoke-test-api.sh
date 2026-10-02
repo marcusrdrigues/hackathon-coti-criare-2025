@@ -117,7 +117,7 @@ passo "cotação publicada e visível no mural"
 PROPOSTA=$(chamar POST "$V1/propostas" 201 "{\"valor\":1400,\"descricao\":\"Entrega semanal\",\"cotacaoId\":\"$COTACAO_ID\"}" "$TOKEN_F")
 PROPOSTA_ID=$(jq -r .id <<<"$PROPOSTA")
 chamar POST "$V1/propostas" 400 "{\"valor\":1300,\"descricao\":\"De novo\",\"cotacaoId\":\"$COTACAO_ID\"}" "$TOKEN_F" >/dev/null
-chamar GET "$V1/propostas/$PROPOSTA_ID" 403 "" "$TOKEN_TECH" >/dev/null
+chamar GET "$V1/propostas/$PROPOSTA_ID" 404 "" "$TOKEN_TECH" >/dev/null
 chamar GET "$V1/propostas/cotacao/$COTACAO_ID" 403 "" "$TOKEN_F" >/dev/null
 [[ $(chamar GET "$V1/propostas/cotacao/$COTACAO_ID" 200 "" "$TOKEN_E" | jq length) -eq 1 ]] || falhar "empresa não viu a proposta"
 passo "proposta enviada; duplicada e espionagem bloqueadas"
@@ -126,14 +126,14 @@ passo "proposta enviada; duplicada e espionagem bloqueadas"
 NEGOCIACAO=$(chamar POST "$V1/negociacoes" 201 "{\"propostaId\":\"$PROPOSTA_ID\"}" "$TOKEN_E")
 NEGOCIACAO_ID=$(jq -r .id <<<"$NEGOCIACAO")
 [[ $(jq -r .cotacaoStatus <<<"$NEGOCIACAO") == "EM_NEGOCIACAO" ]] || falhar "cotação não foi para EM_NEGOCIACAO"
-chamar GET "$V1/negociacoes/$NEGOCIACAO_ID" 403 "" "$TOKEN_TECH" >/dev/null
+chamar GET "$V1/negociacoes/$NEGOCIACAO_ID" 404 "" "$TOKEN_TECH" >/dev/null
 passo "negociação aberta e restrita aos participantes"
 
 # 9. Mensagens e contrapropostas (remetente vem do token)
 chamar POST "$V1/mensagens" 201 "{\"negociacaoId\":\"$NEGOCIACAO_ID\",\"mensagem\":\"Fecha por 1.300?\",\"valorOfertado\":1300}" "$TOKEN_E" >/dev/null
 chamar POST "$V1/mensagens" 201 "{\"negociacaoId\":\"$NEGOCIACAO_ID\",\"valorOfertado\":1350}" "$TOKEN_F" >/dev/null
 chamar POST "$V1/mensagens" 201 "{\"negociacaoId\":\"$NEGOCIACAO_ID\",\"mensagem\":\"Pode ser 1.350.\"}" "$TOKEN_COLEGA" >/dev/null
-chamar POST "$V1/mensagens" 403 "{\"negociacaoId\":\"$NEGOCIACAO_ID\",\"mensagem\":\"intruso\"}" "$TOKEN_TECH" >/dev/null
+chamar POST "$V1/mensagens" 404 "{\"negociacaoId\":\"$NEGOCIACAO_ID\",\"mensagem\":\"intruso\"}" "$TOKEN_TECH" >/dev/null
 MENSAGENS=$(chamar GET "$V1/mensagens/negociacao/$NEGOCIACAO_ID" 200 "" "$TOKEN_F")
 [[ $(jq length <<<"$MENSAGENS") -eq 4 ]] || falhar "esperava 4 mensagens no histórico, veio $(jq length <<<"$MENSAGENS")"
 [[ $(jq -r '.[2].tipoRemetente' <<<"$MENSAGENS") == "FORNECEDOR" ]] || falhar "remetente não veio do token"

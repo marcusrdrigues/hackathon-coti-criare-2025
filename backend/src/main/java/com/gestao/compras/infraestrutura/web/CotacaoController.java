@@ -68,7 +68,7 @@ public class CotacaoController {
                 .toList());
     }
 
-    @Operation(summary = "Buscar cotação", description = "Fornecedores veem qualquer cotação; empresas, só as próprias")
+    @Operation(summary = "Buscar cotação", description = "Empresas veem as próprias; fornecedores, as abertas e aquelas para as quais enviaram proposta. As demais respondem 404")
     @GetMapping("/{id}")
     public ResponseEntity<CotacaoResponse> buscarPorId(@Parameter(description = "ID da cotação") @PathVariable UUID id) {
         return ResponseEntity.ok(cotacaoMapper.toResponse(cotacaoService.buscarParaUsuario(id, usuarioAtual.obter())));
@@ -80,7 +80,7 @@ public class CotacaoController {
     public ResponseEntity<CotacaoResponse> atualizarCotacao(
             @Parameter(description = "ID da cotação") @PathVariable UUID id,
             @Valid @RequestBody CotacaoRequest request) {
-        Cotacao cotacao = cotacaoService.atualizarCotacao(id, usuarioAtual.obter().organizacaoId(), cotacaoMapper.toEntity(request));
+        Cotacao cotacao = cotacaoService.atualizarCotacao(id, usuarioAtual.obter(), cotacaoMapper.toEntity(request));
         return ResponseEntity.ok(cotacaoMapper.toResponse(cotacao));
     }
 
@@ -88,7 +88,7 @@ public class CotacaoController {
     @PreAuthorize("hasRole('EMPRESA')")
     @PatchMapping("/{id}/cancelar")
     public ResponseEntity<CotacaoResponse> cancelarCotacao(@Parameter(description = "ID da cotação") @PathVariable UUID id) {
-        return ResponseEntity.ok(cotacaoMapper.toResponse(cotacaoService.cancelarCotacao(id, usuarioAtual.obter().organizacaoId())));
+        return ResponseEntity.ok(cotacaoMapper.toResponse(cotacaoService.cancelarCotacao(id, usuarioAtual.obter())));
     }
 
     private List<CotacaoResponse> paraResposta(List<Cotacao> cotacoes) {

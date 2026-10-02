@@ -103,7 +103,7 @@ public class DadosDemonstracao implements CommandLineRunner {
                 proposta("58000.00", "Entrega em 10 dias úteis, frete incluso."), carlos, notebooks.getId());
         propostaService.criarProposta(
                 proposta("61500.00", "Garantia estendida para 4 anos."), info, notebooks.getId());
-        Negociacao negociacaoNotebooks = negociacaoService.criarNegociacao(notebooksTech.getId(), ana.organizacaoId());
+        Negociacao negociacaoNotebooks = negociacaoService.criarNegociacao(notebooksTech.getId(), ana);
         mensagemService.enviarMensagem(negociacaoNotebooks.getId(),
                 "Gostamos da proposta. Conseguem chegar a R$ 55.000 mantendo o prazo?",
                 new BigDecimal("55000.00"), ana);
@@ -131,13 +131,12 @@ public class DadosDemonstracao implements CommandLineRunner {
                 CategoriaCotacao.TECNOLOGIA, new BigDecimal("13000.00"), 7), bruno);
         Proposta licencasTech = propostaService.criarProposta(
                 proposta("12000.00", "Licenças anuais com suporte e treinamento de 4 horas."), carlos, licencas.getId());
-        Negociacao negociacaoLicencas = negociacaoService.criarNegociacao(licencasTech.getId(), bruno.organizacaoId());
+        Negociacao negociacaoLicencas = negociacaoService.criarNegociacao(licencasTech.getId(), bruno);
         mensagemService.enviarMensagem(negociacaoLicencas.getId(), "Fechamos hoje por R$ 11.000?",
                 new BigDecimal("11000.00"), bruno);
         mensagemService.enviarMensagem(negociacaoLicencas.getId(), "Conseguimos R$ 11.500 com o treinamento incluso.",
                 new BigDecimal("11500.00"), carlos);
-        negociacaoService.finalizarNegociacao(negociacaoLicencas.getId(), new BigDecimal("11500.00"),
-                ana.organizacaoId());
+        negociacaoService.finalizarNegociacao(negociacaoLicencas.getId(), new BigDecimal("11500.00"), ana);
 
         // 4. Hospital: oportunidades de outra empresa no mural do fornecedor
         Cotacao arCondicionado = cotacaoService.criarCotacao(cotacao(

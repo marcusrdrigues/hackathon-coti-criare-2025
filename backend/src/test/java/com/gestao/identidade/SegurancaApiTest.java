@@ -186,8 +186,8 @@ class SegurancaApiTest {
 
         mvc.perform(get("/api/v1/propostas/cotacao/" + cotacaoDaOutraEmpresa.getId())
                         .header(HttpHeaders.AUTHORIZATION, tokenEmpresa))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.message").value("Esta cotação pertence a outra empresa."));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Cotação não encontrada!"));
     }
 
     @Test
@@ -268,7 +268,7 @@ class SegurancaApiTest {
         Negociacao negociacao = negociacaoComMensagemDaEmpresa();
         mvc.perform(patch("/api/v1/negociacoes/" + negociacao.getId() + "/leitura")
                         .header(HttpHeaders.AUTHORIZATION, bearer(login("outra@api.com"))))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
     }
 
     // ---------------------------------------------------------------- helpers
@@ -286,7 +286,7 @@ class SegurancaApiTest {
         proposta.setDescricao("Entrega em 10 dias");
         proposta = propostaService.criarProposta(proposta, tech, cotacao.getId());
 
-        Negociacao negociacao = negociacaoService.criarNegociacao(proposta.getId(), criare.organizacaoId());
+        Negociacao negociacao = negociacaoService.criarNegociacao(proposta.getId(), criare);
         mensagemService.enviarMensagem(negociacao.getId(), "Fechamos em 10.800?", new BigDecimal("10800.00"),
                 criare);
         return negociacao;

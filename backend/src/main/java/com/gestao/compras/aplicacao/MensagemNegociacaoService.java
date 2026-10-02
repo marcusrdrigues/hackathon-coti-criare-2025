@@ -36,8 +36,7 @@ public class MensagemNegociacaoService {
     @Transactional
     public MensagemNegociacao enviarMensagem(UUID negociacaoId, String mensagem, BigDecimal valorOfertado,
                                              UsuarioAutenticado remetente) {
-        Negociacao negociacao = negociacaoService.buscarPorId(negociacaoId);
-        negociacaoService.verificarParticipante(negociacao, remetente);
+        Negociacao negociacao = negociacaoService.buscarParaParticipante(negociacaoId, remetente);
 
         if (negociacao.getStatus() != StatusNegociacao.EM_ANDAMENTO) {
             throw new RegraDeNegocioException("Negociação não está ativa!");

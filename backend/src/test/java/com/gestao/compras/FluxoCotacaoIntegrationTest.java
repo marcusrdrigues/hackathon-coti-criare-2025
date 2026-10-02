@@ -3,6 +3,7 @@ package com.gestao.compras;
 import com.gestao.compartilhado.dominio.AcessoNegadoException;
 import com.gestao.compartilhado.dominio.NaoAutenticadoException;
 import com.gestao.compartilhado.dominio.RecursoDuplicadoException;
+import com.gestao.compartilhado.dominio.RecursoNaoEncontradoException;
 import com.gestao.compartilhado.dominio.RegraDeNegocioException;
 import com.gestao.compras.aplicacao.CotacaoService;
 import com.gestao.compras.aplicacao.MensagemNegociacaoService;
@@ -154,7 +155,7 @@ class FluxoCotacaoIntegrationTest {
         assertEquals(fornecedorA.usuarioId(), proposta.getEnviadaPor().getId());
 
         // A negociação abre com a proposta, escrita por quem a enviou; depois cada um assina o seu
-        Negociacao negociacao = negociacaoService.criarNegociacao(proposta.getId(), empresa.organizacaoId());
+        Negociacao negociacao = negociacaoService.criarNegociacao(proposta.getId(), empresa);
         mensagemService.enviarMensagem(negociacao.getId(), "Fecha em 900?", new BigDecimal("900.00"), empresa);
         mensagemService.enviarMensagem(negociacao.getId(), "Eu assumo daqui.", null, colega);
 
@@ -178,7 +179,7 @@ class FluxoCotacaoIntegrationTest {
         assertThrows(RegraDeNegocioException.class, () -> enviarProposta(fornecedorA, cotacao, "9000.00"));
 
         // Empresa escolhe negociar com o fornecedor A
-        Negociacao negociacao = negociacaoService.criarNegociacao(propostaA.getId(), empresa.organizacaoId());
+        Negociacao negociacao = negociacaoService.criarNegociacao(propostaA.getId(), empresa);
         assertEquals(StatusProposta.ACEITA, propostaA.getStatus());
         assertEquals(StatusCotacao.EM_NEGOCIACAO, cotacao.getStatus());
         assertEquals(new BigDecimal("10000.00"), negociacao.getUltimaOferta());
@@ -189,7 +190,7 @@ class FluxoCotacaoIntegrationTest {
         assertEquals(TipoRemetente.FORNECEDOR, historico.get(0).getTipoRemetente());
 
         // Não dá para abrir uma segunda negociação na mesma cotação
-        assertThrows(RegraDeNegocioException.class, () -> negociacaoService.criarNegociacao(propostaB.getId(), empresa.organizacaoId()));
+        assertThrows(RegraDeNegocioException.class, () -> negociacaoService.criarNegociacao(propostaB.getId(), empresa));
 
         // Contraproposta da empresa e resposta do fornecedor
         mensagemService.enviarMensagem(negociacao.getId(), "Consegue fazer por 9.000?",
@@ -198,12 +199,12 @@ class FluxoCotacaoIntegrationTest {
                 new BigDecimal("9200.00"), fornecedorA);
         assertEquals(new BigDecimal("9200.00"), negociacao.getUltimaOferta());
 
-        // Quem não participa da negociação não pode enviar mensagem
-        assertThrows(AcessoNegadoException.class, () -> mensagemService.enviarMensagem(negociacao.getId(), "oi",
+        // Para quem não participa, a negociação não existe
+        assertThrows(RecursoNaoEncontradoException.class, () -> mensagemService.enviarMensagem(negociacao.getId(), "oi",
                 null, fornecedorB));
 
         // Fechamento
-        negociacaoService.finalizarNegociacao(negociacao.getId(), new BigDecimal("9200.00"), empresa.organizacaoId());
+        negociacaoService.finalizarNegociacao(negociacao.getId(), new BigDecimal("9200.00"), empresa);
         assertEquals(StatusNegociacao.FINALIZADA, negociacao.getStatus());
         assertEquals(StatusCotacao.FECHADA, cotacao.getStatus());
         assertEquals(StatusProposta.RECUSADA, propostaB.getStatus());
@@ -223,15 +224,15 @@ class FluxoCotacaoIntegrationTest {
         Proposta propostaA = enviarProposta(fornecedorA, cotacao, "10000.00");
         Proposta propostaB = enviarProposta(fornecedorB, cotacao, "9800.00");
 
-        Negociacao negociacao = negociacaoService.criarNegociacao(propostaA.getId(), empresa.organizacaoId());
-        negociacaoService.cancelarNegociacao(negociacao.getId(), empresa.organizacaoId());
+        Negociacao negociacao = negociacaoService.criarNegociacao(propostaA.getId(), empresa);
+        negociacaoService.cancelarNegociacao(negociacao.getId(), empresa);
 
         assertEquals(StatusNegociacao.CANCELADA, negociacao.getStatus());
         assertEquals(StatusProposta.RECUSADA, propostaA.getStatus());
         assertEquals(StatusCotacao.ABERTA, cotacao.getStatus());
 
         // Agora a empresa pode negociar com o outro fornecedor
-        Negociacao segunda = negociacaoService.criarNegociacao(propostaB.getId(), empresa.organizacaoId());
+        Negociacao segunda = negociacaoService.criarNegociacao(propostaB.getId(), empresa);
         assertNotEquals(negociacao.getId(), segunda.getId());
     }
 
@@ -239,7 +240,7 @@ class FluxoCotacaoIntegrationTest {
     void contaAsMensagensNaoLidasDeCadaLado() {
         Cotacao cotacao = criarCotacao(5);
         Proposta proposta = enviarProposta(fornecedorA, cotacao, "10000.00");
-        Negociacao negociacao = negociacaoService.criarNegociacao(proposta.getId(), empresa.organizacaoId());
+        Negociacao negociacao = negociacaoService.criarNegociacao(proposta.getId(), empresa);
         UUID id = negociacao.getId();
 
         // A proposta que abriu a negociação já foi lida pela empresa, e é do próprio fornecedor
@@ -264,7 +265,7 @@ class FluxoCotacaoIntegrationTest {
         assertTrue(negociacaoService.contarNaoLidas(empresa).isEmpty());
 
         // Quem não participa não marca nada
-        assertThrows(AcessoNegadoException.class, () -> negociacaoService.marcarComoLida(id, fornecedorB));
+        assertThrows(RecursoNaoEncontradoException.class, () -> negociacaoService.marcarComoLida(id, fornecedorB));
     }
 
     @Test
@@ -289,7 +290,7 @@ class FluxoCotacaoIntegrationTest {
         Cotacao cotacao = criarCotacao(5);
         Proposta proposta = enviarProposta(fornecedorA, cotacao, "700.00");
 
-        cotacaoService.cancelarCotacao(cotacao.getId(), empresa.organizacaoId());
+        cotacaoService.cancelarCotacao(cotacao.getId(), empresa);
 
         assertEquals(StatusCotacao.CANCELADA, cotacao.getStatus());
         assertEquals(StatusProposta.RECUSADA, proposta.getStatus());
@@ -319,12 +320,53 @@ class FluxoCotacaoIntegrationTest {
         Cotacao cotacao = criarCotacao(5);
         enviarProposta(fornecedorA, cotacao, "500.00");
 
-        assertThrows(AcessoNegadoException.class, () -> cotacaoService.buscarParaUsuario(cotacao.getId(), outra));
-        assertThrows(AcessoNegadoException.class, () -> cotacaoService.cancelarCotacao(cotacao.getId(), outra.organizacaoId()));
-        assertThrows(AcessoNegadoException.class, () -> propostaService.listarPorCotacao(cotacao.getId(), outra.organizacaoId()));
+        assertThrows(RecursoNaoEncontradoException.class, () -> cotacaoService.buscarParaUsuario(cotacao.getId(), outra));
+        assertThrows(RecursoNaoEncontradoException.class, () -> cotacaoService.cancelarCotacao(cotacao.getId(), outra));
+        assertThrows(RecursoNaoEncontradoException.class, () -> propostaService.listarPorCotacao(cotacao.getId(), outra));
 
-        // Fornecedores enxergam qualquer cotação (é o mural)
+        // Fornecedores enxergam as cotações abertas (é o mural)
         assertEquals(cotacao.getId(), cotacaoService.buscarParaUsuario(cotacao.getId(), fornecedorB).getId());
+    }
+
+    @Test
+    void cotacaoQueSaiDoMuralSoContinuaVisivelParaQuemPropos() {
+        Cotacao cotacao = criarCotacao(5);
+        Proposta propostaA = enviarProposta(fornecedorA, cotacao, "500.00");
+        negociacaoService.criarNegociacao(propostaA.getId(), empresa);
+
+        assertEquals(cotacao.getId(), cotacaoService.buscarParaUsuario(cotacao.getId(), fornecedorA).getId());
+        assertThrows(RecursoNaoEncontradoException.class,
+                () -> cotacaoService.buscarParaUsuario(cotacao.getId(), fornecedorB));
+        // E quem não vê a cotação também não consegue enviar proposta para ela
+        assertThrows(RecursoNaoEncontradoException.class, () -> enviarProposta(fornecedorB, cotacao, "450.00"));
+    }
+
+    @Test
+    void outraOrganizacaoRecebeOMesmoErroDeUmIdQueNaoExiste() {
+        Cotacao cotacao = criarCotacao(5);
+        UsuarioAutenticado outra = cadastrar(TipoOrganizacao.EMPRESA,
+                "Concorrente SA", "90.817.263/0001-80", "compras@concorrente.com");
+
+        RecursoNaoEncontradoException deOutra = assertThrows(RecursoNaoEncontradoException.class,
+                () -> cotacaoService.buscarParaUsuario(cotacao.getId(), outra));
+        RecursoNaoEncontradoException inexistente = assertThrows(RecursoNaoEncontradoException.class,
+                () -> cotacaoService.buscarParaUsuario(UUID.randomUUID(), outra));
+        assertEquals(inexistente.getMessage(), deOutra.getMessage());
+    }
+
+    @Test
+    void qualquerPessoaDaOrganizacaoOperaOsDadosDela() {
+        UsuarioAutenticado colega = cadastroService.adicionarMembro(
+                empresa.organizacaoId(), "Bruno Costa", "bruno@criare.com", "segredo123");
+        Cotacao cotacao = criarCotacao(5);
+        Proposta proposta = enviarProposta(fornecedorA, cotacao, "500.00");
+
+        // A cotação foi publicada pela proprietária; o colega negocia e fecha
+        assertEquals(cotacao.getId(), cotacaoService.buscarParaUsuario(cotacao.getId(), colega).getId());
+        assertEquals(1, propostaService.listarPorCotacao(cotacao.getId(), colega).size());
+        Negociacao negociacao = negociacaoService.criarNegociacao(proposta.getId(), colega);
+        negociacaoService.finalizarNegociacao(negociacao.getId(), new BigDecimal("480.00"), colega);
+        assertEquals(StatusNegociacao.FINALIZADA, negociacao.getStatus());
     }
 
     @Test
@@ -332,10 +374,10 @@ class FluxoCotacaoIntegrationTest {
         Cotacao cotacao = criarCotacao(5);
         Proposta propostaA = enviarProposta(fornecedorA, cotacao, "500.00");
 
-        assertThrows(AcessoNegadoException.class,
+        assertThrows(RecursoNaoEncontradoException.class,
                 () -> propostaService.buscarParaUsuario(propostaA.getId(), fornecedorB));
-        assertThrows(AcessoNegadoException.class,
-                () -> propostaService.deletarProposta(propostaA.getId(), fornecedorB.organizacaoId()));
+        assertThrows(RecursoNaoEncontradoException.class,
+                () -> propostaService.deletarProposta(propostaA.getId(), fornecedorB));
         assertEquals(propostaA.getId(),
                 propostaService.buscarParaUsuario(propostaA.getId(), fornecedorA).getId());
     }
@@ -344,13 +386,15 @@ class FluxoCotacaoIntegrationTest {
     void fornecedorNaoFechaNegocioNemVeNegociacaoDosOutros() {
         Cotacao cotacao = criarCotacao(5);
         Proposta propostaA = enviarProposta(fornecedorA, cotacao, "500.00");
-        Negociacao negociacao = negociacaoService.criarNegociacao(propostaA.getId(), empresa.organizacaoId());
+        Negociacao negociacao = negociacaoService.criarNegociacao(propostaA.getId(), empresa);
 
+        // O fornecedor da negociação a enxerga, mas fechar é decisão da empresa: 403
         assertThrows(AcessoNegadoException.class,
-                () -> negociacaoService.finalizarNegociacao(negociacao.getId(), BigDecimal.TEN, fornecedorA.organizacaoId()));
-        assertThrows(AcessoNegadoException.class,
+                () -> negociacaoService.finalizarNegociacao(negociacao.getId(), BigDecimal.TEN, fornecedorA));
+        // Para quem não participa, ela não existe: 404
+        assertThrows(RecursoNaoEncontradoException.class,
                 () -> negociacaoService.buscarParaParticipante(negociacao.getId(), fornecedorB));
-        assertThrows(AcessoNegadoException.class,
+        assertThrows(RecursoNaoEncontradoException.class,
                 () -> mensagemService.listarMensagens(negociacao.getId(), fornecedorB));
     }
 
