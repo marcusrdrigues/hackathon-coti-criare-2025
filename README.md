@@ -620,11 +620,14 @@ Deixar o projeto mais fácil de manter e com qualidade medida.
 - [x] **ADRs** em [`docs/adr/`](docs/adr/README.md): registros curtos das decisões de arquitetura (ex.: por que o refresh token é opaco)
 - [x] **Testes ponta a ponta com Playwright** no CI, simulando empresa e fornecedor no navegador
 
-### Fase 3 · Produto
+### Fase 3 · Produto &nbsp;`em andamento`
 
 Funcionalidades que aproximam a plataforma de um uso real.
 
-- [ ] **Tempo real** com WebSocket ou SSE na negociação, com aviso de mensagens não lidas
+- [ ] **Tempo real** na negociação com WebSocket e STOMP ([ADR 0012](docs/adr/0012-tempo-real-com-websocket-e-stomp.md))
+  - [x] Back-end: conexão autenticada com o JWT, só as partes acompanham a negociação, avisos enviados depois do commit e "digitando"
+  - [ ] Sala de negociação ao vivo: mensagens e ofertas sem recarregar, "digitando…" e indicador de conexão
+  - [ ] Mensagens não lidas (contador na navegação e na lista) e avisos de proposta nova, negociação aberta e negócio fechado
 - [ ] **IA com Spring AI**: resumir e comparar propostas, sugerir contrapropostas e ajudar a escrever os requisitos da cotação
 - [ ] **Contrato em PDF** gerado ao fechar o negócio, com as partes, o objeto e o valor acordado
 - [ ] **Comparador de propostas** com nota ponderada (preço, prazo, garantia)
@@ -635,7 +638,7 @@ Funcionalidades que aproximam a plataforma de um uso real.
 - [ ] Paginação nas listagens
 - [ ] Recuperação de senha e confirmação de e-mail
 - [ ] Anexos nas cotações e propostas (especificações, catálogos)
-- [ ] Limite de tentativas de login compartilhado entre instâncias (Redis)
+- [ ] Limite de tentativas de login e tempo real compartilhados entre instâncias (Redis ou RabbitMQ), para rodar mais de uma API
 
 ---
 
