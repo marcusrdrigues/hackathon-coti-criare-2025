@@ -65,7 +65,7 @@ A fonte é a do sistema: San Francisco no Mac e no iPhone, Segoe no Windows. Nú
 
 Campos usam 16px: abaixo disso o iPhone dá zoom ao focar.
 
-**Título de vitrine** (só no painel da marca das telas de acesso): de 36 a 56px conforme a largura, peso 600, entrelinha 1,02 e letras um pouco mais juntas (−0,035em), como os títulos de produto da Apple. A última frase (`destaque`) ganha um brilho rosado que atravessa o branco devagar, a cada 8 segundos, e o bloco entra subindo e saindo do desfoque, em cascata com o texto e a negociação. Com `prefers-reduced-motion`, nada se move; com alto contraste ou cores forçadas, o destaque vira texto sólido. Nas telas internas, a tipografia continua a da tabela acima: o efeito é para a primeira impressão, não para o trabalho do dia a dia.
+**Título de vitrine** (só no painel da marca das telas de acesso): de 36 a 56px conforme a largura, peso 600, entrelinha 1,02 e letras um pouco mais juntas (−0,035em), como os títulos de produto da Apple. A última frase (`destaque`) ganha uma faixa de luz acinzentada (branco a 50% sobre o vinho) que atravessa o texto sem parar, a cada 5 segundos, e o bloco entra subindo e saindo do desfoque, em cascata com o texto e a negociação. Com `prefers-reduced-motion`, nada se move; com alto contraste ou cores forçadas, o destaque vira texto sólido. Nas telas internas, a tipografia continua a da tabela acima: o efeito é para a primeira impressão, não para o trabalho do dia a dia.
 
 ### Espaço, forma e movimento
 

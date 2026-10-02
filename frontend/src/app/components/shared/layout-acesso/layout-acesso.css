@@ -57,7 +57,7 @@
 /*
  * Título de vitrine, como nos títulos de produto da Apple: grande, entrelinha curta e
  * letras um pouco mais juntas. Entra subindo e saindo do desfoque, em cascata com o
- * texto e a negociação. A última linha tem um brilho que atravessa devagar.
+ * texto e a negociação. Na última linha, uma faixa de luz atravessa o texto sem parar.
  */
 .manifesto-titulo {
   font-size: clamp(2.25rem, 3.7vw, 3.5rem);
@@ -70,17 +70,18 @@
 
 .manifesto-destaque {
   display: block;
-  /* Branco, um tom rosado do painel no meio, e branco de novo: o brilho é o rosado passando */
-  background: linear-gradient(
+  /*
+   * A faixa de luz: branco, um branco apagado (que sobre o vinho fica num tom acinzentado)
+   * e branco de novo. A imagem tem o dobro da largura do texto e se repete, então andar
+   * 200% leva a faixa de uma ponta à outra e emenda sem pulo.
+   */
+  background-image: linear-gradient(
     100deg,
-    var(--cor-sobre-marca) 0%,
-    var(--cor-sobre-marca) 35%,
-    var(--cor-painel-texto-2) 50%,
-    var(--cor-sobre-marca) 65%,
-    var(--cor-sobre-marca) 100%
+    var(--cor-sobre-marca) 20%,
+    rgba(255, 255, 255, 0.5) 50%,
+    var(--cor-sobre-marca) 80%
   );
-  background-size: 250% 100%;
-  background-position: 100% 0;
+  background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -112,7 +113,7 @@
   }
 
   .manifesto-destaque {
-    animation: brilho 8s cubic-bezier(0.45, 0, 0.55, 1) 1s infinite;
+    animation: brilho 5s linear infinite;
   }
 }
 
@@ -125,17 +126,16 @@
 }
 
 @keyframes brilho {
-  0% {
-    background-position: 100% 0;
+  from {
+    background-position: 200% 0;
   }
-  45%,
-  100% {
+  to {
     background-position: 0% 0;
   }
 }
 
-/* Alto contraste e cores forçadas: texto sólido, sem degradê */
-@media (prefers-contrast: more), (forced-colors: active) {
+/* Menos movimento, alto contraste e cores forçadas: texto sólido, sem a faixa parada no meio */
+@media (prefers-reduced-motion: reduce), (prefers-contrast: more), (forced-colors: active) {
   .manifesto-destaque {
     background: none;
     color: inherit;
