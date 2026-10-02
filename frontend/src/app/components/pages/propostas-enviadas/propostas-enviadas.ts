@@ -2,6 +2,7 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Proposta } from '../../../core/models';
+import { aoReceberAviso, mudouNegociacao } from '../../../core/services/avisos.service';
 import { NotificacaoService } from '../../../core/services/notificacao.service';
 import { PropostaService } from '../../../core/services/proposta.service';
 import { mensagemDeErro } from '../../../core/utils/erros';
@@ -35,6 +36,11 @@ export class PropostasEnviadas implements OnInit {
       // Negociações ativas primeiro: são as que pedem resposta
       .sort((a, b) => Number(!!b.negociacaoId) - Number(!!a.negociacaoId)),
   );
+
+  constructor() {
+    // A situação de cada proposta muda quando a empresa abre, fecha ou encerra a negociação
+    aoReceberAviso(mudouNegociacao, () => this.carregar());
+  }
 
   ngOnInit(): void {
     this.carregar();

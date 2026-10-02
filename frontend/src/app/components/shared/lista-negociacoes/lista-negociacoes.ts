@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core
 import { RouterLink } from '@angular/router';
 import { Negociacao } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
+import { AvisosService } from '../../../core/services/avisos.service';
 import { STATUS_NEGOCIACAO, iniciais } from '../../../core/utils/formatos';
 import { Status } from '../../../ui/status';
 
@@ -14,10 +15,12 @@ import { Status } from '../../../ui/status';
   template: `
     <ul class="lista" role="list" [class.compacta]="compacta()">
       @for (n of negociacoes(); track n.id) {
+        @let naoLidas = n.id === selecionada() ? 0 : (avisos.naoLidas()[n.id] ?? 0);
         <li>
           <a
             class="linha"
             [routerLink]="['/pages/negociacao', n.id]"
+            [class.nao-lida]="naoLidas > 0"
             [class.selecionada]="n.id === selecionada()"
             [attr.aria-current]="n.id === selecionada() ? 'page' : null"
           >
@@ -25,7 +28,12 @@ import { Status } from '../../../ui/status';
             <span class="linha-principal">
               <span class="topo-linha">
                 <span class="linha-titulo">{{ outraParte(n) }}</span>
-                <span class="data numeros">{{ n.dataInicio | date: 'dd/MM' }}</span>
+                @if (naoLidas > 0) {
+                  <span class="contador numeros" aria-hidden="true">{{ naoLidas > 99 ? '99+' : naoLidas }}</span>
+                  <span class="visually-hidden">, {{ naoLidas }} {{ naoLidas === 1 ? 'mensagem não lida' : 'mensagens não lidas' }}</span>
+                } @else {
+                  <span class="data numeros">{{ n.dataInicio | date: 'dd/MM' }}</span>
+                }
               </span>
               <span class="linha-detalhe">{{ n.cotacaoNome }}</span>
               <span class="rodape-linha">
@@ -68,6 +76,14 @@ import { Status } from '../../../ui/status';
       color: var(--cor-texto-2);
     }
 
+    .nao-lida .linha-titulo {
+      font-weight: 700;
+    }
+
+    .contador {
+      align-self: center;
+    }
+
     .valor {
       flex-shrink: 0;
       font-size: var(--texto-pequeno);
@@ -95,6 +111,7 @@ import { Status } from '../../../ui/status';
 })
 export class ListaNegociacoes {
   private readonly auth = inject(AuthService);
+  protected readonly avisos = inject(AvisosService);
 
   readonly negociacoes = input.required<Negociacao[]>();
   readonly selecionada = input<string | null>(null);

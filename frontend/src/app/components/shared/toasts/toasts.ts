@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { Notificacao, NotificacaoService } from '../../../core/services/notificacao.service';
 import { Icone, NomeIcone } from '../../../ui/icone';
 
 /** Avisos rápidos depois de uma ação, embaixo e no centro da tela. */
 @Component({
   selector: 'app-toasts',
-  imports: [Icone],
+  imports: [Icone, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './toasts.html',
   styleUrl: './toasts.css',
@@ -17,5 +18,6 @@ export class Toasts {
     sucesso: 'sucesso',
     erro: 'alerta',
     info: 'info',
+    aviso: 'sino',
   };
 }

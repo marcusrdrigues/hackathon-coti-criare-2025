@@ -2,7 +2,15 @@
   @for (n of notificacao.notificacoes(); track n.id) {
     <div class="aviso" [attr.data-tipo]="n.tipo" [attr.role]="n.tipo === 'erro' ? 'alert' : 'status'">
       <ui-icone class="aviso-icone" [nome]="icones[n.tipo]" [tamanho]="18" />
-      <span class="aviso-texto">{{ n.texto }}</span>
+      <span class="aviso-texto">
+        @if (n.titulo) {
+          <strong class="aviso-titulo">{{ n.titulo }}</strong>
+        }
+        {{ n.texto }}
+      </span>
+      @if (n.link) {
+        <a class="aviso-abrir" [routerLink]="n.link" (click)="notificacao.fechar(n.id)">Abrir</a>
+      }
       <button type="button" class="aviso-fechar" aria-label="Fechar aviso" (click)="notificacao.fechar(n.id)">
         <ui-icone nome="fechar" [tamanho]="14" />
       </button>

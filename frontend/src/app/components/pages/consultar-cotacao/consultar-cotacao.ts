@@ -2,6 +2,7 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Cotacao, StatusCotacao } from '../../../core/models';
+import { aoReceberAviso, chegouProposta } from '../../../core/services/avisos.service';
 import { CotacaoService } from '../../../core/services/cotacao.service';
 import { mensagemDeErro } from '../../../core/utils/erros';
 import { STATUS_COTACAO } from '../../../core/utils/formatos';
@@ -52,7 +53,16 @@ export class ConsultarCotacao implements OnInit {
     );
   });
 
+  constructor() {
+    // O total de propostas de cada cotação muda quando chega uma nova
+    aoReceberAviso(chegouProposta, () => this.carregar());
+  }
+
   ngOnInit(): void {
+    this.carregar();
+  }
+
+  private carregar(): void {
     this.cotacaoService.listarMinhas().subscribe({
       next: (lista) => this.cotacoes.set(lista),
       error: (e) => this.erro.set(mensagemDeErro(e)),

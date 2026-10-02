@@ -38,6 +38,7 @@ const ICONES = {
   automatico: [{ circulo: [12, 12, 8] }, { d: 'M12 4a8 8 0 0 1 0 16z', cheio: true }],
   alerta: [{ circulo: [12, 12, 8.5] }, { d: 'M12 7.75v5' }, { circulo: [12, 16.25, 0.6], cheio: true }],
   info: [{ circulo: [12, 12, 8.5] }, { d: 'M12 11v5.25' }, { circulo: [12, 7.9, 0.6], cheio: true }],
+  sino: [{ d: 'M6.5 16.5v-5.25a5.5 5.5 0 0 1 11 0v5.25L19 18H5z' }, { d: 'M10.25 20.25a1.9 1.9 0 0 0 3.5 0' }],
   sucesso: [{ circulo: [12, 12, 8.5] }, { d: 'M8.25 12.25l2.5 2.5 5-5' }],
   editar: [{ d: 'M4.5 19.5h3.75L18.5 9.25 14.75 5.5 4.5 15.75z' }, { d: 'M13 7.25l3.75 3.75' }],
   pessoa: [{ circulo: [12, 8.5, 3.5] }, { d: 'M5 19.5a7 7 0 0 1 14 0' }],

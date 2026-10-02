@@ -109,6 +109,11 @@
   color: var(--cor-marca-texto);
 }
 
+/* Total de não lidas, como no Mail: à direita na barra lateral, sobre o ícone nas abas */
+.nav-item .contador {
+  margin-left: auto;
+}
+
 .lateral-rodape {
   margin-top: auto;
 }
@@ -233,4 +238,21 @@
 
 .aba.ativo {
   color: var(--cor-marca-texto);
+}
+
+.aba-icone {
+  position: relative;
+  display: inline-flex;
+}
+
+.aba .contador {
+  position: absolute;
+  top: -0.25rem;
+  left: calc(100% - 0.625rem);
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding: 0 0.3125rem;
+  font-size: 0.6875rem;
+  line-height: 1.125rem;
+  box-shadow: 0 0 0 2px var(--cor-fundo);
 }

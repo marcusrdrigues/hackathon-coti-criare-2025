@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, si
 import { Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { Cotacao, Proposta } from '../../../core/models';
+import { aoReceberAviso, chegouProposta } from '../../../core/services/avisos.service';
 import { CotacaoService } from '../../../core/services/cotacao.service';
 import { NegociacaoService } from '../../../core/services/negociacao.service';
 import { NotificacaoService } from '../../../core/services/notificacao.service';
@@ -48,6 +49,11 @@ export class DetalheCotacao implements OnInit {
   });
 
   protected readonly negociacaoAtiva = computed(() => this.propostas().find((p) => p.negociacaoStatus === 'EM_ANDAMENTO') ?? null);
+
+  constructor() {
+    // Proposta nova desta cotação entra na lista na hora
+    aoReceberAviso((a) => chegouProposta(a) && a.cotacaoId === this.id(), () => this.carregar());
+  }
 
   ngOnInit(): void {
     this.carregar();

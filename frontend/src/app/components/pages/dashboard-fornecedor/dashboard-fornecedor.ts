@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { Cotacao, DashboardFornecedor as DashboardFornecedorModel, Negociacao } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
+import { AvisosService, aoReceberAviso, mudouNegociacao } from '../../../core/services/avisos.service';
 import { CotacaoService } from '../../../core/services/cotacao.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { NegociacaoService } from '../../../core/services/negociacao.service';
@@ -22,6 +23,7 @@ export class DashboardFornecedor implements OnInit {
   private readonly cotacaoService = inject(CotacaoService);
   private readonly negociacaoService = inject(NegociacaoService);
   protected readonly auth = inject(AuthService);
+  private readonly avisos = inject(AvisosService);
 
   protected readonly numeros = signal<DashboardFornecedorModel | null>(null);
   protected readonly oportunidades = signal<Cotacao[]>([]);
@@ -31,7 +33,15 @@ export class DashboardFornecedor implements OnInit {
 
   protected readonly negociacoesAtivas = computed(() => this.negociacoes().filter((n) => n.status === 'EM_ANDAMENTO'));
 
+  constructor() {
+    aoReceberAviso(mudouNegociacao, () => this.carregar());
+  }
+
   ngOnInit(): void {
+    this.carregar();
+  }
+
+  private carregar(): void {
     forkJoin({
       numeros: this.dashboardService.fornecedor(),
       abertas: this.cotacaoService.listarAbertas(),
@@ -41,6 +51,7 @@ export class DashboardFornecedor implements OnInit {
         this.oportunidades.set(abertas.slice(0, 5));
         this.negociacoes.set(negociacoes);
         this.numeros.set(numeros);
+        this.avisos.atualizar(negociacoes);
       },
       error: (e) => this.erro.set(mensagemDeErro(e)),
     });

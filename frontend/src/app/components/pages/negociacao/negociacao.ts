@@ -21,6 +21,7 @@ import { RouterLink } from '@angular/router';
 import { EMPTY, catchError, filter, forkJoin, interval, pairwise, switchMap } from 'rxjs';
 import { Mensagem, Negociacao as NegociacaoModel } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
+import { AvisosService } from '../../../core/services/avisos.service';
 import { NegociacaoService } from '../../../core/services/negociacao.service';
 import { NotificacaoService } from '../../../core/services/notificacao.service';
 import { EventoNegociacao, TempoRealService } from '../../../core/services/tempo-real.service';
@@ -76,6 +77,7 @@ export class Negociacao implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly tempoReal = inject(TempoRealService);
+  private readonly avisos = inject(AvisosService);
   protected readonly auth = inject(AuthService);
 
   /** Ligado ao servidor: a sala atualiza na hora, sem consultar de tempos em tempos. */
@@ -147,8 +149,8 @@ export class Negociacao implements OnInit {
 
   constructor() {
     // Trocar de conversa pela lista ao lado reaproveita o componente: recarrega pelo id
-    effect(() => {
-      this.id();
+    effect((aoSair) => {
+      const id = this.id();
       untracked(() => {
         this.negociacao.set(null);
         this.mensagens.set([]);
@@ -156,8 +158,19 @@ export class Negociacao implements OnInit {
         this.valor.set(null);
         this.outraDigitando.set(false);
         this.carregar();
+        // Aberta na tela: o que chegou está lido, e o que chegar não vira contador
+        this.avisos.abrir(id);
       });
+      aoSair(() => this.avisos.fechar(id));
     });
+
+    // Negociação nova, fechada ou encerrada em outra conversa: atualiza a lista ao lado
+    this.avisos.recebidos$
+      .pipe(
+        filter((aviso) => aviso.tipo !== 'MENSAGEM' && aviso.negociacaoId !== this.id()),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => this.carregarOutras());
 
     // Eventos da negociação aberta, ao vivo; troca de assinatura quando muda de conversa
     toObservable(this.id)
@@ -186,10 +199,7 @@ export class Negociacao implements OnInit {
   }
 
   ngOnInit(): void {
-    this.negociacaoService
-      .listarMinhas()
-      .pipe(catchError(() => EMPTY))
-      .subscribe((lista) => this.outras.set(ordenarNegociacoes(lista)));
+    this.carregarOutras();
 
     // Plano B: sem tempo real (servidor acordando, rede instável), consulta de tempos em tempos
     interval(ATUALIZACAO_SEM_CONEXAO_MS)
@@ -206,6 +216,7 @@ export class Negociacao implements OnInit {
           this.negociacaoService.mensagens(this.id()).subscribe((m) => {
             if (m.length !== this.mensagens().length) {
               this.mensagens.set(m);
+              this.avisos.vistaNaTela(this.id());
             }
           });
         }
@@ -223,6 +234,16 @@ export class Negociacao implements OnInit {
       },
       error: (e) => this.erro.set(mensagemDeErro(e)),
     });
+  }
+
+  private carregarOutras(): void {
+    this.negociacaoService
+      .listarMinhas()
+      .pipe(catchError(() => EMPTY))
+      .subscribe((lista) => {
+        this.outras.set(ordenarNegociacoes(lista));
+        this.avisos.atualizar(lista);
+      });
   }
 
   /** Mensagem nova, mudança de status ou "digitando" da outra parte. */

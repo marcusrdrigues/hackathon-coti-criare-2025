@@ -118,6 +118,8 @@ sequenceDiagram
 - Moeda e datas no formato brasileiro (`R$ 1.234,56`, `31/12/2025`)
 - Máscara de CNPJ no cadastro
 - Sala de negociação **ao vivo** (WebSocket): mensagens e ofertas chegam na hora, com "digitando…" e indicador de conexão; sem conexão, volta a consultar a cada 10 segundos
+- **Mensagens não lidas** contadas na barra lateral, nas abas do celular e em cada negociação da lista; abrir a conversa zera o contador
+- **Avisos ao vivo em qualquer tela**: mensagem nova, proposta recebida, negociação aberta, fechada ou encerrada, com atalho para abrir; as telas abertas se atualizam sozinhas
 - Telas carregadas sob demanda (*lazy loading*)
 - **Modo claro e escuro**: segue o tema do sistema e pode ser fixado no menu do usuário ou no canto das telas de acesso
 - Layout responsivo, do celular ao monitor largo; login e cadastro cabem na tela sem rolagem
@@ -497,8 +499,9 @@ Legenda: 🌐 público · 🔑 qualquer usuário logado · 🏢 só empresa · �
 | Método | Endpoint | Acesso | Descrição |
 |---|---|---|---|
 | `POST` | `/negociacoes` | 🏢 dona da cotação | Aceita a proposta e abre a negociação (`{ "propostaId": "..." }`) |
-| `GET` | `/negociacoes/minhas` | 🔑 | Negociações do usuário logado |
-| `GET` | `/negociacoes/{id}` · `/negociacoes/proposta/{propostaId}` | 🔑 participante | Detalhe (inclui `ultimaOferta`) |
+| `GET` | `/negociacoes/minhas` | 🔑 | Negociações do usuário logado, com `naoLidas` (mensagens da outra parte ainda não vistas) |
+| `GET` | `/negociacoes/{id}` · `/negociacoes/proposta/{propostaId}` | 🔑 participante | Detalhe (inclui `ultimaOferta`; `naoLidas` no `/{id}`) |
+| `PATCH` | `/negociacoes/{id}/leitura` | 🔑 participante | Marca como lido tudo o que a outra parte enviou até agora (`204`) |
 | `PATCH` | `/negociacoes/{id}/finalizar` | 🏢 participante | Fecha o negócio (`{ "valorFinal": 1350.00 }`) |
 | `PATCH` | `/negociacoes/{id}/cancelar` | 🏢 participante | Encerra sem acordo |
 | `POST` | `/mensagens` | 🔑 participante | Mensagem e/ou contraproposta; o remetente vem do token |
@@ -513,7 +516,7 @@ Conexão STOMP em `/ws` (em produção, `wss://portal-criare-api.onrender.com/ws
 | Destino | Direção | Quem pode | O que trafega |
 |---|---|---|---|
 | `/topic/negociacoes/{id}` | servidor → cliente | as duas partes da negociação | `MENSAGEM` (mensagem + negociação atualizada), `STATUS` (fechada ou encerrada) e `DIGITANDO` |
-| `/user/queue/avisos` | servidor → cliente | o próprio usuário | mensagem nova, proposta recebida, negociação aberta, fechada ou encerrada |
+| `/user/queue/avisos` | servidor → cliente | o próprio usuário | mensagem nova, proposta recebida, negociação aberta, fechada ou encerrada (alimenta o contador de não lidas e os avisos na tela) |
 | `/app/negociacoes/{id}/digitando` | cliente → servidor | as duas partes da negociação | sinal de "digitando", repassado à outra parte |
 
 ### Formato dos erros
@@ -574,7 +577,7 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | `DemonstracaoApiTest` | Login de demonstração em um clique, health check e reset diário dos dados de exemplo |
 | `DocumentosTest` | Validação de CNPJ e normalização de dados |
 | `smoke-test-api.sh` | Contra a API real com PostgreSQL: login, proteção das rotas, CORS, validações, regras de perfil e de posse, cotação → proposta → negociação → mensagens → fechamento, dashboards, refresh com rotação e reuso, logout e força bruta |
-| Playwright (`frontend/e2e`) | No navegador, com API e banco reais: empresa e fornecedor negociam do começo ao fim (publicar, propor pelo painel do mural, contraproposta, aceitar, fechar com confirmação), vendo um ao outro **ao vivo** ("digitando…", aceite e fechamento sem recarregar), rota protegida, login com erro, cadastro com validação de CNPJ, sessão após F5, sair e tema claro/escuro. As telas de acesso rodam também num celular emulado |
+| Playwright (`frontend/e2e`) | No navegador, com API e banco reais: empresa e fornecedor negociam do começo ao fim (publicar, propor pelo painel do mural, contraproposta, aceitar, fechar com confirmação), vendo um ao outro **ao vivo** (proposta e aviso chegando à empresa, contador de não lidas do fornecedor e atalho do aviso, "digitando…", aceite e fechamento sem recarregar), rota protegida, login com erro, cadastro com validação de CNPJ, sessão após F5, sair e tema claro/escuro. As telas de acesso rodam também num celular emulado |
 | Front-end | Interceptor (token, renovação automática e expiração), guards por perfil, tema claro/escuro, seletor (teclado e busca por letra), controle segmentado, confirmação, máscara de CNPJ e componente raiz |
 
 O **GitHub Actions** (`.github/workflows/ci.yml`) roda a cada push: compila e testa o back-end (inclusive contra PostgreSQL com Testcontainers), sobe a API com PostgreSQL e executa o teste de fumaça, faz o build de produção e os testes do front-end, e roda os testes ponta a ponta com Playwright. O **CodeQL** procura vulnerabilidades no código Java e TypeScript, e o **Dependabot** abre PRs semanais com as atualizações de dependências.
@@ -634,10 +637,10 @@ Deixar o projeto mais fácil de manter e com qualidade medida.
 
 Funcionalidades que aproximam a plataforma de um uso real.
 
-- [ ] **Tempo real** na negociação com WebSocket e STOMP ([ADR 0012](docs/adr/0012-tempo-real-com-websocket-e-stomp.md))
+- [x] **Tempo real** na negociação com WebSocket e STOMP ([ADR 0012](docs/adr/0012-tempo-real-com-websocket-e-stomp.md))
   - [x] Back-end: conexão autenticada com o JWT, só as partes acompanham a negociação, avisos enviados depois do commit e "digitando"
   - [x] Sala de negociação ao vivo: mensagens e ofertas sem recarregar, "digitando…" e indicador de conexão
-  - [ ] Mensagens não lidas (contador na navegação e na lista) e avisos de proposta nova, negociação aberta e negócio fechado
+  - [x] Mensagens não lidas (contador na navegação e na lista) e avisos de proposta nova, negociação aberta e negócio fechado
 - [ ] **IA com Spring AI**: resumir e comparar propostas, sugerir contrapropostas e ajudar a escrever os requisitos da cotação
 - [ ] **Contrato em PDF** gerado ao fechar o negócio, com as partes, o objeto e o valor acordado
 - [ ] **Comparador de propostas** com nota ponderada (preço, prazo, garantia)

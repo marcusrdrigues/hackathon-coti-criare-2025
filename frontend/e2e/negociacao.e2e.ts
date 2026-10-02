@@ -1,11 +1,26 @@
-import { expect, test } from '@playwright/test';
+import { Page, expect, test } from '@playwright/test';
 import { entrarComoDemo, sufixo } from './apoio';
+
+/** Link "Negociações" da barra lateral, onde aparece o total de não lidas. */
+function linkNegociacoes(pagina: Page) {
+  return pagina.getByRole('navigation', { name: 'Navegação principal' }).getByRole('link', { name: /^Negociações/ });
+}
+
+async function naoLidas(pagina: Page): Promise<number> {
+  const contador = linkNegociacoes(pagina).locator('.contador');
+  return (await contador.count()) ? Number(await contador.textContent()) : 0;
+}
+
+/** Aviso ao vivo (toast) com este texto. */
+function aviso(pagina: Page, texto: string | RegExp) {
+  return pagina.getByRole('status').filter({ hasText: texto });
+}
 
 /**
  * O fluxo principal com as duas partes ao mesmo tempo, cada uma no seu
  * navegador: a empresa publica, o fornecedor propõe, as duas negociam e a
- * empresa fecha o negócio. Depois que a sala abre, ninguém recarrega a página:
- * tudo chega pelo tempo real (WebSocket).
+ * empresa fecha o negócio. Ninguém recarrega a página: propostas, avisos,
+ * contador de não lidas e mensagens chegam pelo tempo real (WebSocket).
  */
 test('empresa e fornecedor negociam até fechar o negócio', async ({ browser, baseURL }) => {
   const titulo = `Cotação E2E ${sufixo()}`;
@@ -39,23 +54,42 @@ test('empresa e fornecedor negociam até fechar o negócio', async ({ browser, b
     await expect(linha.getByText('Você ofertou')).toBeVisible();
   });
 
-  await test.step('empresa abre a negociação e faz uma contraproposta', async () => {
-    await empresa.reload();
+  await test.step('empresa recebe o aviso e a proposta entra na lista sem recarregar', async () => {
+    await expect(aviso(empresa, /Nova proposta de R\$\s?11\.500,00/)).toBeVisible();
+    await expect(empresa.getByRole('listitem').filter({ hasText: 'Tech Soluções' })).toBeVisible();
+  });
+
+  let antes = 0;
+  await test.step('empresa abre a negociação e o fornecedor é avisado', async () => {
+    antes = await naoLidas(fornecedor);
     const proposta = empresa.getByRole('listitem').filter({ hasText: 'Tech Soluções' });
     await proposta.getByRole('button', { name: 'Negociar' }).click();
     // Confirmação no diálogo do próprio sistema, não no confirm() do navegador
     await empresa.getByRole('alertdialog').getByRole('button', { name: 'Negociar' }).click();
     await expect(empresa).toHaveURL(/\/pages\/negociacao\//);
     await expect(empresa.getByText('Ao vivo')).toBeVisible();
+    await expect(aviso(fornecedor, 'Quer negociar a sua proposta')).toBeVisible();
+  });
 
+  await test.step('contraproposta soma no contador do fornecedor, que abre pelo aviso', async () => {
     await empresa.getByLabel('Mensagem', { exact: true }).fill('Fechamos em 10.800 com o mesmo prazo?');
     await empresa.getByLabel('Valor da contraproposta (opcional)').fill('10800');
     await empresa.getByRole('button', { name: 'Enviar', exact: true }).click();
     await expect(empresa.getByText('Fechamos em 10.800 com o mesmo prazo?')).toBeVisible();
+
+    const novaOferta = aviso(fornecedor, /Nova oferta de R\$\s?10\.800,00/);
+    await expect(novaOferta).toBeVisible();
+    const esperado = antes + 1;
+    await expect(linkNegociacoes(fornecedor)).toHaveAccessibleName(new RegExp(`Negociações\\s*,\\s*${esperado} não lidas?`));
+
+    await novaOferta.getByRole('link', { name: 'Abrir' }).click();
+    await expect(fornecedor).toHaveURL(empresa.url());
+    await expect(fornecedor.getByText('Fechamos em 10.800 com o mesmo prazo?')).toBeVisible();
+    // Aberta, a conversa deixa de contar como não lida
+    await expect.poll(() => naoLidas(fornecedor)).toBe(antes);
   });
 
-  await test.step('fornecedor abre a sala e a empresa vê que ele está digitando', async () => {
-    await fornecedor.goto(empresa.url().replace(/^https?:\/\/[^/]+/, ''));
+  await test.step('fornecedor escreve e a empresa vê que ele está digitando', async () => {
     await expect(fornecedor.getByText('Ao vivo')).toBeVisible();
     await fornecedor.getByLabel('Mensagem', { exact: true }).pressSequentially('Deixa eu ver', { delay: 50 });
     await expect(empresa.getByText(/está digitando/)).toBeVisible();

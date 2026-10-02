@@ -4,6 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
+import { AvisosService } from '../../../core/services/avisos.service';
 import { TempoRealService } from '../../../core/services/tempo-real.service';
 import { CnpjPipe } from '../../../core/utils/cnpj.pipe';
 import { iniciais } from '../../../core/utils/formatos';
@@ -17,6 +18,8 @@ interface Destino {
   icone: NomeIcone;
   /** Outras rotas que pertencem a este destino (ex.: o detalhe de uma cotação) */
   inclui?: string[];
+  /** Mostra o total de mensagens não lidas */
+  comNaoLidas?: boolean;
 }
 
 const LARGURA_COM_LATERAL = '(min-width: 1024px)';
@@ -34,6 +37,7 @@ const LARGURA_COM_LATERAL = '(min-width: 1024px)';
 })
 export class Shell {
   protected readonly auth = inject(AuthService);
+  protected readonly avisos = inject(AvisosService);
   private readonly router = inject(Router);
 
   protected readonly usuario = this.auth.usuario;
@@ -58,12 +62,24 @@ export class Shell {
             icone: 'cotacoes',
             inclui: ['/pages/detalhe-cotacao', '/pages/cadastro-cotacao'],
           },
-          { rota: '/pages/negociacoes', rotulo: 'Negociações', icone: 'negociacoes', inclui: ['/pages/negociacao/'] },
+          {
+            rota: '/pages/negociacoes',
+            rotulo: 'Negociações',
+            icone: 'negociacoes',
+            inclui: ['/pages/negociacao/'],
+            comNaoLidas: true,
+          },
         ]
       : [
           { rota: '/pages/dashboard-fornecedor', rotulo: 'Início', icone: 'inicio' },
           { rota: '/pages/mural-oportunidades', rotulo: 'Mural', icone: 'mural' },
-          { rota: '/pages/negociacoes', rotulo: 'Negociações', icone: 'negociacoes', inclui: ['/pages/negociacao/'] },
+          {
+            rota: '/pages/negociacoes',
+            rotulo: 'Negociações',
+            icone: 'negociacoes',
+            inclui: ['/pages/negociacao/'],
+            comNaoLidas: true,
+          },
           { rota: '/pages/propostas-enviadas', rotulo: 'Propostas', icone: 'propostas', inclui: ['/pages/historico-propostas'] },
         ],
   );
@@ -72,10 +88,21 @@ export class Shell {
   protected readonly comLateral = signal(true);
 
   constructor() {
-    // Tempo real enquanto houver sessão nas telas internas
+    // Tempo real (e os avisos que vêm por ele) enquanto houver sessão nas telas internas
     const tempoReal = inject(TempoRealService);
-    effect(() => (this.auth.logado() ? tempoReal.ligar() : tempoReal.desligar()));
-    inject(DestroyRef).onDestroy(() => tempoReal.desligar());
+    effect(() => {
+      if (this.auth.logado()) {
+        tempoReal.ligar();
+        this.avisos.iniciar();
+      } else {
+        this.avisos.parar();
+        tempoReal.desligar();
+      }
+    });
+    inject(DestroyRef).onDestroy(() => {
+      this.avisos.parar();
+      tempoReal.desligar();
+    });
 
     if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
       const midia = window.matchMedia(LARGURA_COM_LATERAL);
@@ -89,6 +116,11 @@ export class Shell {
   protected ativo(destino: Destino): boolean {
     const url = this.url().split('?')[0];
     return url === destino.rota || (destino.inclui ?? []).some((rota) => url.startsWith(rota));
+  }
+
+  /** Total que aparece no destino ("99+" acima disso) */
+  protected contador(total: number): string {
+    return total > 99 ? '99+' : String(total);
   }
 
   protected sair(): void {

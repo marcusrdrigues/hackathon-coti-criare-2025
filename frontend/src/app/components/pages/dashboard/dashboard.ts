@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { Cotacao, DashboardEmpresa, Negociacao } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
+import { AvisosService, aoReceberAviso, chegouProposta, mudouNegociacao } from '../../../core/services/avisos.service';
 import { CotacaoService } from '../../../core/services/cotacao.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { NegociacaoService } from '../../../core/services/negociacao.service';
@@ -30,6 +31,7 @@ export class DashboardComponent implements OnInit {
   private readonly cotacaoService = inject(CotacaoService);
   private readonly negociacaoService = inject(NegociacaoService);
   protected readonly auth = inject(AuthService);
+  private readonly avisos = inject(AvisosService);
 
   protected readonly dados = signal<DashboardEmpresa | null>(null);
   private readonly cotacoes = signal<Cotacao[]>([]);
@@ -68,7 +70,16 @@ export class DashboardComponent implements OnInit {
 
   protected readonly maiorCategoria = computed(() => Math.max(1, ...(this.dados()?.categorias ?? []).map((c) => c.total)));
 
+  constructor() {
+    // Números e atividade ao vivo: proposta nova ou negociação que mudou
+    aoReceberAviso((a) => chegouProposta(a) || mudouNegociacao(a), () => this.carregar());
+  }
+
   ngOnInit(): void {
+    this.carregar();
+  }
+
+  private carregar(): void {
     forkJoin({
       dados: this.dashboardService.empresa(),
       cotacoes: this.cotacaoService.listarMinhas(),
@@ -78,6 +89,7 @@ export class DashboardComponent implements OnInit {
         this.cotacoes.set(cotacoes);
         this.negociacoes.set(negociacoes);
         this.dados.set(dados);
+        this.avisos.atualizar(negociacoes);
       },
       error: (e) => this.erro.set(mensagemDeErro(e)),
     });

@@ -42,6 +42,28 @@
   min-width: 0;
 }
 
+.aviso[data-tipo='aviso'] .aviso-icone {
+  color: var(--cor-marca-texto);
+}
+
+.aviso-titulo {
+  display: block;
+  font-weight: 600;
+}
+
+.aviso-abrir {
+  align-self: center;
+  flex-shrink: 0;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--raio-pequeno);
+  font-weight: 600;
+  color: var(--cor-marca-texto);
+}
+
+.aviso-abrir:hover {
+  background: var(--cor-hover);
+}
+
 .aviso-fechar {
   display: grid;
   place-items: center;

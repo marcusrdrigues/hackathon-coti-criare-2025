@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { RouterLink } from '@angular/router';
 import { Negociacao } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
+import { AvisosService, aoReceberAviso, mudouNegociacao } from '../../../core/services/avisos.service';
 import { NegociacaoService } from '../../../core/services/negociacao.service';
 import { mensagemDeErro } from '../../../core/utils/erros';
 import { Icone } from '../../../ui/icone';
@@ -66,6 +67,7 @@ type Filtro = 'ANDAMENTO' | 'TODAS';
 export class Negociacoes implements OnInit {
   private readonly negociacaoService = inject(NegociacaoService);
   protected readonly auth = inject(AuthService);
+  private readonly avisos = inject(AvisosService);
 
   protected readonly negociacoes = signal<Negociacao[] | null>(null);
   protected readonly erro = signal<string | null>(null);
@@ -84,13 +86,23 @@ export class Negociacoes implements OnInit {
     return this.filtro() === 'TODAS' ? lista : lista.filter((n) => n.status === 'EM_ANDAMENTO');
   });
 
+  constructor() {
+    // Negociação nova, fechada ou encerrada aparece na lista sem recarregar a página
+    aoReceberAviso(mudouNegociacao, () => this.carregar());
+  }
+
   ngOnInit(): void {
+    this.carregar(true);
+  }
+
+  private carregar(primeiraVez = false): void {
     this.negociacaoService.listarMinhas().subscribe({
       next: (lista) => {
         const ordenada = ordenarNegociacoes(lista);
         this.negociacoes.set(ordenada);
+        this.avisos.atualizar(lista);
         // Sem nenhuma em andamento, mostra todas de uma vez
-        if (!ordenada.some((n) => n.status === 'EM_ANDAMENTO')) {
+        if (primeiraVez && !ordenada.some((n) => n.status === 'EM_ANDAMENTO')) {
           this.filtro.set('TODAS');
         }
       },

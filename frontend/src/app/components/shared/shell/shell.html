@@ -1,5 +1,10 @@
 <a class="pular" href="#conteudo">Pular para o conteúdo</a>
 
+<!-- O número visível é decorativo; quem usa leitor de tela ouve "Negociações, 2 não lidas" -->
+<ng-template #naoLidas let-total>
+  <span class="visually-hidden">, {{ total }} {{ total === 1 ? 'não lida' : 'não lidas' }}</span>
+</ng-template>
+
 <ng-template #conta>
   @if (usuario(); as u) {
     <div class="menu-cabecalho">
@@ -35,6 +40,10 @@
               <a class="nav-item" [routerLink]="d.rota" [class.ativo]="ativo(d)" [attr.aria-current]="ativo(d) ? 'page' : null">
                 <ui-icone [nome]="d.icone" />
                 <span>{{ d.rotulo }}</span>
+                @if (d.comNaoLidas && avisos.total(); as total) {
+                  <span class="contador numeros" aria-hidden="true">{{ contador(total) }}</span>
+                  <ng-container [ngTemplateOutlet]="naoLidas" [ngTemplateOutletContext]="{ $implicit: total }" />
+                }
               </a>
             </li>
           }
@@ -76,8 +85,16 @@
     <nav class="abas" aria-label="Navegação principal" [style.--colunas]="destinos().length">
       @for (d of destinos(); track d.rota) {
         <a class="aba" [routerLink]="d.rota" [class.ativo]="ativo(d)" [attr.aria-current]="ativo(d) ? 'page' : null">
-          <ui-icone [nome]="d.icone" [tamanho]="24" />
+          <span class="aba-icone">
+            <ui-icone [nome]="d.icone" [tamanho]="24" />
+            @if (d.comNaoLidas && avisos.total(); as total) {
+              <span class="contador numeros" aria-hidden="true">{{ contador(total) }}</span>
+            }
+          </span>
           <span>{{ d.rotulo }}</span>
+          @if (d.comNaoLidas && avisos.total(); as total) {
+            <ng-container [ngTemplateOutlet]="naoLidas" [ngTemplateOutletContext]="{ $implicit: total }" />
+          }
         </a>
       }
     </nav>

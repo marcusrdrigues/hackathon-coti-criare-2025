@@ -23,6 +23,11 @@ export class NegociacaoService {
     return this.http.get<Negociacao>(`${this.url}/${id}`);
   }
 
+  /** Tudo o que a outra parte enviou até agora passa a contar como visto. */
+  marcarComoLida(id: string): Observable<void> {
+    return this.http.patch<void>(`${this.url}/${id}/leitura`, {});
+  }
+
   finalizar(id: string, valorFinal: number): Observable<Negociacao> {
     return this.http.patch<Negociacao>(`${this.url}/${id}/finalizar`, { valorFinal });
   }

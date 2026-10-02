@@ -127,6 +127,8 @@ export interface Negociacao {
   cotacaoNome: string;
   cotacaoRequisitos: string;
   cotacaoStatus: StatusCotacao;
+  /** Mensagens da outra parte que o usuário ainda não viu (só nas consultas do próprio usuário) */
+  naoLidas?: number | null;
 }
 
 export interface Mensagem {
