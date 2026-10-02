@@ -3,6 +3,11 @@
   "framework": "angular",
   "buildCommand": "npm run build",
   "outputDirectory": "dist/frontHackaton/browser",
+  "git": {
+    "deploymentEnabled": {
+      "em-andamento": false
+    }
+  },
   "rewrites": [
     {
       "source": "/api/:caminho*",

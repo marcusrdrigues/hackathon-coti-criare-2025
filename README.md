@@ -504,7 +504,7 @@ A demo pública está em **[portal-criare.vercel.app](https://portal-criare.verc
 
 | Parte | Serviço | Configuração |
 |---|---|---|
-| Front-end | Vercel | [`frontend/vercel.json`](frontend/vercel.json): build do Angular e repasse de `/api/*` para a API |
+| Front-end | Vercel | [`frontend/vercel.json`](frontend/vercel.json): build do Angular e repasse de `/api/*` para a API. Só a `main` publica: o ramo de trabalho é testado no CI, sem gastar a cota de deploys da Vercel |
 | API | Render | [`render.yaml`](render.yaml): Docker, health check e `JWT_SECRET` gerado pela plataforma |
 | Banco | Neon | PostgreSQL gerenciado; o Flyway cria e atualiza o esquema na inicialização |
 
