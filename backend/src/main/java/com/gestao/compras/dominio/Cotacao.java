@@ -5,6 +5,7 @@ import com.gestao.identidade.dominio.Usuario;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.envers.Audited;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -14,6 +15,7 @@ import java.util.UUID;
 
 @Getter
 @Setter
+@Audited
 @Entity
 @Table(name = "tb_cotacao")
 public class Cotacao {

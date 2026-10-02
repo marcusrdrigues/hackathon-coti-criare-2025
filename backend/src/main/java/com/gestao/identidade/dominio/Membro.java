@@ -13,6 +13,7 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.envers.Audited;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -22,6 +23,7 @@ import java.util.UUID;
  * ({@code removidoEm}): o que essa pessoa fez continua com o nome dela.
  */
 @Getter
+@Audited
 @Entity
 @Table(name = "tb_membro")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

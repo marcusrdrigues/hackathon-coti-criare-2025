@@ -4,6 +4,8 @@ import com.gestao.identidade.dominio.Organizacao;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -14,6 +16,7 @@ import java.util.UUID;
 
 @Getter
 @Setter
+@Audited
 @Entity
 @Table(name = "tb_negociacao")
 public class Negociacao {
@@ -37,10 +40,12 @@ public class Negociacao {
     private LocalDate dataFinalizacao;
 
     /** Última vez que a empresa abriu a negociação (base das mensagens não lidas). */
+    @NotAudited
     @Column(name = "lida_empresa_em")
     private LocalDateTime lidaEmpresaEm;
 
     /** Última vez que o fornecedor abriu a negociação. */
+    @NotAudited
     @Column(name = "lida_fornecedor_em")
     private LocalDateTime lidaFornecedorEm;
 
@@ -56,6 +61,7 @@ public class Negociacao {
     @JoinColumn(name = "fornecedor_id", nullable = false)
     private Organizacao fornecedor;
 
+    @NotAudited
     @OneToMany(mappedBy = "negociacao")
     @OrderBy("dataEnvio ASC")
     private List<MensagemNegociacao> mensagens = new ArrayList<>();

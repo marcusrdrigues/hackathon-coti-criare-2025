@@ -9,12 +9,15 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 /** A pessoa que entra no sistema. Pertence a uma organização por meio de {@link Membro}. */
 @Getter
+@Audited
 @Entity
 @Table(name = "tb_usuario")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -32,6 +35,7 @@ public class Usuario {
     private String email;
 
     /** Hash BCrypt da senha. */
+    @NotAudited
     @Column(name = "senha_hash", length = 100, nullable = false)
     private String senhaHash;
 

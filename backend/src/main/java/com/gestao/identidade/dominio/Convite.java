@@ -11,6 +11,8 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -21,6 +23,7 @@ import java.util.UUID;
  * fica só o hash dele. Vale por {@link #VALIDADE} e uma vez só.
  */
 @Getter
+@Audited
 @Entity
 @Table(name = "tb_convite")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -44,6 +47,7 @@ public class Convite {
     @Column(name = "email", length = 100, nullable = false)
     private String email;
 
+    @NotAudited
     @Column(name = "token_hash", length = 64, nullable = false, unique = true)
     private String tokenHash;
 
