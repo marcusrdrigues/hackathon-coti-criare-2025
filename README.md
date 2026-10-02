@@ -816,6 +816,7 @@ Saber quem fez o quê. O proprietário vê a atividade da própria organização
 - [ ] **Console do superadmin**: eventos de segurança, atividade de cada organização e histórico de cada registro; as consultas dele também ficam registradas
 - [ ] **Registro de consumo de IA**: tokens, custo e latência por organização e por funcionalidade, pronto para a fase 7
 - [ ] **Exclusão de dados pessoais a pedido** (LGPD): nome e e-mail anonimizados na conta e no histórico
+- [ ] **Redefinição de senha**: "Esqueci minha senha" no login, link de uso único por e-mail e sessões encerradas depois da troca ([spec 004](docs/specs/004-redefinicao-de-senha/spec.md))
 
 ### Fase 6 · Produto &nbsp;`planejada`
 
@@ -836,7 +837,7 @@ Em níveis, cada um com avaliação automatizada antes de chegar ao usuário.
 
 ### Depois
 
-- [ ] Recuperação de senha, confirmação de e-mail e convites por e-mail
+- [ ] Confirmação de e-mail no cadastro e convites enviados por e-mail
 - [ ] Anexos nas cotações e propostas (especificações, catálogos)
 - [ ] Uma pessoa em mais de uma organização
 - [ ] Tempo real e limite de tentativas compartilhados entre instâncias (Redis ou RabbitMQ), para rodar mais de uma API
