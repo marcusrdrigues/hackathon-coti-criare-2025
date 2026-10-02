@@ -10,7 +10,7 @@ Uma decisão registrada não se edita. Se ela mudar, um ADR novo a substitui, e 
 | [0002](0002-monorepo.md) | Back-end e front-end num monorepo | Aceita |
 | [0003](0003-access-token-curto-e-refresh-token-opaco.md) | Access token JWT curto e refresh token opaco em cookie | Aceita |
 | [0004](0004-jwt-assinado-com-hs256.md) | JWT assinado com HS256 pelo resource server do Spring | Aceita |
-| [0005](0005-autorizacao-por-perfil-e-por-posse.md) | Autorização por perfil no controller e por posse no service | Aceita |
+| [0005](0005-autorizacao-por-perfil-e-por-posse.md) | Autorização por perfil no controller e por posse no service | Substituída por 0016 |
 | [0006](0006-proxy-da-vercel-para-a-api.md) | Front-end e API na mesma origem pelo proxy da Vercel | Aceita |
 | [0007](0007-flyway-com-validacao-do-hibernate.md) | Esquema versionado com Flyway e validado pelo Hibernate | Aceita |
 | [0008](0008-testes-no-h2-e-no-postgresql.md) | Testes no H2 e também no PostgreSQL com Testcontainers | Aceita |
@@ -21,5 +21,6 @@ Uma decisão registrada não se edita. Se ela mudar, um ADR novo a substitui, e 
 | [0013](0013-monolito-modular-com-clean-architecture.md) | Monólito modular com Clean Architecture, verificado por teste | Aceita |
 | [0014](0014-rastreio-por-requisicao-e-logs-estruturados.md) | Rastreio por requisição e logs estruturados, sem dados sensíveis | Aceita |
 | [0015](0015-pessoas-e-organizacoes-separadas.md) | Pessoas e organizações separadas, com papéis e autoria | Aceita |
+| [0016](0016-autorizacao-por-organizacao.md) | Autorização por organização, com 404 e trava de rota nova | Aceita |
 
 Modelo para um ADR novo: [template.md](template.md).

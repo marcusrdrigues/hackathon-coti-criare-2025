@@ -1,6 +1,6 @@
 # 0005. Autorização por perfil no controller e por posse no service
 
-- **Status:** Aceita
+- **Status:** Substituída por [ADR 0016](0016-autorizacao-por-organizacao.md)
 - **Data:** 2026-10-01
 
 ## Contexto

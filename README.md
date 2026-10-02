@@ -200,7 +200,8 @@ sequenceDiagram
 | **Força bruta** | 5 senhas erradas para o mesmo e-mail em 15 minutos bloqueiam o login (HTTP 429 com `Retry-After`) | Dificulta adivinhar senhas |
 | **Senhas** | BCrypt; cadastro exige 8+ caracteres com letras e números | Hash lento e com *salt*, resistente a vazamentos |
 | **Autorização por perfil** | `@PreAuthorize("hasRole('EMPRESA')")` nos endpoints | Fornecedor não cria cotação, empresa não envia proposta |
-| **Autorização por posse** | Os services conferem a organização dona de cada recurso | Empresa só vê e altera as próprias cotações; fornecedor não vê o lance do concorrente; negociação só para as duas organizações participantes |
+| **Autorização por organização** | Uma política de acesso única no módulo de compras (`AcessoCompras`), usada pela API e pelo WebSocket. Recurso de outra organização responde **404**, igual a um id que não existe | Empresa só vê e altera as próprias cotações; fornecedor não vê o lance do concorrente nem cotações fora do mural em que não entrou; negociação só para as duas organizações participantes. O 404 não confirma que o id existe ([ADR 0016](docs/adr/0016-autorizacao-por-organizacao.md)) |
+| **Trava de rota nova** | Um teste lê todas as rotas da API que recebem id e exige, para cada uma, a tentativa de outra organização | Uma rota nova sem teste de isolamento quebra o build |
 | **Identidade** | Quem é a pessoa e em nome de qual organização ela age vem **sempre do token**, nunca de um ID enviado no corpo | Ninguém consegue agir em nome de outra empresa trocando um ID |
 | **Chave de assinatura** | Lida da variável `JWT_SECRET`; sem ela, a API gera uma chave aleatória e avisa no log | Nenhum segredo fica no código |
 | **Rastreio** | Cada requisição tem um `traceId` (OpenTelemetry), que aparece em todas as linhas de log dela, no cabeçalho `X-Trace-Id` e no corpo dos erros. O front mostra o começo dele quando algo falha no servidor | Uma reclamação vira uma busca nos logs, sem expor detalhes do erro a quem usa |
@@ -488,7 +489,7 @@ Com o repasse da Vercel, o navegador fala só com um domínio: o cookie da sess�
 
 Todos os endpoints ficam sob `/api/v1`. A documentação completa, com exemplos, está no Swagger.
 
-Legenda: 🌐 público · 🔑 qualquer usuário logado · 🏢 só empresa · 🚚 só fornecedor. As rotas marcadas como "dono" ou "participante" também conferem se o recurso é do usuário do token.
+Legenda: 🌐 público · 🔑 qualquer usuário logado · 🏢 só empresa · 🚚 só fornecedor. As rotas marcadas como "dona" ou "participante" também conferem se o recurso é da organização do token; se não for, respondem `404`, como um id que não existe.
 
 <details>
 <summary><b>Autenticação e dashboard</b></summary>
@@ -522,7 +523,7 @@ Legenda: 🌐 público · 🔑 qualquer usuário logado · 🏢 só empresa · �
 | `GET` | `/cotacoes/minhas` | 🏢 | Cotações da empresa logada |
 | `GET` | `/cotacoes/abertas` | 🔑 | Abertas e dentro do prazo (mural) |
 | `GET` | `/cotacoes/categorias` | 🌐 | Categorias disponíveis |
-| `GET` | `/cotacoes/{id}` | 🔑 | Detalhe; empresas só veem as próprias |
+| `GET` | `/cotacoes/{id}` | 🔑 | Detalhe; empresas veem as próprias, fornecedores as abertas e aquelas em que enviaram proposta |
 | `PUT` | `/cotacoes/{id}` | 🏢 dona | Edita (somente abertas) |
 | `PATCH` | `/cotacoes/{id}/cancelar` | 🏢 dona | Cancela |
 
@@ -597,7 +598,7 @@ Erros de validação trazem também o campo de cada problema:
 |---|---|
 | `400` | Dados inválidos ou regra de negócio violada |
 | `401` | Sem token, token inválido/vencido, sessão expirada ou e-mail/senha errados |
-| `403` | Perfil sem permissão ou recurso de outro usuário |
+| `403` | Perfil sem permissão, ou ação que a organização não pode fazer num recurso que ela enxerga (o fornecedor fechar a negociação, por exemplo) |
 | `404` | Registro ou endpoint inexistente |
 | `409` | E-mail ou CNPJ já cadastrado |
 | `429` | Login bloqueado por excesso de tentativas (veja o header `Retry-After`) |
@@ -629,12 +630,13 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | `FluxoCotacaoIntegrationTest` | Cadastro de organização e proprietário, login com papel, membro da equipe agindo pela organização e registrado como autor, CNPJ único por tipo, CNPJ inválido, e-mail duplicado, proposta duplicada, negociação, contrapropostas, fechamento, cancelamento, prazo vencido, dashboards e regras de posse (empresa concorrente, fornecedor concorrente, intruso na negociação) |
 | `ComprasApiTest` | O contrato HTTP de compras, como o front-end usa: publicar, editar, propor, retirar, recusar, negociar, conversar, fechar e cancelar, painéis, e o formato das respostas de erro (validação por campo, 404, id malformado, JSON inválido, cadastro repetido) |
 | `AutenticacaoIntegrationTest` | Conteúdo do JWT (pessoa, organização, tipo e papel), token de antes da separação recusado, login de um membro, token adulterado, refresh gravado como hash, rotação, detecção de reuso, logout e bloqueio de força bruta |
-| `SegurancaApiTest` | Pela camada HTTP: cadastro público (201, 409 e validação por campo), formato de `/auth/me`, 401 sem token e com token inválido, rotas públicas, cookie `HttpOnly`/`SameSite`, 403 por perfil e por posse, identidade vinda do token, refresh pelo cookie, logout e CORS |
+| `SegurancaApiTest` | Pela camada HTTP: cadastro público (201, 409 e validação por campo), formato de `/auth/me`, 401 sem token e com token inválido, rotas públicas, cookie `HttpOnly`/`SameSite`, 403 por perfil, 404 para recurso de outra organização, identidade vinda do token, refresh pelo cookie, logout e CORS |
 | `TempoRealIntegrationTest` | WebSocket de verdade (STOMP): conexão sem token ou com token inválido recusada, mensagem e aviso entregues na hora (o aviso chega a toda a equipe da organização), "digitando…" e quem não participa não consegue assinar a negociação |
 | `MigracoesPostgresTest` | Num PostgreSQL 16 real (Testcontainers): o Flyway aplica as migrações, o Hibernate valida o esquema e todas as tabelas existem |
 | `MigracaoPessoasEOrganizacoesTest` | A migração V3 sobre dados no formato antigo, num PostgreSQL real: empresas e fornecedores viram organizações com o mesmo id, cada conta vira uma pessoa proprietária com a mesma senha, o negócio ganha autoria, as chaves apontam para as tabelas novas e as sessões antigas são encerradas |
 | `FluxoCotacaoPostgresTest` e `AutenticacaoPostgresTest` | Os mesmos cenários das duas suítes acima, agora no PostgreSQL real, para pegar diferenças que o H2 esconde |
 | `DemonstracaoApiTest` | Login de demonstração em um clique, health check e reset diário dos dados de exemplo |
+| `IsolamentoEntreOrganizacoesTest` | Toda rota da API que recebe id, no caminho ou no corpo, tentada por outra organização: a resposta é `404` com a mesma mensagem de um id inexistente. Lê as rotas do Spring MVC e falha se uma rota com id não tiver caso cadastrado |
 | `ArquiteturaTest` | A arquitetura como teste: módulos sem ciclos e usando só a API uns dos outros (Spring Modulith), e camadas da Clean Architecture com as dependências apontando para dentro (ArchUnit) |
 | `DocumentosTest` | Validação de CNPJ e normalização de dados |
 | `RastreioELogsTest` | Toda resposta com `X-Trace-Id`, o mesmo id no corpo dos erros (inclusive os do Spring Security), id enviado pelo cliente ignorado, e um fluxo inteiro (cadastro, senha errada, proposta, mensagem) sem senha, token, e-mail, nome de pessoa ou conteúdo sigiloso nos logs |
@@ -662,7 +664,7 @@ As decisões maiores têm um registro próprio, com contexto, alternativas e con
 - **JWT com o resource server do próprio Spring Security** (Nimbus), em vez de uma biblioteca de JWT à parte: validação de assinatura, expiração e emissor ficam a cargo do framework.
 - **Access token curto + refresh token rotativo em cookie** em vez de um token longo no `localStorage`: equilibra segurança (XSS e roubo de token) e conforto (o usuário não precisa logar de novo a cada 15 minutos).
 - **Refresh token opaco e não JWT**: como fica no banco, dá para revogar no logout e detectar reuso, algo que um JWT puro não permite.
-- **Autorização em duas camadas**: perfil no controller (`@PreAuthorize`) e posse no service, perto da regra de negócio.
+- **Autorização em duas camadas**: perfil no controller (`@PreAuthorize`) e acesso por organização numa política única do módulo (`AcessoCompras`), usada pelos services e pelo WebSocket, com `404` para o que é de outra organização ([ADR 0016](docs/adr/0016-autorizacao-por-organizacao.md)).
 - **Front-end com signals e componentes standalone**, controle de fluxo `@if`/`@for` e um service por recurso da API.
 - **Esquema do banco versionado com Flyway**: cada mudança vira uma migração revisável, e o Hibernate só confere (`ddl-auto=validate`) se as entidades batem com o banco.
 - **Design tokens** ([`tokens.css`](frontend/src/styles/tokens.css)): cores, tipografia, espaços e movimento existem num lugar só, com uma versão para o claro e outra para o escuro. Nenhum componente usa valor solto, e todos os pares de texto e fundo passam no contraste da WCAG. Detalhes em [docs/design-system.md](docs/design-system.md).
@@ -715,7 +717,7 @@ A base que as próximas fases exigem, feita antes delas. Especificação: [spec 
 - [x] **Monólito modular com Clean Architecture**: módulos de negócio com domínio, aplicação e infraestrutura, portas e adaptadores, e fronteiras verificadas por teste (Spring Modulith + ArchUnit)
 - [x] **Rastreio por requisição** (OpenTelemetry) e logs em JSON, sem dados sensíveis, verificados por teste
 - [x] **Pessoas e organizações**: várias pessoas por empresa ou fornecedor, com papéis, e registro de quem fez cada ação ([ADR 0015](docs/adr/0015-pessoas-e-organizacoes-separadas.md))
-- [ ] **Autorização por organização**, com teste de isolamento em todas as rotas e trava para rotas novas
+- [x] **Autorização por organização**, com teste de isolamento em todas as rotas e trava para rotas novas ([ADR 0016](docs/adr/0016-autorizacao-por-organizacao.md))
 - [ ] **Equipe**: convite por link de uso único e gestão de membros
 - [ ] **Superadmin**, criado só pela configuração do servidor
 - [ ] **Paginação** nas listagens e erros no padrão **Problem Details** (RFC 9457)

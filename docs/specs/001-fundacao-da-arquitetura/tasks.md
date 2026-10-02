@@ -40,10 +40,10 @@ Cada passo é entregue com o CI verde (testes, ponta a ponta e quality gate) e c
 
 ## Passo 5 · Autorização por organização (R4)
 
-- [ ] Política de acesso única por módulo, usada pelo REST e pelo WebSocket
-- [ ] 404 para recurso de outra organização
-- [ ] Teste de isolamento em todas as rotas com id, com trava para rota nova
-- [ ] ADR 0016, que substitui o 0005
+- [x] Política de acesso única por módulo (`AcessoCompras`), usada pelo REST e pelo WebSocket
+- [x] 404 para recurso de outra organização, com a mesma mensagem de um id inexistente
+- [x] Teste de isolamento em todas as rotas com id (no caminho ou no corpo), com trava para rota nova
+- [x] ADR 0016, que substitui o 0005
 
 ## Passo 6 · Equipe (R2)
 
