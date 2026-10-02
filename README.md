@@ -625,26 +625,32 @@ Conexão STOMP em `/ws` (em produção, `wss://portal-criare-api.onrender.com/ws
 
 ### Formato dos erros
 
+Todo erro segue o **Problem Details** ([RFC 9457](https://www.rfc-editor.org/rfc/rfc9457)), com o tipo `application/problem+json` ([ADR 0020](docs/adr/0020-paginacao-e-problem-details.md)):
+
 ```json
 {
+  "type": "about:blank",
+  "title": "Requisição inválida",
   "status": 400,
-  "message": "Você já enviou uma proposta para esta cotação!",
-  "timestamp": "2025-12-20T14:30:00",
+  "detail": "Você já enviou uma proposta para esta cotação!",
+  "instance": "/api/v1/propostas",
   "traceId": "4bf92f3577b34da6a3ce929d0e0e4736"
 }
 ```
 
-O `traceId` é o mesmo do cabeçalho `X-Trace-Id` e das linhas de log daquela requisição.
+O `detail` é a mensagem para mostrar a quem usa, e o `traceId` é o mesmo do cabeçalho `X-Trace-Id` e das linhas de log daquela requisição.
 
-Erros de validação trazem também o campo de cada problema:
+Erros de validação trazem também o problema de cada campo:
 
 ```json
 {
+  "type": "about:blank",
+  "title": "Requisição inválida",
   "status": 400,
-  "message": "Erro de validação nos campos",
-  "timestamp": "2025-12-20T14:30:00",
+  "detail": "Confira os campos destacados.",
+  "instance": "/api/v1/cadastro",
   "traceId": "0af7651916cd43dd8448eb211c80319c",
-  "errors": { "email": "Email inválido", "senha": "Senha deve ter letras e números" }
+  "erros": { "email": "Email inválido", "senha": "Senha deve ter letras e números" }
 }
 ```
 
@@ -654,6 +660,7 @@ Erros de validação trazem também o campo de cada problema:
 | `401` | Sem token, token inválido/vencido, sessão expirada ou e-mail/senha errados |
 | `403` | Perfil sem permissão, ou ação que a organização não pode fazer num recurso que ela enxerga (o fornecedor fechar a negociação, por exemplo) |
 | `404` | Registro ou endpoint inexistente |
+| `405` / `415` | Método que a rota não aceita / corpo que não é JSON |
 | `409` | E-mail ou CNPJ já cadastrado |
 | `429` | Login bloqueado por excesso de tentativas (veja o header `Retry-After`) |
 | `500` | Erro inesperado (detalhes só no log do servidor, achados pelo `traceId`) |
@@ -682,7 +689,7 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | Suíte | O que cobre |
 |---|---|
 | `FluxoCotacaoIntegrationTest` | Cadastro de organização e proprietário, login com papel, membro da equipe agindo pela organização e registrado como autor, CNPJ único por tipo, CNPJ inválido, e-mail duplicado, proposta duplicada, negociação, contrapropostas, fechamento, cancelamento, prazo vencido, dashboards e regras de posse (empresa concorrente, fornecedor concorrente, intruso na negociação) |
-| `ComprasApiTest` | O contrato HTTP de compras, como o front-end usa: publicar, editar, propor, retirar, recusar, negociar, conversar, fechar e cancelar, painéis, e o formato das respostas de erro (validação por campo, 404, id malformado, JSON inválido, cadastro repetido) |
+| `ComprasApiTest` | O contrato HTTP de compras, como o front-end usa: publicar, editar, propor, retirar, recusar, negociar, conversar, fechar e cancelar, painéis, e o formato Problem Details das respostas de erro (validação por campo, 404, id malformado, JSON inválido, cadastro repetido) |
 | `AutenticacaoIntegrationTest` | Conteúdo do JWT (pessoa, organização, tipo e papel), token de antes da separação recusado, login de um membro, token adulterado, refresh gravado como hash, rotação, detecção de reuso, logout e bloqueio de força bruta |
 | `SegurancaApiTest` | Pela camada HTTP: cadastro público (201, 409 e validação por campo), formato de `/auth/me`, 401 sem token e com token inválido, rotas públicas, cookie `HttpOnly`/`SameSite`, 403 por perfil, 404 para recurso de outra organização, identidade vinda do token, refresh pelo cookie, logout e CORS |
 | `TempoRealIntegrationTest` | WebSocket de verdade (STOMP): conexão sem token ou com token inválido recusada, mensagem e aviso entregues na hora (o aviso chega a toda a equipe da organização), conexão encerrada quando a pessoa sai da equipe, "digitando…" e quem não participa não consegue assinar a negociação |

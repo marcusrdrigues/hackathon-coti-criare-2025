@@ -7,16 +7,16 @@ function erro(status: number, corpo: unknown, cabecalhos?: Record<string, string
 
 describe('mensagemDeErro', () => {
   it('mostra a mensagem da API', () => {
-    expect(mensagemDeErro(erro(400, { message: 'CNPJ inválido!' }))).toBe('CNPJ inválido!');
+    expect(mensagemDeErro(erro(400, { title: 'Requisição inválida', status: 400, detail: 'CNPJ inválido!' }))).toBe('CNPJ inválido!');
   });
 
   it('junta os erros de validação por campo', () => {
-    const corpo = { message: 'Erro de validação', errors: { email: 'Email inválido', senha: 'Senha é obrigatória' } };
+    const corpo = { detail: 'Confira os campos destacados.', erros: { email: 'Email inválido', senha: 'Senha é obrigatória' } };
     expect(mensagemDeErro(erro(400, corpo))).toBe('Email inválido • Senha é obrigatória');
   });
 
   it('em falha do servidor, não mostra detalhes e dá o código de rastreio', () => {
-    const corpo = { message: 'Erro interno do servidor.', traceId: '4bf92f3577b34da6a3ce929d0e0e4736' };
+    const corpo = { detail: 'Erro interno do servidor.', traceId: '4bf92f3577b34da6a3ce929d0e0e4736' };
     expect(mensagemDeErro(erro(500, corpo))).toBe(
       'Ocorreu um erro inesperado. Tente novamente. Código para o suporte: 4bf92f35.',
     );

@@ -119,7 +119,7 @@ class EquipeApiTest {
         aceitar(usado, "Bruno Costa").andExpect(status().isCreated());
         aceitar(usado, "Outra Pessoa")
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value(containsString("já foi usado")));
+                .andExpect(jsonPath("$.detail").value(containsString("já foi usado")));
 
         String vencido = convidar("Carla Dias", "carla@criare.com");
         // Grava o convite, vence-o direto no banco e esquece a cópia que o Hibernate tinha na memória
@@ -129,7 +129,7 @@ class EquipeApiTest {
         entityManager.clear();
         aceitar(vencido, "Carla Dias")
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value(containsString("venceu")));
+                .andExpect(jsonPath("$.detail").value(containsString("venceu")));
 
         String cancelado = convidar("Davi Lima", "davi@criare.com");
         String conviteId = JsonPath.read(enviar(get("/api/v1/equipe/convites"), proprietaria)
@@ -139,7 +139,7 @@ class EquipeApiTest {
 
         aceitar(cancelado.substring(1) + "x", "Davi Lima")
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value(containsString("não é válido")));
+                .andExpect(jsonPath("$.detail").value(containsString("não é válido")));
 
         // Nenhuma dessas tentativas criou conta
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_usuario WHERE email IN "
@@ -162,8 +162,8 @@ class EquipeApiTest {
                 .andExpect(status().isConflict());
         enviar(post("/api/v1/equipe/convites"), proprietaria, "{\"nome\":\"\",\"email\":\"sem-arroba\"}")
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors.nome").exists())
-                .andExpect(jsonPath("$.errors.email").exists());
+                .andExpect(jsonPath("$.erros.nome").exists())
+                .andExpect(jsonPath("$.erros.email").exists());
     }
 
     @Test
@@ -205,7 +205,7 @@ class EquipeApiTest {
     void ninguemRemoveASiMesmo() throws Exception {
         enviar(delete("/api/v1/equipe/membros/" + idDoMembro("Ana Ribeiro")), proprietaria)
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Você não pode remover a si mesmo da equipe."));
+                .andExpect(jsonPath("$.detail").value("Você não pode remover a si mesmo da equipe."));
     }
 
     // ---------------------------------------------------------------- apoio

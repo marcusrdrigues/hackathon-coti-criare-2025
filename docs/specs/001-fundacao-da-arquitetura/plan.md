@@ -160,8 +160,20 @@ ADR: **0016 · Autorização por organização** (substitui o ADR 0005).
 
 - **Paginação** com os parâmetros de sempre do Spring (`page`, `size`, `sort=campo,asc|desc`): padrão de 20 itens, máximo de 50 (acima disso, vale 50) e uma lista de campos aceitos para ordenação por endpoint; campo fora da lista responde 400. A resposta usa o formato estável do Spring Data, `{ content, page: { size, number, totalElements, totalPages } }`.
 - **Sem Spring Data na aplicação:** a regra de camadas (ArchUnit) não deixa a aplicação conhecer `Pageable`, então ela usa tipos próprios do módulo compartilhado (`PedidoDePagina` e `Pagina<T>`), e só a web e a persistência convertem de e para o Spring.
-- **Onde pagina:** as listas que crescem sem limite com o uso: cotações da empresa, mural, propostas do fornecedor, negociações e a lista de organizações do superadmin. Listas limitadas por natureza (propostas de uma cotação, mensagens de uma negociação, equipe) continuam inteiras. No front-end, as listas paginadas ganham "Carregar mais".
-- **Problem Details (RFC 9457)** com o `ProblemDetail` do Spring: `title`, `status`, `detail`, `instance`, mais `traceId` e `erros` (por campo). O front-end passa a ler `detail`.
+- **Onde pagina:** as listas que crescem sem limite com o uso. Os filtros que as telas faziam na memória do navegador passam para o servidor, porque filtrar só a página carregada mostraria um resultado errado:
+
+  | Endpoint | Filtros | Ordem |
+  |---|---|---|
+  | `GET /cotacoes/minhas` | `status`, `busca` (título e requisitos) | `dataCriacao` (padrão, mais recentes), `dataLimite`, `nomeServico` |
+  | `GET /cotacoes/abertas` (mural) | `categoria`, `busca` (título, requisitos e empresa) | `dataCriacao` (padrão), `dataLimite` |
+  | `GET /propostas/minhas` | `situacao`: `ANDAMENTO` ou `HISTORICO` | negociações ativas primeiro, depois as mais recentes |
+  | `GET /negociacoes/minhas` | `situacao`: `ANDAMENTO` ou `TODAS` | em andamento primeiro, depois as mais recentes |
+  | `GET /admin/organizacoes` | — | `criadaEm` (padrão), `razaoSocial` |
+
+- **O que as telas tiravam das listas inteiras ganha endpoint próprio:** `GET /cotacoes/minhas/contagem` (quantas cotações em cada situação, para os filtros com número), `GET /negociacoes/nao-lidas` (o total e as conversas com mensagens não lidas, para o contador da navegação), `minhaProposta` em cada item do mural do fornecedor (para o "Você ofertou") e o total ganho que o painel do fornecedor já calcula (para o histórico).
+- **Os painéis pedem só o que mostram:** as cotações abertas por prazo, as negociações em andamento e as cinco oportunidades mais recentes, em vez das listas inteiras.
+- Listas limitadas por natureza (propostas de uma cotação, mensagens de uma negociação, equipe) continuam inteiras. No front-end, as listas paginadas ganham "Carregar mais", e a busca espera a pessoa parar de digitar antes de consultar a API.
+- **Problem Details (RFC 9457)** em todo erro, inclusive os 401 e 403 dos filtros de segurança e o 405 e o 415 do Spring MVC: `type` (`about:blank`), `title`, `status`, `detail`, `instance`, mais `traceId` e `erros` (por campo), com o tipo `application/problem+json`. Um record próprio (`Problema`) no lugar do `ProblemDetail` do Spring, para o JSON não depender de como cada versão do Jackson serializa as propriedades extras. O front-end passa a ler `detail` e `erros`.
 
 ADR: **0020 · Paginação e Problem Details**.
 

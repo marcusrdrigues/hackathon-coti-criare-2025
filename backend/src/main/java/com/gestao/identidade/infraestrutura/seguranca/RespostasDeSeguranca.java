@@ -1,11 +1,10 @@
 package com.gestao.identidade.infraestrutura.seguranca;
 
-import com.gestao.compartilhado.infraestrutura.web.Rastreio;
+import com.gestao.compartilhado.infraestrutura.web.Problema;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -14,12 +13,10 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 /**
  * Respostas 401/403 geradas pelos filtros do Spring Security (antes de chegar
- * ao controller), no mesmo formato JSON do GlobalExceptionHandler.
+ * ao controller), no mesmo formato Problem Details do GlobalExceptionHandler.
  */
 @Component
 public class RespostasDeSeguranca implements AuthenticationEntryPoint, AccessDeniedHandler {
@@ -42,13 +39,8 @@ public class RespostasDeSeguranca implements AuthenticationEntryPoint, AccessDen
 
     private void escrever(HttpServletResponse response, HttpStatus status, String mensagem) throws IOException {
         response.setStatus(status.value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setContentType(Problema.TIPO.toString());
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        String agora = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
-        String rastreio = Rastreio.idAtual();
-        response.getWriter().write("{\"status\":" + status.value()
-                + ",\"message\":\"" + mensagem
-                + "\",\"timestamp\":\"" + agora
-                + "\",\"traceId\":" + (rastreio == null ? "null" : "\"" + rastreio + "\"") + "}");
+        response.getWriter().write(Problema.de(status, mensagem).paraJson());
     }
 }

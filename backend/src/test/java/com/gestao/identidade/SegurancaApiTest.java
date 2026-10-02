@@ -35,6 +35,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -82,14 +83,27 @@ class SegurancaApiTest {
         mvc.perform(get("/api/v1/cotacoes/abertas"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE, "Bearer"))
-                .andExpect(jsonPath("$.status").value(401));
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Não autenticado"))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.detail").value("Faça login para acessar este recurso."))
+                .andExpect(jsonPath("$.instance").value("/api/v1/cotacoes/abertas"));
+    }
+
+    @Test
+    void metodoNaoSuportadoRetorna405NoMesmoFormato() throws Exception {
+        mvc.perform(patch("/api/v1/cotacoes/categorias").header(HttpHeaders.AUTHORIZATION, bearer(login("empresa@api.com"))))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Método não permitido"));
     }
 
     @Test
     void tokenInvalidoRetorna401() throws Exception {
         mvc.perform(get("/api/v1/cotacoes/abertas").header(HttpHeaders.AUTHORIZATION, "Bearer abc.def.ghi"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Token inválido ou expirado."));
+                .andExpect(jsonPath("$.detail").value("Token inválido ou expirado."));
     }
 
     @Test
@@ -148,15 +162,15 @@ class SegurancaApiTest {
                          "nome":"Outra pessoa","email":"nova@tech.com","senha":"segredo123"}
                         """))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("CNPJ já cadastrado!"));
+                .andExpect(jsonPath("$.detail").value("CNPJ já cadastrado!"));
 
         // Sem o tipo e sem o nome da pessoa
         mvc.perform(post("/api/v1/cadastro").contentType(MediaType.APPLICATION_JSON).content("""
                         {"razaoSocial":"Sem tipo","cnpj":"56.102.938/0001-77","email":"x@y.com","senha":"segredo123"}
                         """))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors.tipo").value("Informe se é empresa ou fornecedor"))
-                .andExpect(jsonPath("$.errors.nome").value("Seu nome é obrigatório"));
+                .andExpect(jsonPath("$.erros.tipo").value("Informe se é empresa ou fornecedor"))
+                .andExpect(jsonPath("$.erros.nome").value("Seu nome é obrigatório"));
     }
 
     @Test
@@ -164,7 +178,7 @@ class SegurancaApiTest {
         mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"empresa@api.com\",\"senha\":\"errada123\"}"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Email ou senha inválidos."));
+                .andExpect(jsonPath("$.detail").value("Email ou senha inválidos."));
     }
 
     @Test
@@ -187,7 +201,7 @@ class SegurancaApiTest {
         mvc.perform(get("/api/v1/propostas/cotacao/" + cotacaoDaOutraEmpresa.getId())
                         .header(HttpHeaders.AUTHORIZATION, tokenEmpresa))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Cotação não encontrada!"));
+                .andExpect(jsonPath("$.detail").value("Cotação não encontrada!"));
     }
 
     @Test

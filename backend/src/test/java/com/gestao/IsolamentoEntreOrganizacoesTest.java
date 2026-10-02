@@ -244,7 +244,7 @@ class IsolamentoEntreOrganizacoesTest {
     }
 
     private static String mensagem(MvcResult resultado) throws Exception {
-        return JsonPath.read(resultado.getResponse().getContentAsString(), "$.message");
+        return JsonPath.read(resultado.getResponse().getContentAsString(), "$.detail");
     }
 
     private static MockHttpServletRequestBuilder json(MockHttpServletRequestBuilder requisicao, String corpo) {

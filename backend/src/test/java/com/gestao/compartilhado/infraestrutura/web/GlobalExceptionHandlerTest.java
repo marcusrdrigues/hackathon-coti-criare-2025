@@ -2,10 +2,12 @@ package com.gestao.compartilhado.infraestrutura.web;
 
 import com.gestao.compartilhado.dominio.AcessoNegadoException;
 import com.gestao.compartilhado.dominio.MuitasTentativasException;
+import com.gestao.compartilhado.dominio.RecursoNaoEncontradoException;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 
@@ -18,10 +20,10 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void erroInesperadoNaoExpoeDetalhes() {
-        ResponseEntity<ErrorResponse> resposta = handler.inesperado(new IllegalStateException("conexão recusada pelo banco"));
+        ResponseEntity<Problema> resposta = handler.inesperado(new IllegalStateException("conexão recusada pelo banco"));
 
         assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-        assertThat(resposta.getBody().getMessage()).isEqualTo(GlobalExceptionHandler.ERRO_INTERNO);
+        assertThat(resposta.getBody().detail()).isEqualTo(GlobalExceptionHandler.ERRO_INTERNO);
     }
 
     @Test
@@ -46,11 +48,34 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void bloqueioDeLoginInformaQuandoTentarDeNovo() {
-        ResponseEntity<ErrorResponse> resposta = handler.muitasTentativas(
+        ResponseEntity<Problema> resposta = handler.muitasTentativas(
                 new MuitasTentativasException("Muitas tentativas.", 90));
 
         assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
         assertThat(resposta.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isEqualTo("90");
+    }
+
+    @Test
+    void problemaTemTituloStatusEDetalheNoFormatoDaRfc() {
+        ResponseEntity<Problema> resposta = handler.naoEncontrado(
+                new RecursoNaoEncontradoException("Cotação não encontrada!"));
+
+        assertThat(resposta.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_PROBLEM_JSON);
+        Problema problema = resposta.getBody();
+        assertThat(problema.type()).isEqualTo("about:blank");
+        assertThat(problema.title()).isEqualTo("Não encontrado");
+        assertThat(problema.status()).isEqualTo(404);
+        assertThat(problema.detail()).isEqualTo("Cotação não encontrada!");
+        assertThat(problema.erros()).isNull();
+    }
+
+    @Test
+    void jsonDosFiltrosDeSegurancaEscapaOTexto() {
+        String json = new Problema("about:blank", "Acesso negado", 403, "Diz \"não\"\nlinha", null, "abc", null)
+                .paraJson();
+
+        assertThat(json).isEqualTo("{\"type\":\"about:blank\",\"title\":\"Acesso negado\",\"status\":403,"
+                + "\"detail\":\"Diz \\\"não\\\"\\nlinha\",\"traceId\":\"abc\"}");
     }
 
     @Test
@@ -59,7 +84,7 @@ class GlobalExceptionHandlerTest {
                 .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
-    private static String mensagem(ResponseEntity<ErrorResponse> resposta) {
-        return resposta.getBody().getMessage();
+    private static String mensagem(ResponseEntity<Problema> resposta) {
+        return resposta.getBody().detail();
     }
 }

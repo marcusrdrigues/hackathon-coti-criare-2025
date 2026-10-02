@@ -25,5 +25,6 @@ Uma decisão registrada não se edita. Se ela mudar, um ADR novo a substitui, e 
 | [0017](0017-equipe-com-convite-por-link.md) | Equipe com convite por link de uso único | Aceita |
 | [0018](0018-liquid-glass-na-camada-flutuante.md) | Liquid Glass só na camada que flutua | Aceita, em parte substituída pelo 0019 |
 | [0019](0019-barra-lateral-encostada-e-recolhivel.md) | Barra lateral encostada e recolhível | Aceita |
+| [0020](0020-paginacao-e-problem-details.md) | Paginação no servidor e erros em Problem Details | Aceita |
 
 Modelo para um ADR novo: [template.md](template.md).

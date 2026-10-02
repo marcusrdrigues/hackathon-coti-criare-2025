@@ -25,6 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -138,8 +139,12 @@ class ComprasApiTest {
         mvc.perform(post("/api/v1/cotacoes").header(HttpHeaders.AUTHORIZATION, empresa)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"nomeServico\":\"\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors.nomeServico").exists())
-                .andExpect(jsonPath("$.errors.requisitos").exists());
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Requisição inválida"))
+                .andExpect(jsonPath("$.instance").value("/api/v1/cotacoes"))
+                .andExpect(jsonPath("$.traceId").isNotEmpty())
+                .andExpect(jsonPath("$.erros.nomeServico").exists())
+                .andExpect(jsonPath("$.erros.requisitos").exists());
 
         // Recurso que não existe, id malformado e JSON inválido
         mvc.perform(get("/api/v1/cotacoes/" + UUID.randomUUID()).header(HttpHeaders.AUTHORIZATION, empresa))
@@ -161,7 +166,7 @@ class ComprasApiTest {
         mvc.perform(post("/api/v1/propostas").header(HttpHeaders.AUTHORIZATION, fornecedor)
                         .contentType(MediaType.APPLICATION_JSON).content(propostaJson(cotacaoId)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").exists());
+                .andExpect(jsonPath("$.detail").exists());
     }
 
     // ---------------------------------------------------------------- apoio
