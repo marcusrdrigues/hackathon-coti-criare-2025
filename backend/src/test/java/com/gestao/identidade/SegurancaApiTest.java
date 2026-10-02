@@ -8,12 +8,10 @@ import com.gestao.compras.dominio.CategoriaCotacao;
 import com.gestao.compras.dominio.Cotacao;
 import com.gestao.compras.dominio.Negociacao;
 import com.gestao.compras.dominio.Proposta;
-import com.gestao.identidade.aplicacao.EmpresaService;
-import com.gestao.identidade.aplicacao.FornecedorService;
+import com.gestao.identidade.aplicacao.CadastroService.NovaOrganizacao;
+import com.gestao.identidade.aplicacao.CadastroService;
 import com.gestao.identidade.aplicacao.UsuarioAutenticado;
-import com.gestao.identidade.dominio.Empresa;
-import com.gestao.identidade.dominio.Fornecedor;
-import com.gestao.identidade.dominio.TipoUsuario;
+import com.gestao.identidade.dominio.TipoOrganizacao;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,32 +50,31 @@ class SegurancaApiTest {
     private static final String SENHA = "segredo123";
 
     @Autowired private WebApplicationContext contexto;
-    @Autowired private EmpresaService empresaService;
-    @Autowired private FornecedorService fornecedorService;
+    @Autowired private CadastroService cadastroService;
     @Autowired private CotacaoService cotacaoService;
     @Autowired private PropostaService propostaService;
     @Autowired private NegociacaoService negociacaoService;
     @Autowired private MensagemNegociacaoService mensagemService;
 
     private MockMvc mvc;
-    private Empresa criare;
-    private Fornecedor tech;
+    private UsuarioAutenticado criare;
+    private UsuarioAutenticado tech;
     private Cotacao cotacaoDaOutraEmpresa;
 
     @BeforeEach
     void setUp() {
         mvc = MockMvcBuilders.webAppContextSetup(contexto).apply(springSecurity()).build();
 
-        criare = empresaService.cadastrarEmpresa(empresa("Criare Consulting", "11.222.333/0001-81", "empresa@api.com"));
-        Empresa outra = empresaService.cadastrarEmpresa(empresa("Outra SA", "90.817.263/0001-80", "outra@api.com"));
-        tech = fornecedorService.cadastrarFornecedor(fornecedor("Tech Soluções", "45.236.789/0001-12", "fornecedor@api.com"));
+        criare = cadastrar(TipoOrganizacao.EMPRESA, "Criare Consulting", "11.222.333/0001-81", "empresa@api.com");
+        UsuarioAutenticado outra = cadastrar(TipoOrganizacao.EMPRESA, "Outra SA", "90.817.263/0001-80", "outra@api.com");
+        tech = cadastrar(TipoOrganizacao.FORNECEDOR, "Tech Soluções", "45.236.789/0001-12", "fornecedor@api.com");
 
         Cotacao c = new Cotacao();
         c.setNomeServico("Notebooks");
         c.setRequisitos("10 unidades");
         c.setCategoria(CategoriaCotacao.TECNOLOGIA);
         c.setDataLimite(LocalDateTime.now().plusDays(5));
-        cotacaoDaOutraEmpresa = cotacaoService.criarCotacao(c, outra.getId());
+        cotacaoDaOutraEmpresa = cotacaoService.criarCotacao(c, outra);
     }
 
     @Test
@@ -115,8 +112,51 @@ class SegurancaApiTest {
 
         mvc.perform(get("/api/v1/auth/me").header(HttpHeaders.AUTHORIZATION, bearer(resultado)))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(criare.usuarioId().toString()))
+                .andExpect(jsonPath("$.nome").value("Pessoa da Criare Consulting"))
                 .andExpect(jsonPath("$.email").value("empresa@api.com"))
-                .andExpect(jsonPath("$.tipo").value("EMPRESA"));
+                .andExpect(jsonPath("$.tipo").value("EMPRESA"))
+                .andExpect(jsonPath("$.papel").value("PROPRIETARIO"))
+                .andExpect(jsonPath("$.organizacao.id").value(criare.organizacaoId().toString()))
+                .andExpect(jsonPath("$.organizacao.razaoSocial").value("Criare Consulting"))
+                .andExpect(jsonPath("$.organizacao.cnpj").value("11222333000181"));
+    }
+
+    @Test
+    void cadastroPublicoCriaOrganizacaoEProprietario() throws Exception {
+        mvc.perform(post("/api/v1/cadastro").contentType(MediaType.APPLICATION_JSON).content("""
+                        {"tipo":"FORNECEDOR","razaoSocial":"InfoWorld","cnpj":"78.345.129/0001-29",
+                         "nome":"Eduardo Lima","email":"Eduardo@InfoWorld.com","senha":"segredo123"}
+                        """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.nome").value("Eduardo Lima"))
+                .andExpect(jsonPath("$.email").value("eduardo@infoworld.com"))
+                .andExpect(jsonPath("$.tipo").value("FORNECEDOR"))
+                .andExpect(jsonPath("$.papel").value("PROPRIETARIO"))
+                .andExpect(jsonPath("$.organizacao.razaoSocial").value("InfoWorld"))
+                .andExpect(jsonPath("$.organizacao.cnpj").value("78345129000129"))
+                .andExpect(jsonPath("$.senha").doesNotExist());
+
+        login("eduardo@infoworld.com");
+    }
+
+    @Test
+    void cadastroRepetidoOuIncompletoEhRecusado() throws Exception {
+        // Mesmo CNPJ e mesmo tipo
+        mvc.perform(post("/api/v1/cadastro").contentType(MediaType.APPLICATION_JSON).content("""
+                        {"tipo":"FORNECEDOR","razaoSocial":"Tech de novo","cnpj":"45236789000112",
+                         "nome":"Outra pessoa","email":"nova@tech.com","senha":"segredo123"}
+                        """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("CNPJ já cadastrado!"));
+
+        // Sem o tipo e sem o nome da pessoa
+        mvc.perform(post("/api/v1/cadastro").contentType(MediaType.APPLICATION_JSON).content("""
+                        {"razaoSocial":"Sem tipo","cnpj":"56.102.938/0001-77","email":"x@y.com","senha":"segredo123"}
+                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.tipo").value("Informe se é empresa ou fornecedor"))
+                .andExpect(jsonPath("$.errors.nome").value("Seu nome é obrigatório"));
     }
 
     @Test
@@ -239,16 +279,16 @@ class SegurancaApiTest {
         cotacao.setRequisitos("20 cadeiras ergonômicas");
         cotacao.setCategoria(CategoriaCotacao.TECNOLOGIA);
         cotacao.setDataLimite(LocalDateTime.now().plusDays(5));
-        cotacao = cotacaoService.criarCotacao(cotacao, criare.getId());
+        cotacao = cotacaoService.criarCotacao(cotacao, criare);
 
         Proposta proposta = new Proposta();
         proposta.setValor(new BigDecimal("11500.00"));
         proposta.setDescricao("Entrega em 10 dias");
-        proposta = propostaService.criarProposta(proposta, tech.getId(), cotacao.getId());
+        proposta = propostaService.criarProposta(proposta, tech, cotacao.getId());
 
-        Negociacao negociacao = negociacaoService.criarNegociacao(proposta.getId(), criare.getId());
+        Negociacao negociacao = negociacaoService.criarNegociacao(proposta.getId(), criare.organizacaoId());
         mensagemService.enviarMensagem(negociacao.getId(), "Fechamos em 10.800?", new BigDecimal("10800.00"),
-                new UsuarioAutenticado(criare.getId(), TipoUsuario.EMPRESA));
+                criare);
         return negociacao;
     }
 
@@ -270,21 +310,8 @@ class SegurancaApiTest {
         return new Cookie("refresh_token", valor);
     }
 
-    private Empresa empresa(String nome, String cnpj, String email) {
-        Empresa e = new Empresa();
-        e.setRazaoSocial(nome);
-        e.setCnpj(cnpj);
-        e.setEmail(email);
-        e.setSenha(SENHA);
-        return e;
-    }
-
-    private Fornecedor fornecedor(String nome, String cnpj, String email) {
-        Fornecedor f = new Fornecedor();
-        f.setNomeCompleto(nome);
-        f.setCnpj(cnpj);
-        f.setEmail(email);
-        f.setSenha(SENHA);
-        return f;
+    private UsuarioAutenticado cadastrar(TipoOrganizacao tipo, String razaoSocial, String cnpj, String email) {
+        return cadastroService.cadastrar(
+                new NovaOrganizacao(tipo, razaoSocial, cnpj, "Pessoa da " + razaoSocial, email, SENHA));
     }
 }

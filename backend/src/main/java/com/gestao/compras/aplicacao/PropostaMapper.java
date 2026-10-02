@@ -28,7 +28,7 @@ public class PropostaMapper {
                 proposta.getStatus(),
                 proposta.getDataEnvio(),
                 proposta.getFornecedor().getId(),
-                proposta.getFornecedor().getNomeCompleto(),
+                proposta.getFornecedor().getRazaoSocial(),
                 proposta.getFornecedor().getCnpj(),
                 cotacao.getId(),
                 cotacao.getNomeServico(),

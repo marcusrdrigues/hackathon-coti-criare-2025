@@ -8,6 +8,7 @@ import com.gestao.compras.dominio.MensagemNegociacao;
 import com.gestao.compras.dominio.Negociacao;
 import com.gestao.compras.dominio.StatusNegociacao;
 import com.gestao.compras.dominio.TipoRemetente;
+import com.gestao.identidade.aplicacao.OrganizacaoService;
 import com.gestao.identidade.aplicacao.UsuarioAutenticado;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -25,6 +26,7 @@ public class MensagemNegociacaoService {
 
     private final MensagemNegociacaoRepositorio mensagemRepositorio;
     private final NegociacaoService negociacaoService;
+    private final OrganizacaoService organizacaoService;
     private final ApplicationEventPublisher eventos;
 
     /**
@@ -51,7 +53,7 @@ public class MensagemNegociacaoService {
         nova.setMensagem(semTexto ? "Nova oferta de valor" : mensagem.trim());
         nova.setValorOfertado(valorOfertado);
         nova.setTipoRemetente(TipoRemetente.de(remetente.tipo()));
-        nova.setRemetenteId(remetente.id());
+        nova.setRemetente(organizacaoService.buscarUsuario(remetente.usuarioId()));
         nova.setDataEnvio(LocalDateTime.now());
 
         nova = mensagemRepositorio.salvar(nova);

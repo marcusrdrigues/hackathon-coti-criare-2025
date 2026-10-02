@@ -5,6 +5,6 @@ import java.util.UUID;
 public record FornecedorResumoResponse(
         UUID id,
         String nome,
-        String email,
+        String cnpj,
         long totalPropostas
 ) {}

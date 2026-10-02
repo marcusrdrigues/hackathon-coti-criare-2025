@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Rastreio e higiene dos logs (spec 001, R6): toda requisição tem um identificador que
  * aparece nos logs, no cabeçalho e no erro; e nenhum log carrega senha, token, e-mail
- * completo ou o conteúdo de uma negociação.
+ * completo, nome de pessoa ou o conteúdo de uma negociação.
  */
 @SpringBootTest
 @Transactional
@@ -44,6 +44,7 @@ class RastreioELogsTest {
     private static final String SENHA = "SenhaSecreta123";
     private static final String EMAIL_EMPRESA = "compras.sigilo@empresa-teste.com";
     private static final String EMAIL_FORNECEDOR = "vendas.sigilo@fornecedor-teste.com";
+    private static final String NOME_PESSOA = "Marina Sigilosa Albuquerque";
     private static final String CONDICOES = "Condição confidencial: desconto de 7% para pagamento em 10 dias";
     private static final String MENSAGEM = "Mensagem reservada: fechamos em 9.900 se mantiver o frete";
 
@@ -97,19 +98,22 @@ class RastreioELogsTest {
 
     @Test
     void logsNaoVazamDadosSensiveis(CapturedOutput saida) throws Exception {
-        enviar(post("/api/v1/empresas"), null, """
-                {"razaoSocial":"Empresa Sigilo","cnpj":"11.222.333/0001-81","email":"%s","senha":"%s"}
-                """.formatted(EMAIL_EMPRESA, SENHA));
-        enviar(post("/api/v1/fornecedores"), null, """
-                {"nomeCompleto":"Fornecedor Sigilo","cnpj":"45.236.789/0001-12","email":"%s","senha":"%s"}
+        enviar(post("/api/v1/cadastro"), null, """
+                {"tipo":"EMPRESA","razaoSocial":"Empresa Sigilo","cnpj":"11.222.333/0001-81",
+                 "nome":"%s","email":"%s","senha":"%s"}
+                """.formatted(NOME_PESSOA, EMAIL_EMPRESA, SENHA));
+        enviar(post("/api/v1/cadastro"), null, """
+                {"tipo":"FORNECEDOR","razaoSocial":"Fornecedor Sigilo","cnpj":"45.236.789/0001-12",
+                 "nome":"Pessoa do Fornecedor","email":"%s","senha":"%s"}
                 """.formatted(EMAIL_FORNECEDOR, SENHA));
 
         // Erros que geram log: senha errada, cadastro repetido e validação
         enviar(post("/api/v1/auth/login"), null, login(EMAIL_EMPRESA, SENHA + "x"));
-        enviar(post("/api/v1/fornecedores"), null, """
-                {"nomeCompleto":"Outro","cnpj":"78.345.129/0001-29","email":"%s","senha":"%s"}
+        enviar(post("/api/v1/cadastro"), null, """
+                {"tipo":"FORNECEDOR","razaoSocial":"Outro","cnpj":"78.345.129/0001-29",
+                 "nome":"Outra pessoa","email":"%s","senha":"%s"}
                 """.formatted(EMAIL_FORNECEDOR, SENHA));
-        enviar(post("/api/v1/empresas"), null, "{\"email\":\"" + EMAIL_EMPRESA + "\",\"senha\":\"" + SENHA + "\"}");
+        enviar(post("/api/v1/cadastro"), null, "{\"email\":\"" + EMAIL_EMPRESA + "\",\"senha\":\"" + SENHA + "\"}");
 
         MvcResult loginEmpresa = enviar(post("/api/v1/auth/login"), null, login(EMAIL_EMPRESA, SENHA));
         MvcResult loginFornecedor = enviar(post("/api/v1/auth/login"), null, login(EMAIL_FORNECEDOR, SENHA));
@@ -131,7 +135,7 @@ class RastreioELogsTest {
                 """.formatted(negociacao, MENSAGEM));
 
         String logs = saida.getAll();
-        List<String> proibidos = List.of(SENHA, EMAIL_EMPRESA, EMAIL_FORNECEDOR, CONDICOES, MENSAGEM,
+        List<String> proibidos = List.of(SENHA, EMAIL_EMPRESA, EMAIL_FORNECEDOR, NOME_PESSOA, CONDICOES, MENSAGEM,
                 tokenEmpresa.substring("Bearer ".length()), refresh.substring(refresh.indexOf('=') + 1, refresh.indexOf(';')));
         for (String proibido : proibidos) {
             assertThat(logs).as("os logs não podem conter: %s", proibido).doesNotContain(proibido);

@@ -85,7 +85,7 @@ public class NotificadorTempoReal {
 
         boolean daEmpresa = mensagem.getTipoRemetente() == TipoRemetente.EMPRESA;
         UUID destinatario = daEmpresa ? negociacao.getFornecedor().getId() : negociacao.getEmpresa().getId();
-        String quem = daEmpresa ? negociacao.getEmpresa().getRazaoSocial() : negociacao.getFornecedor().getNomeCompleto();
+        String quem = daEmpresa ? negociacao.getEmpresa().getRazaoSocial() : negociacao.getFornecedor().getRazaoSocial();
         String texto = mensagem.getValorOfertado() != null
                 ? "Nova oferta de " + moeda(mensagem.getValorOfertado())
                 : resumo(mensagem.getMensagem());
@@ -115,7 +115,7 @@ public class NotificadorTempoReal {
 
     private void avisarEmpresa(Proposta proposta) {
         avisar(proposta.getCotacao().getEmpresa().getId(), new AvisoTempoReal(AvisoTempoReal.Tipo.PROPOSTA_RECEBIDA,
-                null, proposta.getCotacao().getId(), proposta.getFornecedor().getNomeCompleto(),
+                null, proposta.getCotacao().getId(), proposta.getFornecedor().getRazaoSocial(),
                 "Nova proposta de " + moeda(proposta.getValor()) + " para " + proposta.getCotacao().getNomeServico()));
     }
 

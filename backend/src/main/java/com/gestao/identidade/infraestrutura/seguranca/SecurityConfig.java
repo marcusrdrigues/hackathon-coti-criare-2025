@@ -12,8 +12,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -25,7 +23,6 @@ import org.springframework.security.web.SecurityFilterChain;
 
 import java.security.SecureRandom;
 import java.util.Base64;
-import java.util.List;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -65,7 +62,7 @@ public class SecurityConfig {
                                 "/api/v1/auth/logout", "/api/v1/auth/demo/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/demo").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/empresas", "/api/v1/fornecedores").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/cadastro").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/cotacoes/categorias").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/api-docs", "/api-docs/**").permitAll()
                         .requestMatchers("/error").permitAll()
@@ -117,15 +114,10 @@ public class SecurityConfig {
         return decoder;
     }
 
-    /** Claim "tipo" do token -> ROLE_EMPRESA / ROLE_FORNECEDOR. */
+    /** Claims "tipo" e "papel" do token -> ROLE_EMPRESA / ROLE_FORNECEDOR e ROLE_PROPRIETARIO / ROLE_MEMBRO. */
     private JwtAuthenticationConverter conversorDePerfil() {
         JwtAuthenticationConverter conversor = new JwtAuthenticationConverter();
-        conversor.setJwtGrantedAuthoritiesConverter(jwt -> {
-            String tipo = jwt.getClaimAsString(EmissorDeTokenJwt.CLAIM_TIPO);
-            return tipo == null
-                    ? List.<GrantedAuthority>of()
-                    : List.<GrantedAuthority>of(new SimpleGrantedAuthority("ROLE_" + tipo));
-        });
+        conversor.setJwtGrantedAuthoritiesConverter(ClaimsDoToken::autoridades);
         return conversor;
     }
 }

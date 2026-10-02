@@ -9,12 +9,10 @@ import com.gestao.compras.dominio.Cotacao;
 import com.gestao.compras.dominio.Negociacao;
 import com.gestao.compras.dominio.Proposta;
 import com.gestao.identidade.aplicacao.AuthService;
-import com.gestao.identidade.aplicacao.EmpresaService;
-import com.gestao.identidade.aplicacao.FornecedorService;
+import com.gestao.identidade.aplicacao.CadastroService.NovaOrganizacao;
+import com.gestao.identidade.aplicacao.CadastroService;
 import com.gestao.identidade.aplicacao.UsuarioAutenticado;
-import com.gestao.identidade.dominio.Empresa;
-import com.gestao.identidade.dominio.Fornecedor;
-import com.gestao.identidade.dominio.TipoUsuario;
+import com.gestao.identidade.dominio.TipoOrganizacao;
 import com.gestao.temporeal.infraestrutura.Destinos;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -64,29 +62,30 @@ class TempoRealIntegrationTest {
 
     private static final String SENHA = "segredo123";
     private static final long ESPERA_S = 5;
+    private static final String AVISOS = Destinos.PREFIXO_USUARIO + Destinos.FILA_AVISOS.substring(1);
 
     @Value("${local.server.port}")
     private int porta;
 
-    @Autowired private EmpresaService empresaService;
-    @Autowired private FornecedorService fornecedorService;
+    @Autowired private CadastroService cadastroService;
     @Autowired private CotacaoService cotacaoService;
     @Autowired private PropostaService propostaService;
     @Autowired private NegociacaoService negociacaoService;
     @Autowired private MensagemNegociacaoService mensagemService;
     @Autowired private AuthService authService;
 
-    private Empresa empresa;
-    private Fornecedor fornecedor;
-    private Fornecedor intruso;
+    private UsuarioAutenticado empresa;
+    private UsuarioAutenticado fornecedor;
+    private UsuarioAutenticado intruso;
     private WebSocketStompClient cliente;
     private final List<StompSession> sessoes = new ArrayList<>();
 
     @BeforeAll
     void criarUsuarios() {
-        empresa = empresaService.cadastrarEmpresa(empresa("Hospital Santa Vida", "27.384.915/0001-02", "compras@hospital.com"));
-        fornecedor = fornecedorService.cadastrarFornecedor(fornecedor("Limpa Bem", "90.817.263/0001-80", "contato@limpabem.com"));
-        intruso = fornecedorService.cadastrarFornecedor(fornecedor("Clima Frio", "56.102.938/0001-77", "contato@climafrio.com"));
+        empresa = cadastrar(TipoOrganizacao.EMPRESA, "Hospital Santa Vida", "27.384.915/0001-02", "compras@hospital.com");
+        cadastroService.adicionarMembro(empresa.organizacaoId(), "Colega do Hospital", "colega@hospital.com", SENHA);
+        fornecedor = cadastrar(TipoOrganizacao.FORNECEDOR, "Limpa Bem", "90.817.263/0001-80", "contato@limpabem.com");
+        intruso = cadastrar(TipoOrganizacao.FORNECEDOR, "Clima Frio", "56.102.938/0001-77", "contato@climafrio.com");
 
         cliente = new WebSocketStompClient(new StandardWebSocketClient());
         cliente.setMessageConverter(new JsonComoTexto());
@@ -117,14 +116,16 @@ class TempoRealIntegrationTest {
     }
 
     @Test
-    void mensagemDoFornecedorChegaNaHoraParaAEmpresa() throws Exception {
+    void mensagemDoFornecedorChegaNaHoraParaAEquipeDaEmpresa() throws Exception {
         Negociacao negociacao = novaNegociacao();
-        StompSession sessaoEmpresa = conectar(token(empresa.getEmail()), new Erros());
+        StompSession sessaoEmpresa = conectar(token("compras@hospital.com"), new Erros());
         BlockingQueue<String> topico = assinar(sessaoEmpresa, Destinos.negociacao(negociacao.getId()));
-        BlockingQueue<String> avisos = assinar(sessaoEmpresa, Destinos.PREFIXO_USUARIO + Destinos.FILA_AVISOS.substring(1));
+        BlockingQueue<String> avisos = assinar(sessaoEmpresa, AVISOS);
+        // Outra pessoa da mesma empresa, conectada ao mesmo tempo
+        BlockingQueue<String> avisosDoColega = assinar(conectar(token("colega@hospital.com"), new Erros()), AVISOS);
 
         mensagemService.enviarMensagem(negociacao.getId(), "Consigo entregar em 5 dias", new BigDecimal("7100.00"),
-                como(fornecedor));
+                fornecedor);
 
         String evento = topico.poll(ESPERA_S, TimeUnit.SECONDS);
         assertNotNull(evento, "a empresa deveria receber a mensagem pelo tópico da negociação");
@@ -135,15 +136,19 @@ class TempoRealIntegrationTest {
         assertNotNull(aviso, "a empresa deveria receber o aviso pessoal");
         assertTrue(aviso.contains("Limpa Bem"), aviso);
         assertTrue(aviso.contains("Nova oferta"), aviso);
+
+        String avisoDoColega = avisosDoColega.poll(ESPERA_S, TimeUnit.SECONDS);
+        assertNotNull(avisoDoColega, "os avisos são da organização: o colega também deveria receber");
+        assertTrue(avisoDoColega.contains("Nova oferta"), avisoDoColega);
     }
 
     @Test
     void fornecedorEAvisadoQuandoAEmpresaAbreANegociacao() throws Exception {
         Proposta proposta = novaProposta();
-        StompSession sessaoFornecedor = conectar(token(fornecedor.getEmail()), new Erros());
-        BlockingQueue<String> avisos = assinar(sessaoFornecedor, Destinos.PREFIXO_USUARIO + Destinos.FILA_AVISOS.substring(1));
+        StompSession sessaoFornecedor = conectar(token("contato@limpabem.com"), new Erros());
+        BlockingQueue<String> avisos = assinar(sessaoFornecedor, AVISOS);
 
-        negociacaoService.criarNegociacao(proposta.getId(), empresa.getId());
+        negociacaoService.criarNegociacao(proposta.getId(), empresa.organizacaoId());
 
         String aviso = avisos.poll(ESPERA_S, TimeUnit.SECONDS);
         assertNotNull(aviso, "o fornecedor deveria ser avisado da negociação");
@@ -154,9 +159,9 @@ class TempoRealIntegrationTest {
     @Test
     void digitandoChegaParaAOutraParte() throws Exception {
         Negociacao negociacao = novaNegociacao();
-        StompSession sessaoFornecedor = conectar(token(fornecedor.getEmail()), new Erros());
+        StompSession sessaoFornecedor = conectar(token("contato@limpabem.com"), new Erros());
         BlockingQueue<String> topico = assinar(sessaoFornecedor, Destinos.negociacao(negociacao.getId()));
-        StompSession sessaoEmpresa = conectar(token(empresa.getEmail()), new Erros());
+        StompSession sessaoEmpresa = conectar(token("compras@hospital.com"), new Erros());
 
         sessaoEmpresa.send("/app/negociacoes/" + negociacao.getId() + "/digitando", "");
 
@@ -170,12 +175,12 @@ class TempoRealIntegrationTest {
     void quemNaoParticipaNaoAssinaANegociacao() throws Exception {
         Negociacao negociacao = novaNegociacao();
         Erros erros = new Erros();
-        StompSession sessaoIntruso = conectar(token(intruso.getEmail()), erros);
+        StompSession sessaoIntruso = conectar(token("contato@climafrio.com"), erros);
         BlockingQueue<String> topico = assinar(sessaoIntruso, Destinos.negociacao(negociacao.getId()));
 
         assertNotNull(erros.primeiro.get(ESPERA_S, TimeUnit.SECONDS), "a assinatura deveria ser recusada");
 
-        mensagemService.enviarMensagem(negociacao.getId(), "Só para as partes", null, como(fornecedor));
+        mensagemService.enviarMensagem(negociacao.getId(), "Só para as partes", null, fornecedor);
         assertNull(topico.poll(1, TimeUnit.SECONDS), "quem não participa não pode receber nada");
     }
 
@@ -217,7 +222,7 @@ class TempoRealIntegrationTest {
     }
 
     private Negociacao novaNegociacao() {
-        return negociacaoService.criarNegociacao(novaProposta().getId(), empresa.getId());
+        return negociacaoService.criarNegociacao(novaProposta().getId(), empresa.organizacaoId());
     }
 
     private Proposta novaProposta() {
@@ -226,34 +231,17 @@ class TempoRealIntegrationTest {
         cotacao.setRequisitos("Equipe de 3 pessoas, 3 vezes por semana");
         cotacao.setCategoria(CategoriaCotacao.LIMPEZA_MANUTENCAO);
         cotacao.setDataLimite(LocalDateTime.now().plusDays(5));
-        cotacao = cotacaoService.criarCotacao(cotacao, empresa.getId());
+        cotacao = cotacaoService.criarCotacao(cotacao, empresa);
 
         Proposta proposta = new Proposta();
         proposta.setValor(new BigDecimal("7500.00"));
         proposta.setDescricao("Materiais inclusos");
-        return propostaService.criarProposta(proposta, fornecedor.getId(), cotacao.getId());
+        return propostaService.criarProposta(proposta, fornecedor, cotacao.getId());
     }
 
-    private static UsuarioAutenticado como(Fornecedor f) {
-        return new UsuarioAutenticado(f.getId(), TipoUsuario.FORNECEDOR);
-    }
-
-    private static Empresa empresa(String nome, String cnpj, String email) {
-        Empresa e = new Empresa();
-        e.setRazaoSocial(nome);
-        e.setCnpj(cnpj);
-        e.setEmail(email);
-        e.setSenha(SENHA);
-        return e;
-    }
-
-    private static Fornecedor fornecedor(String nome, String cnpj, String email) {
-        Fornecedor f = new Fornecedor();
-        f.setNomeCompleto(nome);
-        f.setCnpj(cnpj);
-        f.setEmail(email);
-        f.setSenha(SENHA);
-        return f;
+    private UsuarioAutenticado cadastrar(TipoOrganizacao tipo, String razaoSocial, String cnpj, String email) {
+        return cadastroService.cadastrar(
+                new NovaOrganizacao(tipo, razaoSocial, cnpj, "Pessoa da " + razaoSocial, email, SENHA));
     }
 
     /** Guarda o primeiro erro da sessão: frame ERROR do servidor ou queda da conexão. */

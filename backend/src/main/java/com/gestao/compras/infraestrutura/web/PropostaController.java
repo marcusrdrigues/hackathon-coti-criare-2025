@@ -41,7 +41,7 @@ public class PropostaController {
     @PostMapping
     public ResponseEntity<PropostaResponse> criarProposta(@Valid @RequestBody PropostaRequest request) {
         Proposta proposta = propostaService.criarProposta(
-                propostaMapper.toEntity(request), usuarioAtual.obter().id(), request.cotacaoId());
+                propostaMapper.toEntity(request), usuarioAtual.obter(), request.cotacaoId());
         return ResponseEntity.status(HttpStatus.CREATED).body(propostaMapper.toResponse(proposta));
     }
 
@@ -49,7 +49,7 @@ public class PropostaController {
     @PreAuthorize("hasRole('FORNECEDOR')")
     @GetMapping("/minhas")
     public ResponseEntity<List<PropostaResponse>> minhas() {
-        return ResponseEntity.ok(paraResposta(propostaService.listarPorFornecedor(usuarioAtual.obter().id())));
+        return ResponseEntity.ok(paraResposta(propostaService.listarPorFornecedor(usuarioAtual.obter().organizacaoId())));
     }
 
     @Operation(summary = "Buscar proposta", description = "Só o fornecedor autor e a empresa dona da cotação")
@@ -64,21 +64,21 @@ public class PropostaController {
     @GetMapping("/cotacao/{cotacaoId}")
     public ResponseEntity<List<PropostaResponse>> listarPorCotacao(
             @Parameter(description = "ID da cotação") @PathVariable UUID cotacaoId) {
-        return ResponseEntity.ok(paraResposta(propostaService.listarPorCotacao(cotacaoId, usuarioAtual.obter().id())));
+        return ResponseEntity.ok(paraResposta(propostaService.listarPorCotacao(cotacaoId, usuarioAtual.obter().organizacaoId())));
     }
 
     @Operation(summary = "Recusar proposta", description = "Perfil EMPRESA, dona da cotação")
     @PreAuthorize("hasRole('EMPRESA')")
     @PatchMapping("/{id}/recusar")
     public ResponseEntity<PropostaResponse> recusarProposta(@Parameter(description = "ID da proposta") @PathVariable UUID id) {
-        return ResponseEntity.ok(propostaMapper.toResponse(propostaService.recusarProposta(id, usuarioAtual.obter().id())));
+        return ResponseEntity.ok(propostaMapper.toResponse(propostaService.recusarProposta(id, usuarioAtual.obter().organizacaoId())));
     }
 
     @Operation(summary = "Retirar proposta", description = "Perfil FORNECEDOR, autor. Só enquanto não foi aceita")
     @PreAuthorize("hasRole('FORNECEDOR')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletarProposta(@Parameter(description = "ID da proposta") @PathVariable UUID id) {
-        propostaService.deletarProposta(id, usuarioAtual.obter().id());
+        propostaService.deletarProposta(id, usuarioAtual.obter().organizacaoId());
         return ResponseEntity.noContent().build();
     }
 

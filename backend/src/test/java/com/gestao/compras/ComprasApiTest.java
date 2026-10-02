@@ -48,11 +48,13 @@ class ComprasApiTest {
     void setUp() throws Exception {
         mvc = MockMvcBuilders.webAppContextSetup(contexto).apply(springSecurity()).build();
 
-        enviar(post("/api/v1/empresas"), null, """
-                {"razaoSocial":"Criare Consulting","cnpj":"11.222.333/0001-81","email":"compras@api.com","senha":"%s"}
+        enviar(post("/api/v1/cadastro"), null, """
+                {"tipo":"EMPRESA","razaoSocial":"Criare Consulting","cnpj":"11.222.333/0001-81",
+                 "nome":"Ana Ribeiro","email":"compras@api.com","senha":"%s"}
                 """.formatted(SENHA), 201);
-        enviar(post("/api/v1/fornecedores"), null, """
-                {"nomeCompleto":"Tech Soluções","cnpj":"45.236.789/0001-12","email":"vendas@api.com","senha":"%s"}
+        enviar(post("/api/v1/cadastro"), null, """
+                {"tipo":"FORNECEDOR","razaoSocial":"Tech Soluções","cnpj":"45.236.789/0001-12",
+                 "nome":"Carlos Mendes","email":"vendas@api.com","senha":"%s"}
                 """.formatted(SENHA), 201);
 
         empresa = entrar("compras@api.com");
@@ -150,8 +152,9 @@ class ComprasApiTest {
                 .andExpect(status().isBadRequest());
 
         // Cadastro repetido e regra de negócio
-        enviar(post("/api/v1/fornecedores"), null, """
-                {"nomeCompleto":"Outra","cnpj":"78.345.129/0001-29","email":"vendas@api.com","senha":"%s"}
+        enviar(post("/api/v1/cadastro"), null, """
+                {"tipo":"FORNECEDOR","razaoSocial":"Outra","cnpj":"78.345.129/0001-29",
+                 "nome":"Outra pessoa","email":"vendas@api.com","senha":"%s"}
                 """.formatted(SENHA), 409);
         String cotacaoId = publicarCotacao();
         enviarProposta(cotacaoId);

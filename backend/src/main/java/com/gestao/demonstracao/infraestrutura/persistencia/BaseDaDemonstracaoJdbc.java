@@ -22,15 +22,16 @@ class BaseDaDemonstracaoJdbc implements BaseDaDemonstracao {
             "DELETE FROM tb_proposta",
             "DELETE FROM tb_cotacao",
             "DELETE FROM tb_refresh_token",
-            "DELETE FROM tb_empresa",
-            "DELETE FROM tb_fornecedor"};
+            "DELETE FROM tb_membro",
+            "DELETE FROM tb_usuario",
+            "DELETE FROM tb_organizacao"};
 
     private final JdbcTemplate jdbc;
 
     @Override
     public boolean temDados() {
-        Integer empresas = jdbc.queryForObject("SELECT COUNT(*) FROM tb_empresa", Integer.class);
-        return empresas != null && empresas > 0;
+        Integer organizacoes = jdbc.queryForObject("SELECT COUNT(*) FROM tb_organizacao", Integer.class);
+        return organizacoes != null && organizacoes > 0;
     }
 
     @Override

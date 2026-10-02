@@ -10,12 +10,10 @@ import com.gestao.compras.dominio.Cotacao;
 import com.gestao.compras.dominio.Negociacao;
 import com.gestao.compras.dominio.Proposta;
 import com.gestao.demonstracao.aplicacao.porta.BaseDaDemonstracao;
-import com.gestao.identidade.aplicacao.EmpresaService;
-import com.gestao.identidade.aplicacao.FornecedorService;
+import com.gestao.identidade.aplicacao.CadastroService.NovaOrganizacao;
+import com.gestao.identidade.aplicacao.CadastroService;
 import com.gestao.identidade.aplicacao.UsuarioAutenticado;
-import com.gestao.identidade.dominio.Empresa;
-import com.gestao.identidade.dominio.Fornecedor;
-import com.gestao.identidade.dominio.TipoUsuario;
+import com.gestao.identidade.dominio.TipoOrganizacao;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -31,9 +29,12 @@ import java.time.LocalDateTime;
 /**
  * Dados de exemplo para apresentações e para a demo pública.
  * Só existe com o profile "demo":
- * - na inicialização, popula o banco se ainda não houver nenhuma empresa
+ * - na inicialização, popula o banco se ainda não houver nenhuma organização
  * - todo dia (app.demo.reset-cron), apaga tudo e popula de novo, para a demo
  *   pública voltar ao estado inicial depois de ser usada por visitantes
+ *
+ * <p>A Criare e a Tech têm duas pessoas cada: a proprietária, que é a conta de exemplo
+ * da tela de login, e um membro da equipe que também participa das negociações.
  *
  * <pre>./mvnw spring-boot:run -Dspring-boot.run.profiles=demo</pre>
  */
@@ -50,8 +51,7 @@ public class DadosDemonstracao implements CommandLineRunner {
 
     private final BaseDaDemonstracao base;
 
-    private final EmpresaService empresaService;
-    private final FornecedorService fornecedorService;
+    private final CadastroService cadastroService;
     private final CotacaoService cotacaoService;
     private final PropostaService propostaService;
     private final NegociacaoService negociacaoService;
@@ -61,7 +61,7 @@ public class DadosDemonstracao implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         if (base.temDados()) {
-            log.info("Dados de demonstração ignorados: o banco já tem empresas cadastradas.");
+            log.info("Dados de demonstração ignorados: o banco já tem organizações cadastradas.");
             return;
         }
         popular();
@@ -77,99 +77,97 @@ public class DadosDemonstracao implements CommandLineRunner {
     }
 
     private void popular() {
-        // Empresas
-        Empresa criare = empresaService.cadastrarEmpresa(
-                empresa("Criare Consulting", "11.222.333/0001-81", EMAIL_EMPRESA));
-        Empresa hospital = empresaService.cadastrarEmpresa(
-                empresa("Hospital Santa Vida", "27.384.915/0001-02", "hospital@demo.com"));
+        // Empresas compradoras
+        UsuarioAutenticado ana = empresa("Criare Consulting", "11.222.333/0001-81", "Ana Ribeiro", EMAIL_EMPRESA);
+        UsuarioAutenticado bruno = membro(ana, "Bruno Costa", "bruno.compras@demo.com");
+        UsuarioAutenticado helena = empresa("Hospital Santa Vida", "27.384.915/0001-02", "Helena Duarte",
+                "hospital@demo.com");
 
         // Fornecedores
-        Fornecedor tech = fornecedorService.cadastrarFornecedor(
-                fornecedor("Tech Soluções Ltda", "45.236.789/0001-12", EMAIL_FORNECEDOR));
-        Fornecedor info = fornecedorService.cadastrarFornecedor(
-                fornecedor("InfoWorld Distribuidora", "78.345.129/0001-29", "infoworld@demo.com"));
-        Fornecedor limpa = fornecedorService.cadastrarFornecedor(
-                fornecedor("Limpa Bem Serviços", "90.817.263/0001-80", "limpabem@demo.com"));
-        Fornecedor clima = fornecedorService.cadastrarFornecedor(
-                fornecedor("Clima Frio Ar-Condicionado", "56.102.938/0001-77", "climafrio@demo.com"));
-
-        UsuarioAutenticado comoCriare = new UsuarioAutenticado(criare.getId(), TipoUsuario.EMPRESA);
-        UsuarioAutenticado comoTech = new UsuarioAutenticado(tech.getId(), TipoUsuario.FORNECEDOR);
+        UsuarioAutenticado carlos = fornecedor("Tech Soluções Ltda", "45.236.789/0001-12", "Carlos Mendes",
+                EMAIL_FORNECEDOR);
+        UsuarioAutenticado daniela = membro(carlos, "Daniela Rocha", "daniela.vendas@demo.com");
+        UsuarioAutenticado info = fornecedor("InfoWorld Distribuidora", "78.345.129/0001-29", "Eduardo Lima",
+                "infoworld@demo.com");
+        UsuarioAutenticado limpa = fornecedor("Limpa Bem Serviços", "90.817.263/0001-80", "Fernanda Alves",
+                "limpabem@demo.com");
+        UsuarioAutenticado clima = fornecedor("Clima Frio Ar-Condicionado", "56.102.938/0001-77", "Gustavo Pires",
+                "climafrio@demo.com");
 
         // 1. Notebooks: duas propostas e uma negociação em andamento com a Tech
         Cotacao notebooks = cotacaoService.criarCotacao(cotacao(
                 "Aquisição de 10 notebooks",
                 "10 notebooks com 16 GB de RAM, SSD de 512 GB e garantia on-site de 3 anos para o time de TI.",
-                CategoriaCotacao.TECNOLOGIA, new BigDecimal("60000.00"), 15), criare.getId());
+                CategoriaCotacao.TECNOLOGIA, new BigDecimal("60000.00"), 15), ana);
         Proposta notebooksTech = propostaService.criarProposta(
-                proposta("58000.00", "Entrega em 10 dias úteis, frete incluso."), tech.getId(), notebooks.getId());
+                proposta("58000.00", "Entrega em 10 dias úteis, frete incluso."), carlos, notebooks.getId());
         propostaService.criarProposta(
-                proposta("61500.00", "Garantia estendida para 4 anos."), info.getId(), notebooks.getId());
-        Negociacao negociacaoNotebooks = negociacaoService.criarNegociacao(notebooksTech.getId(), criare.getId());
+                proposta("61500.00", "Garantia estendida para 4 anos."), info, notebooks.getId());
+        Negociacao negociacaoNotebooks = negociacaoService.criarNegociacao(notebooksTech.getId(), ana.organizacaoId());
         mensagemService.enviarMensagem(negociacaoNotebooks.getId(),
                 "Gostamos da proposta. Conseguem chegar a R$ 55.000 mantendo o prazo?",
-                new BigDecimal("55000.00"), comoCriare);
+                new BigDecimal("55000.00"), ana);
+        mensagemService.enviarMensagem(negociacaoNotebooks.getId(),
+                "Assumo a negociação daqui. Podemos fechar em R$ 56.500 com entrega em 8 dias úteis.",
+                new BigDecimal("56500.00"), daniela);
 
-        // 2. Limpeza e cadeiras: abertas, aguardando a empresa
+        // 2. Limpeza e cadeiras: abertas, aguardando a empresa (a de cadeiras foi criada pelo Bruno)
         Cotacao limpeza = cotacaoService.criarCotacao(cotacao(
                 "Limpeza pós-obra do galpão B",
                 "Limpeza completa de 800 m² após reforma, incluindo vidros e retirada de entulho leve.",
-                CategoriaCotacao.LIMPEZA_MANUTENCAO, new BigDecimal("8000.00"), 10), criare.getId());
+                CategoriaCotacao.LIMPEZA_MANUTENCAO, new BigDecimal("8000.00"), 10), ana);
         propostaService.criarProposta(
-                proposta("7200.00", "Equipe de 6 pessoas, conclusão em 3 dias."), limpa.getId(), limpeza.getId());
+                proposta("7200.00", "Equipe de 6 pessoas, conclusão em 3 dias."), limpa, limpeza.getId());
 
         cotacaoService.criarCotacao(cotacao(
                 "Cadeiras ergonômicas",
                 "25 cadeiras ergonômicas com regulagem de altura e apoio lombar.",
-                CategoriaCotacao.MOBILIARIO, null, 20), criare.getId());
+                CategoriaCotacao.MOBILIARIO, null, 20), bruno);
 
         // 3. Licenças: negócio já fechado com a Tech (aparece no histórico e nos dashboards)
         Cotacao licencas = cotacaoService.criarCotacao(cotacao(
                 "Licenças de software de design",
                 "15 licenças anuais de software de design gráfico, com suporte em português.",
-                CategoriaCotacao.TECNOLOGIA, new BigDecimal("13000.00"), 7), criare.getId());
+                CategoriaCotacao.TECNOLOGIA, new BigDecimal("13000.00"), 7), bruno);
         Proposta licencasTech = propostaService.criarProposta(
-                proposta("12000.00", "Licenças anuais com suporte e treinamento de 4 horas."), tech.getId(), licencas.getId());
-        Negociacao negociacaoLicencas = negociacaoService.criarNegociacao(licencasTech.getId(), criare.getId());
+                proposta("12000.00", "Licenças anuais com suporte e treinamento de 4 horas."), carlos, licencas.getId());
+        Negociacao negociacaoLicencas = negociacaoService.criarNegociacao(licencasTech.getId(), bruno.organizacaoId());
         mensagemService.enviarMensagem(negociacaoLicencas.getId(), "Fechamos hoje por R$ 11.000?",
-                new BigDecimal("11000.00"), comoCriare);
+                new BigDecimal("11000.00"), bruno);
         mensagemService.enviarMensagem(negociacaoLicencas.getId(), "Conseguimos R$ 11.500 com o treinamento incluso.",
-                new BigDecimal("11500.00"), comoTech);
-        negociacaoService.finalizarNegociacao(negociacaoLicencas.getId(), new BigDecimal("11500.00"), criare.getId());
+                new BigDecimal("11500.00"), carlos);
+        negociacaoService.finalizarNegociacao(negociacaoLicencas.getId(), new BigDecimal("11500.00"),
+                ana.organizacaoId());
 
         // 4. Hospital: oportunidades de outra empresa no mural do fornecedor
         Cotacao arCondicionado = cotacaoService.criarCotacao(cotacao(
                 "Manutenção de 15 aparelhos de ar-condicionado",
                 "Manutenção preventiva trimestral em 15 aparelhos split, com relatório técnico.",
-                CategoriaCotacao.SERVICOS, new BigDecimal("5000.00"), 12), hospital.getId());
+                CategoriaCotacao.SERVICOS, new BigDecimal("5000.00"), 12), helena);
         propostaService.criarProposta(
-                proposta("4800.00", "Visita trimestral, peças à parte."), clima.getId(), arCondicionado.getId());
+                proposta("4800.00", "Visita trimestral, peças à parte."), clima, arCondicionado.getId());
 
         cotacaoService.criarCotacao(cotacao(
                 "Material de escritório para o trimestre",
                 "Papel A4, toners, pastas e itens de papelaria para 3 setores administrativos.",
-                CategoriaCotacao.SUPRIMENTOS, null, 9), hospital.getId());
+                CategoriaCotacao.SUPRIMENTOS, null, 9), helena);
 
         log.info("Dados de demonstração criados. Contas de exemplo: {} e {}.",
                 Mascaras.email(EMAIL_EMPRESA), Mascaras.email(EMAIL_FORNECEDOR));
     }
 
-    private Empresa empresa(String nome, String cnpj, String email) {
-        Empresa e = new Empresa();
-        e.setRazaoSocial(nome);
-        e.setCnpj(cnpj);
-        e.setEmail(email);
-        e.setSenha(SENHA_DEMO);
-        return e;
+    private UsuarioAutenticado empresa(String razaoSocial, String cnpj, String pessoa, String email) {
+        return cadastroService.cadastrar(
+                new NovaOrganizacao(TipoOrganizacao.EMPRESA, razaoSocial, cnpj, pessoa, email, SENHA_DEMO));
     }
 
-    private Fornecedor fornecedor(String nome, String cnpj, String email) {
-        Fornecedor f = new Fornecedor();
-        f.setNomeCompleto(nome);
-        f.setCnpj(cnpj);
-        f.setEmail(email);
-        f.setSenha(SENHA_DEMO);
-        return f;
+    private UsuarioAutenticado fornecedor(String razaoSocial, String cnpj, String pessoa, String email) {
+        return cadastroService.cadastrar(
+                new NovaOrganizacao(TipoOrganizacao.FORNECEDOR, razaoSocial, cnpj, pessoa, email, SENHA_DEMO));
+    }
+
+    private UsuarioAutenticado membro(UsuarioAutenticado colega, String pessoa, String email) {
+        return cadastroService.adicionarMembro(colega.organizacaoId(), pessoa, email, SENHA_DEMO);
     }
 
     private Cotacao cotacao(String nome, String requisitos, CategoriaCotacao categoria,

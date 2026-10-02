@@ -49,7 +49,8 @@ class MigracoesPostgresTest {
                 order by table_name
                 """, String.class);
         assertEquals(List.of(
-                "tb_cotacao", "tb_empresa", "tb_fornecedor", "tb_mensagem_negociacao",
-                "tb_negociacao", "tb_perfil", "tb_proposta", "tb_refresh_token"), tabelas);
+                "tb_cotacao", "tb_empresa", "tb_fornecedor", "tb_membro", "tb_mensagem_negociacao",
+                "tb_negociacao", "tb_organizacao", "tb_perfil", "tb_proposta", "tb_refresh_token",
+                "tb_usuario"), tabelas);
     }
 }

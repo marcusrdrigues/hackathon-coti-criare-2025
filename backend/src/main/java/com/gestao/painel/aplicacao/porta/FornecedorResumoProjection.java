@@ -5,6 +5,6 @@ import java.util.UUID;
 public interface FornecedorResumoProjection {
     UUID getId();
     String getNome();
-    String getEmail();
+    String getCnpj();
     Long getTotalPropostas();
 }

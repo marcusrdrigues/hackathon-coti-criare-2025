@@ -22,7 +22,7 @@ class CanalStomp implements CanalTempoReal {
     }
 
     @Override
-    public void avisar(UUID usuarioId, AvisoTempoReal aviso) {
-        mensageiro.convertAndSendToUser(usuarioId.toString(), Destinos.FILA_AVISOS, aviso);
+    public void avisar(UUID organizacaoId, AvisoTempoReal aviso) {
+        mensageiro.convertAndSendToUser(organizacaoId.toString(), Destinos.FILA_AVISOS, aviso);
     }
 }

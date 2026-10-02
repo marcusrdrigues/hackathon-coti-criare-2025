@@ -3,7 +3,7 @@ package com.gestao.demonstracao;
 import com.gestao.compras.aplicacao.porta.CotacaoRepositorio;
 import com.gestao.compras.aplicacao.porta.NegociacaoRepositorio;
 import com.gestao.demonstracao.aplicacao.DadosDemonstracao;
-import com.gestao.identidade.aplicacao.porta.EmpresaRepositorio;
+import com.gestao.identidade.aplicacao.porta.OrganizacaoRepositorio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +33,7 @@ class DemonstracaoApiTest {
 
     @Autowired private WebApplicationContext contexto;
     @Autowired private DadosDemonstracao dadosDemonstracao;
-    @Autowired private EmpresaRepositorio empresaRepositorio;
+    @Autowired private OrganizacaoRepositorio organizacaoRepositorio;
     @Autowired private CotacaoRepositorio cotacaoRepositorio;
     @Autowired private NegociacaoRepositorio negociacaoRepositorio;
 
@@ -59,6 +59,8 @@ class DemonstracaoApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.usuario.email").value(DadosDemonstracao.EMAIL_EMPRESA))
+                .andExpect(jsonPath("$.usuario.papel").value("PROPRIETARIO"))
+                .andExpect(jsonPath("$.usuario.organizacao.razaoSocial").value("Criare Consulting"))
                 .andExpect(header().string(HttpHeaders.SET_COOKIE, org.hamcrest.Matchers.containsString("HttpOnly")));
 
         mvc.perform(post("/api/v1/auth/demo/FORNECEDOR"))
@@ -80,16 +82,16 @@ class DemonstracaoApiTest {
 
     @Test
     void restaurarVoltaOsDadosAoEstadoInicial() {
-        long empresas = empresaRepositorio.contar();
+        long organizacoes = organizacaoRepositorio.contar();
         long cotacoes = cotacaoRepositorio.contar();
         long negociacoes = negociacaoRepositorio.contar();
-        assertThat(empresas).isEqualTo(2);
+        assertThat(organizacoes).isEqualTo(6);
         assertThat(negociacoes).isEqualTo(2);
 
         dadosDemonstracao.restaurar();
         dadosDemonstracao.restaurar();
 
-        assertThat(empresaRepositorio.contar()).isEqualTo(empresas);
+        assertThat(organizacaoRepositorio.contar()).isEqualTo(organizacoes);
         assertThat(cotacaoRepositorio.contar()).isEqualTo(cotacoes);
         assertThat(negociacaoRepositorio.contar()).isEqualTo(negociacoes);
     }

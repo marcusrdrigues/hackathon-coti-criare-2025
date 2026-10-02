@@ -27,7 +27,7 @@ public class PainelController {
     @PreAuthorize("hasRole('EMPRESA')")
     @GetMapping("/empresa")
     public ResponseEntity<PainelEmpresaResponse> empresa() {
-        return ResponseEntity.ok(dashboardService.resumoEmpresa(usuarioAtual.obter().id()));
+        return ResponseEntity.ok(dashboardService.resumoEmpresa(usuarioAtual.obter().organizacaoId()));
     }
 
     @Operation(summary = "Painel do fornecedor",
@@ -35,6 +35,6 @@ public class PainelController {
     @PreAuthorize("hasRole('FORNECEDOR')")
     @GetMapping("/fornecedor")
     public ResponseEntity<PainelFornecedorResponse> fornecedor() {
-        return ResponseEntity.ok(dashboardService.resumoFornecedor(usuarioAtual.obter().id()));
+        return ResponseEntity.ok(dashboardService.resumoFornecedor(usuarioAtual.obter().organizacaoId()));
     }
 }

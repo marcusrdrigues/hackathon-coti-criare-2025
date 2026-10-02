@@ -1,6 +1,7 @@
 package com.gestao.compras.dominio;
 
-import com.gestao.identidade.dominio.Empresa;
+import com.gestao.identidade.dominio.Organizacao;
+import com.gestao.identidade.dominio.Usuario;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -45,9 +46,15 @@ public class Cotacao {
     @Column(name = "status", nullable = false)
     private StatusCotacao status;
 
+    /** A empresa compradora, dona da cotação */
     @ManyToOne
     @JoinColumn(name = "empresa_id", nullable = false)
-    private Empresa empresa;
+    private Organizacao empresa;
+
+    /** Quem publicou */
+    @ManyToOne
+    @JoinColumn(name = "criada_por", nullable = false)
+    private Usuario criadaPor;
 
     @OneToMany(mappedBy = "cotacao")
     private List<Proposta> propostas = new ArrayList<>();

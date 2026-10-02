@@ -27,7 +27,7 @@ public class NegociacaoMapper {
                 negociacao.getEmpresa().getId(),
                 negociacao.getEmpresa().getRazaoSocial(),
                 negociacao.getFornecedor().getId(),
-                negociacao.getFornecedor().getNomeCompleto(),
+                negociacao.getFornecedor().getRazaoSocial(),
                 proposta.getId(),
                 proposta.getValor(),
                 negociacao.getUltimaOferta(),

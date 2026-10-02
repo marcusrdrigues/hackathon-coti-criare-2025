@@ -10,9 +10,8 @@ import com.gestao.compras.dominio.Cotacao;
 import com.gestao.compras.dominio.Proposta;
 import com.gestao.compras.dominio.StatusCotacao;
 import com.gestao.compras.dominio.StatusProposta;
-import com.gestao.identidade.aplicacao.EmpresaService;
+import com.gestao.identidade.aplicacao.OrganizacaoService;
 import com.gestao.identidade.aplicacao.UsuarioAutenticado;
-import com.gestao.identidade.dominio.Empresa;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,14 +26,15 @@ public class CotacaoService {
 
     private final CotacaoRepositorio cotacaoRepositorio;
     private final PropostaRepositorio propostaRepositorio;
-    private final EmpresaService empresaService;
+    private final OrganizacaoService organizacaoService;
 
+    /** Publica em nome da empresa de quem está logado, registrando quem publicou. */
     @Transactional
-    public Cotacao criarCotacao(Cotacao cotacao, UUID empresaId) {
-        Empresa empresa = empresaService.buscarPorId(empresaId);
+    public Cotacao criarCotacao(Cotacao cotacao, UsuarioAutenticado autor) {
         validarDataLimite(cotacao.getDataLimite());
 
-        cotacao.setEmpresa(empresa);
+        cotacao.setEmpresa(organizacaoService.buscarPorId(autor.organizacaoId()));
+        cotacao.setCriadaPor(organizacaoService.buscarUsuario(autor.usuarioId()));
         cotacao.setStatus(StatusCotacao.ABERTA);
         cotacao.setDataCriacao(LocalDateTime.now());
         if (cotacao.getCategoria() == null) {
@@ -58,7 +58,7 @@ public class CotacaoService {
     public Cotacao buscarParaUsuario(UUID id, UsuarioAutenticado usuario) {
         Cotacao cotacao = buscarPorId(id);
         if (usuario.ehEmpresa()) {
-            verificarDona(cotacao, usuario.id());
+            verificarDona(cotacao, usuario.organizacaoId());
         }
         return cotacao;
     }

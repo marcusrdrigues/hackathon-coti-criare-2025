@@ -1,5 +1,6 @@
 package com.gestao.compras.dominio;
 
+import com.gestao.identidade.dominio.Usuario;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,8 +31,10 @@ public class MensagemNegociacao {
     @Column(name = "tipo_remetente", nullable = false)
     private TipoRemetente tipoRemetente;
 
-    @Column(name = "remetente_id", nullable = false)
-    private UUID remetenteId;
+    /** A pessoa que escreveu; o lado dela na negociação está em {@code tipoRemetente} */
+    @ManyToOne
+    @JoinColumn(name = "remetente_id", nullable = false)
+    private Usuario remetente;
 
     @Column(name = "data_hora_envio", nullable = false)
     private LocalDateTime dataEnvio;

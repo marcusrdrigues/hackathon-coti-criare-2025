@@ -2,7 +2,8 @@ package com.gestao.identidade.infraestrutura.seguranca;
 
 import com.gestao.compartilhado.dominio.NaoAutenticadoException;
 import com.gestao.identidade.aplicacao.UsuarioAutenticado;
-import com.gestao.identidade.dominio.TipoUsuario;
+import com.gestao.identidade.dominio.Papel;
+import com.gestao.identidade.dominio.TipoOrganizacao;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -26,10 +27,19 @@ public class UsuarioAtual {
         throw new NaoAutenticadoException("Usuário não autenticado.");
     }
 
-    /** Identidade a partir de um token já validado (também usado na conexão WebSocket). */
+    /**
+     * Identidade a partir de um token já validado (também usado na conexão WebSocket).
+     * Um token de antes da separação entre pessoa e organização não tem as claims novas:
+     * vale como não autenticado, e o front-end renova a sessão ou pede login.
+     */
     public static UsuarioAutenticado de(Jwt jwt) {
-        return new UsuarioAutenticado(
-                UUID.fromString(jwt.getSubject()),
-                TipoUsuario.valueOf(jwt.getClaimAsString(EmissorDeTokenJwt.CLAIM_TIPO)));
+        String organizacao = jwt.getClaimAsString(ClaimsDoToken.ORGANIZACAO);
+        String tipo = jwt.getClaimAsString(ClaimsDoToken.TIPO);
+        String papel = jwt.getClaimAsString(ClaimsDoToken.PAPEL);
+        if (organizacao == null || tipo == null || papel == null) {
+            throw new NaoAutenticadoException("Sessão antiga. Faça login novamente.");
+        }
+        return new UsuarioAutenticado(UUID.fromString(jwt.getSubject()), UUID.fromString(organizacao),
+                TipoOrganizacao.valueOf(tipo), Papel.valueOf(papel));
     }
 }

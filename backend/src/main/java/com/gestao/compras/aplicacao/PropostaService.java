@@ -9,9 +9,8 @@ import com.gestao.compras.dominio.Proposta;
 import com.gestao.compras.dominio.PropostaRecebidaEvento;
 import com.gestao.compras.dominio.StatusCotacao;
 import com.gestao.compras.dominio.StatusProposta;
-import com.gestao.identidade.aplicacao.FornecedorService;
+import com.gestao.identidade.aplicacao.OrganizacaoService;
 import com.gestao.identidade.aplicacao.UsuarioAutenticado;
-import com.gestao.identidade.dominio.Fornecedor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -27,12 +26,13 @@ public class PropostaService {
 
     private final PropostaRepositorio propostaRepositorio;
     private final CotacaoService cotacaoService;
-    private final FornecedorService fornecedorService;
+    private final OrganizacaoService organizacaoService;
     private final ApplicationEventPublisher eventos;
 
+    /** Envia em nome do fornecedor de quem está logado, registrando quem enviou. */
     @Transactional
-    public Proposta criarProposta(Proposta proposta, UUID fornecedorId, UUID cotacaoId) {
-        Fornecedor fornecedor = fornecedorService.buscarPorId(fornecedorId);
+    public Proposta criarProposta(Proposta proposta, UsuarioAutenticado autor, UUID cotacaoId) {
+        UUID fornecedorId = autor.organizacaoId();
         Cotacao cotacao = cotacaoService.buscarPorId(cotacaoId);
 
         if (cotacao.getStatus() != StatusCotacao.ABERTA) {
@@ -45,7 +45,8 @@ public class PropostaService {
             throw new RegraDeNegocioException("Você já enviou uma proposta para esta cotação!");
         }
 
-        proposta.setFornecedor(fornecedor);
+        proposta.setFornecedor(organizacaoService.buscarPorId(fornecedorId));
+        proposta.setEnviadaPor(organizacaoService.buscarUsuario(autor.usuarioId()));
         proposta.setCotacao(cotacao);
         proposta.setStatus(StatusProposta.ENVIADA);
         proposta.setDataEnvio(LocalDateTime.now());
@@ -65,9 +66,9 @@ public class PropostaService {
     @Transactional(readOnly = true)
     public Proposta buscarParaUsuario(UUID id, UsuarioAutenticado usuario) {
         Proposta proposta = buscarPorId(id);
-        boolean autor = usuario.ehFornecedor() && proposta.getFornecedor().getId().equals(usuario.id());
+        boolean autor = usuario.ehFornecedor() && proposta.getFornecedor().getId().equals(usuario.organizacaoId());
         boolean empresaDaCotacao = usuario.ehEmpresa()
-                && proposta.getCotacao().getEmpresa().getId().equals(usuario.id());
+                && proposta.getCotacao().getEmpresa().getId().equals(usuario.organizacaoId());
         if (!autor && !empresaDaCotacao) {
             throw new AcessoNegadoException("Você não tem acesso a esta proposta.");
         }

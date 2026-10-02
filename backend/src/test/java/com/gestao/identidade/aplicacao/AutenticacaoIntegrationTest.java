@@ -2,10 +2,12 @@ package com.gestao.identidade.aplicacao;
 
 import com.gestao.compartilhado.dominio.MuitasTentativasException;
 import com.gestao.compartilhado.dominio.NaoAutenticadoException;
+import com.gestao.identidade.aplicacao.CadastroService.NovaOrganizacao;
 import com.gestao.identidade.aplicacao.porta.RefreshTokenRepositorio;
-import com.gestao.identidade.dominio.Fornecedor;
-import com.gestao.identidade.dominio.TipoUsuario;
-import com.gestao.identidade.infraestrutura.seguranca.EmissorDeTokenJwt;
+import com.gestao.identidade.dominio.Papel;
+import com.gestao.identidade.dominio.TipoOrganizacao;
+import com.gestao.identidade.infraestrutura.seguranca.ClaimsDoToken;
+import com.gestao.identidade.infraestrutura.seguranca.UsuarioAtual;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +17,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -31,21 +35,17 @@ class AutenticacaoIntegrationTest {
     private static final String SENHA = "segredo123";
 
     @Autowired private AuthService authService;
-    @Autowired private FornecedorService fornecedorService;
+    @Autowired private CadastroService cadastroService;
     @Autowired private JwtDecoder jwtDecoder;
     @Autowired private RefreshTokenRepositorio refreshTokenRepositorio;
     @Autowired private TentativasLoginService tentativas;
 
-    private Fornecedor fornecedor;
+    private UsuarioAutenticado fornecedor;
 
     @BeforeEach
     void setUp() {
-        Fornecedor f = new Fornecedor();
-        f.setNomeCompleto("Tech Soluções");
-        f.setCnpj("45.236.789/0001-12");
-        f.setEmail("auth@fornecedor.com");
-        f.setSenha(SENHA);
-        fornecedor = fornecedorService.cadastrarFornecedor(f);
+        fornecedor = cadastroService.cadastrar(new NovaOrganizacao(TipoOrganizacao.FORNECEDOR,
+                "Tech Soluções", "45.236.789/0001-12", "Carla Souza", "auth@fornecedor.com", SENHA));
     }
 
     /** O contador de tentativas fica em memória e é compartilhado entre os testes. */
@@ -55,15 +55,48 @@ class AutenticacaoIntegrationTest {
     }
 
     @Test
-    void accessTokenTrazSoIdentidadeEPerfil() {
+    void accessTokenTrazPessoaOrganizacaoTipoEPapel() {
         String token = authService.login("auth@fornecedor.com", SENHA).resposta().accessToken();
 
         Jwt jwt = jwtDecoder.decode(token);
-        assertEquals(fornecedor.getId().toString(), jwt.getSubject());
-        assertEquals("FORNECEDOR", jwt.getClaimAsString(EmissorDeTokenJwt.CLAIM_TIPO));
+        assertEquals(fornecedor.usuarioId().toString(), jwt.getSubject());
+        assertEquals(fornecedor.organizacaoId().toString(), jwt.getClaimAsString(ClaimsDoToken.ORGANIZACAO));
+        assertEquals("FORNECEDOR", jwt.getClaimAsString(ClaimsDoToken.TIPO));
+        assertEquals("PROPRIETARIO", jwt.getClaimAsString(ClaimsDoToken.PAPEL));
         assertEquals("portal-criare", jwt.getClaimAsString("iss"));
         assertNotNull(jwt.getExpiresAt());
         assertNull(jwt.getClaim("email"), "o token não deve carregar dados pessoais");
+        assertNull(jwt.getClaim("nome"), "o token não deve carregar dados pessoais");
+
+        assertEquals(fornecedor, UsuarioAtual.de(jwt));
+    }
+
+    @Test
+    void tokenDeAntesDaSeparacaoEntrePessoaEOrganizacaoNaoVale() {
+        // Só sub e tipo, como os tokens emitidos antes da migração V3
+        Jwt antigo = Jwt.withTokenValue("antigo")
+                .header("alg", "HS256")
+                .subject(fornecedor.organizacaoId().toString())
+                .claim(ClaimsDoToken.TIPO, "FORNECEDOR")
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(60))
+                .build();
+
+        assertThrows(NaoAutenticadoException.class, () -> UsuarioAtual.de(antigo));
+    }
+
+    @Test
+    void membroEntraPelaOrganizacaoComOutroPapel() {
+        cadastroService.adicionarMembro(fornecedor.organizacaoId(), "Diego Lima", "Diego@Fornecedor.com", SENHA);
+
+        var membro = authService.login("diego@fornecedor.com", SENHA).resposta().usuario();
+
+        assertEquals("Diego Lima", membro.nome());
+        assertEquals(Papel.MEMBRO, membro.papel());
+        assertEquals(TipoOrganizacao.FORNECEDOR, membro.tipo());
+        assertEquals(fornecedor.organizacaoId(), membro.organizacao().id());
+        assertEquals("45236789000112", membro.organizacao().cnpj());
+        assertNotEquals(fornecedor.usuarioId(), membro.id());
     }
 
     @Test
@@ -91,7 +124,7 @@ class AutenticacaoIntegrationTest {
         AuthService.Sessao renovada = authService.renovar(primeiro);
 
         assertNotEquals(primeiro, renovada.refreshToken());
-        assertEquals(TipoUsuario.FORNECEDOR, renovada.resposta().usuario().tipo());
+        assertEquals(TipoOrganizacao.FORNECEDOR, renovada.resposta().usuario().tipo());
         assertNotNull(renovada.resposta().accessToken());
     }
 
@@ -105,7 +138,7 @@ class AutenticacaoIntegrationTest {
 
         // O token legítimo mais novo também deixa de valer
         assertThrows(NaoAutenticadoException.class, () -> authService.renovar(segundo));
-        assertEquals(0, refreshTokenRepositorio.contarAtivos(fornecedor.getId()));
+        assertEquals(0, refreshTokenRepositorio.contarAtivos(fornecedor.usuarioId()));
     }
 
     @Test

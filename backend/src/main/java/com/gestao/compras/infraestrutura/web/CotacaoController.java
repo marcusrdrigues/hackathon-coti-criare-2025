@@ -43,7 +43,7 @@ public class CotacaoController {
     @PreAuthorize("hasRole('EMPRESA')")
     @PostMapping
     public ResponseEntity<CotacaoResponse> criarCotacao(@Valid @RequestBody CotacaoRequest request) {
-        Cotacao cotacao = cotacaoService.criarCotacao(cotacaoMapper.toEntity(request), usuarioAtual.obter().id());
+        Cotacao cotacao = cotacaoService.criarCotacao(cotacaoMapper.toEntity(request), usuarioAtual.obter());
         return ResponseEntity.status(HttpStatus.CREATED).body(cotacaoMapper.toResponse(cotacao));
     }
 
@@ -51,7 +51,7 @@ public class CotacaoController {
     @PreAuthorize("hasRole('EMPRESA')")
     @GetMapping("/minhas")
     public ResponseEntity<List<CotacaoResponse>> minhas() {
-        return ResponseEntity.ok(paraResposta(cotacaoService.listarPorEmpresa(usuarioAtual.obter().id())));
+        return ResponseEntity.ok(paraResposta(cotacaoService.listarPorEmpresa(usuarioAtual.obter().organizacaoId())));
     }
 
     @Operation(summary = "Mural", description = "Cotações abertas e dentro do prazo")
@@ -80,7 +80,7 @@ public class CotacaoController {
     public ResponseEntity<CotacaoResponse> atualizarCotacao(
             @Parameter(description = "ID da cotação") @PathVariable UUID id,
             @Valid @RequestBody CotacaoRequest request) {
-        Cotacao cotacao = cotacaoService.atualizarCotacao(id, usuarioAtual.obter().id(), cotacaoMapper.toEntity(request));
+        Cotacao cotacao = cotacaoService.atualizarCotacao(id, usuarioAtual.obter().organizacaoId(), cotacaoMapper.toEntity(request));
         return ResponseEntity.ok(cotacaoMapper.toResponse(cotacao));
     }
 
@@ -88,7 +88,7 @@ public class CotacaoController {
     @PreAuthorize("hasRole('EMPRESA')")
     @PatchMapping("/{id}/cancelar")
     public ResponseEntity<CotacaoResponse> cancelarCotacao(@Parameter(description = "ID da cotação") @PathVariable UUID id) {
-        return ResponseEntity.ok(cotacaoMapper.toResponse(cotacaoService.cancelarCotacao(id, usuarioAtual.obter().id())));
+        return ResponseEntity.ok(cotacaoMapper.toResponse(cotacaoService.cancelarCotacao(id, usuarioAtual.obter().organizacaoId())));
     }
 
     private List<CotacaoResponse> paraResposta(List<Cotacao> cotacoes) {

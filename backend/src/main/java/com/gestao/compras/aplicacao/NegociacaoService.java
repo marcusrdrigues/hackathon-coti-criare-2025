@@ -75,7 +75,7 @@ public class NegociacaoService {
         MensagemNegociacao inicial = new MensagemNegociacao();
         inicial.setNegociacao(negociacao);
         inicial.setTipoRemetente(TipoRemetente.FORNECEDOR);
-        inicial.setRemetenteId(proposta.getFornecedor().getId());
+        inicial.setRemetente(proposta.getEnviadaPor());
         inicial.setMensagem(proposta.getDescricao());
         inicial.setValorOfertado(proposta.getValor());
         inicial.setDataEnvio(proposta.getDataEnvio() != null ? proposta.getDataEnvio() : negociacao.getDataInicio());
@@ -102,8 +102,8 @@ public class NegociacaoService {
     @Transactional(readOnly = true)
     public List<Negociacao> listarDoUsuario(UsuarioAutenticado usuario) {
         return usuario.ehEmpresa()
-                ? negociacaoRepositorio.listarDaEmpresa(usuario.id())
-                : negociacaoRepositorio.listarDoFornecedor(usuario.id());
+                ? negociacaoRepositorio.listarDaEmpresa(usuario.organizacaoId())
+                : negociacaoRepositorio.listarDoFornecedor(usuario.organizacaoId());
     }
 
     /**
@@ -186,8 +186,8 @@ public class NegociacaoService {
     @Transactional(readOnly = true)
     public Map<UUID, Integer> contarNaoLidas(UsuarioAutenticado usuario) {
         List<MensagemNegociacaoRepositorio.NaoLidas> contagens = usuario.ehEmpresa()
-                ? mensagemRepositorio.contarNaoLidasDaEmpresa(usuario.id(), TipoRemetente.FORNECEDOR)
-                : mensagemRepositorio.contarNaoLidasDoFornecedor(usuario.id(), TipoRemetente.EMPRESA);
+                ? mensagemRepositorio.contarNaoLidasDaEmpresa(usuario.organizacaoId(), TipoRemetente.FORNECEDOR)
+                : mensagemRepositorio.contarNaoLidasDoFornecedor(usuario.organizacaoId(), TipoRemetente.EMPRESA);
         Map<UUID, Integer> porNegociacao = new HashMap<>();
         contagens.forEach(c -> porNegociacao.put(c.getNegociacaoId(), c.getTotal().intValue()));
         return porNegociacao;
@@ -205,7 +205,7 @@ public class NegociacaoService {
         UUID participante = usuario.ehEmpresa()
                 ? negociacao.getEmpresa().getId()
                 : negociacao.getFornecedor().getId();
-        if (!participante.equals(usuario.id())) {
+        if (!participante.equals(usuario.organizacaoId())) {
             throw new AcessoNegadoException("Você não participa desta negociação.");
         }
     }

@@ -27,10 +27,6 @@ public class RefreshToken {
     @Column(name = "usuario_id", nullable = false)
     private UUID usuarioId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_usuario", length = 20, nullable = false)
-    private TipoUsuario tipoUsuario;
-
     @Column(name = "criado_em", nullable = false)
     private Instant criadoEm;
 

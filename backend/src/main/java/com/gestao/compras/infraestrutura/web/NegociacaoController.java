@@ -37,7 +37,7 @@ public class NegociacaoController {
     @PreAuthorize("hasRole('EMPRESA')")
     @PostMapping
     public ResponseEntity<NegociacaoResponse> criarNegociacao(@Valid @RequestBody NegociacaoRequest request) {
-        Negociacao negociacao = negociacaoService.criarNegociacao(request.propostaId(), usuarioAtual.obter().id());
+        Negociacao negociacao = negociacaoService.criarNegociacao(request.propostaId(), usuarioAtual.obter().organizacaoId());
         return ResponseEntity.status(HttpStatus.CREATED).body(negociacaoMapper.toResponse(negociacao));
     }
 
@@ -75,7 +75,7 @@ public class NegociacaoController {
             @PathVariable UUID id,
             @Valid @RequestBody FinalizarNegociacaoRequest request) {
         return ResponseEntity.ok(negociacaoMapper.toResponse(
-                negociacaoService.finalizarNegociacao(id, request.valorFinal(), usuarioAtual.obter().id())));
+                negociacaoService.finalizarNegociacao(id, request.valorFinal(), usuarioAtual.obter().organizacaoId())));
     }
 
     @Operation(summary = "Encerrar sem acordo",
@@ -84,6 +84,6 @@ public class NegociacaoController {
     @PatchMapping("/{id}/cancelar")
     public ResponseEntity<NegociacaoResponse> cancelarNegociacao(@PathVariable UUID id) {
         return ResponseEntity.ok(negociacaoMapper.toResponse(
-                negociacaoService.cancelarNegociacao(id, usuarioAtual.obter().id())));
+                negociacaoService.cancelarNegociacao(id, usuarioAtual.obter().organizacaoId())));
     }
 }

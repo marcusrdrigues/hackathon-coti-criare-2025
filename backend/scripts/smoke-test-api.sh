@@ -47,8 +47,9 @@ echo "Testando $API"
 EMP_JAR="$COOKIES/empresa"; FORN_JAR="$COOKIES/fornecedor"
 LOGIN_E=$(chamar POST "$V1/auth/login" 200 "{\"email\":\"empresa@demo.com\",\"senha\":\"$SENHA_DEMO\"}" "" "$EMP_JAR")
 TOKEN_E=$(jq -r .accessToken <<<"$LOGIN_E")
-EMPRESA_ID=$(jq -r .usuario.id <<<"$LOGIN_E")
+EMPRESA_ID=$(jq -r .usuario.organizacao.id <<<"$LOGIN_E")
 [[ $(jq -r .usuario.tipo <<<"$LOGIN_E") == "EMPRESA" ]] || falhar "login da empresa não retornou tipo EMPRESA"
+[[ $(jq -r .usuario.papel <<<"$LOGIN_E") == "PROPRIETARIO" ]] || falhar "a conta de exemplo da empresa deveria ser a proprietária"
 grep -q refresh_token "$EMP_JAR" || falhar "login não gravou o cookie refresh_token"
 jq -e 'has("refreshToken") | not' <<<"$LOGIN_E" >/dev/null || falhar "refresh token não pode vir no corpo"
 
@@ -56,7 +57,12 @@ LOGIN_F=$(chamar POST "$V1/auth/login" 200 "{\"email\":\"limpabem@demo.com\",\"s
 TOKEN_F=$(jq -r .accessToken <<<"$LOGIN_F")
 TOKEN_TECH=$(chamar POST "$V1/auth/login" 200 "{\"email\":\"fornecedor@demo.com\",\"senha\":\"$SENHA_DEMO\"}" | jq -r .accessToken)
 chamar POST "$V1/auth/login" 401 '{"email":"empresa@demo.com","senha":"errada123"}' >/dev/null
-passo "login (empresa, fornecedores e senha errada)"
+# Segunda pessoa da mesma empresa: outro papel, mesma organização
+LOGIN_COLEGA=$(chamar POST "$V1/auth/login" 200 "{\"email\":\"bruno.compras@demo.com\",\"senha\":\"$SENHA_DEMO\"}")
+TOKEN_COLEGA=$(jq -r .accessToken <<<"$LOGIN_COLEGA")
+[[ $(jq -r .usuario.papel <<<"$LOGIN_COLEGA") == "MEMBRO" ]] || falhar "o colega da empresa deveria ser MEMBRO"
+[[ $(jq -r .usuario.organizacao.id <<<"$LOGIN_COLEGA") == "$EMPRESA_ID" ]] || falhar "o colega deveria estar na mesma empresa"
+passo "login (empresa, colega da empresa, fornecedores e senha errada)"
 
 # 1b. Demo de um clique (profile demo) e health check
 [[ $(chamar GET "$V1/auth/demo" 200 | jq length) -eq 2 ]] || falhar "esperava 2 contas de demonstração"
@@ -78,15 +84,19 @@ grep -qi "access-control-allow-origin: $ORIGEM_FRONT" <<<"$CORS" || falhar "CORS
 grep -qi "access-control-allow-credentials: true" <<<"$CORS" || falhar "CORS não liberou credenciais"
 passo "CORS liberado para $ORIGEM_FRONT"
 
-# 4. Validação e cadastro
-chamar POST "$V1/fornecedores" 400 '{"nomeCompleto":"","cnpj":"1","email":"x","senha":"1"}' >/dev/null
-chamar POST "$V1/fornecedores" 400 \
-  '{"nomeCompleto":"Senha Fraca","cnpj":"33.445.566/0001-86","email":"fraca@teste.com","senha":"somenteletras"}' >/dev/null
-chamar POST "$V1/fornecedores" 400 \
-  '{"nomeCompleto":"CNPJ Errado","cnpj":"11.222.333/0001-00","email":"cnpj@teste.com","senha":"senha1234"}' >/dev/null
-chamar POST "$V1/fornecedores" 409 \
-  '{"nomeCompleto":"Duplicado","cnpj":"33.445.566/0001-86","email":"empresa@demo.com","senha":"senha1234"}' >/dev/null
-passo "validação de campos, senha, CNPJ e e-mail duplicado"
+# 4. Validação e cadastro (organização e pessoa proprietária juntas)
+chamar POST "$V1/cadastro" 400 '{"tipo":"FORNECEDOR","razaoSocial":"","cnpj":"1","nome":"","email":"x","senha":"1"}' >/dev/null
+chamar POST "$V1/cadastro" 400 \
+  '{"razaoSocial":"Sem Tipo","cnpj":"33.445.566/0001-86","nome":"Fulano","email":"semtipo@teste.com","senha":"senha1234"}' >/dev/null
+chamar POST "$V1/cadastro" 400 \
+  '{"tipo":"FORNECEDOR","razaoSocial":"Senha Fraca","cnpj":"33.445.566/0001-86","nome":"Fulano","email":"fraca@teste.com","senha":"somenteletras"}' >/dev/null
+chamar POST "$V1/cadastro" 400 \
+  '{"tipo":"FORNECEDOR","razaoSocial":"CNPJ Errado","cnpj":"11.222.333/0001-00","nome":"Fulano","email":"cnpj@teste.com","senha":"senha1234"}' >/dev/null
+chamar POST "$V1/cadastro" 409 \
+  '{"tipo":"FORNECEDOR","razaoSocial":"Duplicado","cnpj":"33.445.566/0001-86","nome":"Fulano","email":"empresa@demo.com","senha":"senha1234"}' >/dev/null
+chamar POST "$V1/cadastro" 409 \
+  '{"tipo":"FORNECEDOR","razaoSocial":"CNPJ Repetido","cnpj":"45.236.789/0001-12","nome":"Fulano","email":"repetido@teste.com","senha":"senha1234"}' >/dev/null
+passo "validação de campos, tipo, senha, CNPJ e e-mail ou CNPJ duplicado"
 
 # 5. Regras de perfil
 chamar POST "$V1/cotacoes" 403 '{"nomeServico":"X","requisitos":"Y"}' "$TOKEN_F" >/dev/null
@@ -122,10 +132,13 @@ passo "negociação aberta e restrita aos participantes"
 # 9. Mensagens e contrapropostas (remetente vem do token)
 chamar POST "$V1/mensagens" 201 "{\"negociacaoId\":\"$NEGOCIACAO_ID\",\"mensagem\":\"Fecha por 1.300?\",\"valorOfertado\":1300}" "$TOKEN_E" >/dev/null
 chamar POST "$V1/mensagens" 201 "{\"negociacaoId\":\"$NEGOCIACAO_ID\",\"valorOfertado\":1350}" "$TOKEN_F" >/dev/null
+chamar POST "$V1/mensagens" 201 "{\"negociacaoId\":\"$NEGOCIACAO_ID\",\"mensagem\":\"Pode ser 1.350.\"}" "$TOKEN_COLEGA" >/dev/null
 chamar POST "$V1/mensagens" 403 "{\"negociacaoId\":\"$NEGOCIACAO_ID\",\"mensagem\":\"intruso\"}" "$TOKEN_TECH" >/dev/null
 MENSAGENS=$(chamar GET "$V1/mensagens/negociacao/$NEGOCIACAO_ID" 200 "" "$TOKEN_F")
-[[ $(jq length <<<"$MENSAGENS") -eq 3 ]] || falhar "esperava 3 mensagens no histórico, veio $(jq length <<<"$MENSAGENS")"
+[[ $(jq length <<<"$MENSAGENS") -eq 4 ]] || falhar "esperava 4 mensagens no histórico, veio $(jq length <<<"$MENSAGENS")"
 [[ $(jq -r '.[2].tipoRemetente' <<<"$MENSAGENS") == "FORNECEDOR" ]] || falhar "remetente não veio do token"
+[[ $(jq -r '.[1].remetentePessoa' <<<"$MENSAGENS") == "Ana Ribeiro" ]] || falhar "a mensagem deveria trazer a pessoa que escreveu"
+[[ $(jq -r '.[3].remetentePessoa' <<<"$MENSAGENS") == "Bruno Costa" ]] || falhar "a mensagem do colega deveria trazer o nome dele"
 ULTIMA=$(chamar GET "$V1/negociacoes/$NEGOCIACAO_ID" 200 "" "$TOKEN_E" | jq -r .ultimaOferta)
 [[ "$ULTIMA" == "1350" || "$ULTIMA" == "1350.00" || "$ULTIMA" == "1350.0" ]] || falhar "última oferta deveria ser 1350, veio $ULTIMA"
 passo "mensagens, contraproposta e bloqueio de intruso"

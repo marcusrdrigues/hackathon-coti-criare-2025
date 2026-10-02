@@ -3,7 +3,6 @@ package com.gestao.identidade.aplicacao;
 import com.gestao.compartilhado.dominio.NaoAutenticadoException;
 import com.gestao.identidade.aplicacao.porta.RefreshTokenRepositorio;
 import com.gestao.identidade.dominio.RefreshToken;
-import com.gestao.identidade.dominio.TipoUsuario;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -41,10 +40,10 @@ public class RefreshTokenService {
         this.validade = validade;
     }
 
-    public record Rotacao(UUID usuarioId, TipoUsuario tipo, String novoToken) {}
+    public record Rotacao(UUID usuarioId, String novoToken) {}
 
     @Transactional
-    public String emitir(UUID usuarioId, TipoUsuario tipo) {
+    public String emitir(UUID usuarioId) {
         byte[] bytes = new byte[32];
         aleatorio.nextBytes(bytes);
         String tokenBruto = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
@@ -53,7 +52,6 @@ public class RefreshTokenService {
         RefreshToken token = new RefreshToken();
         token.setTokenHash(hash(tokenBruto));
         token.setUsuarioId(usuarioId);
-        token.setTipoUsuario(tipo);
         token.setCriadoEm(agora);
         token.setExpiraEm(agora.plus(validade));
         repositorio.salvar(token);
@@ -86,8 +84,7 @@ public class RefreshTokenService {
         }
 
         token.setRevogadoEm(agora);
-        return new Rotacao(token.getUsuarioId(), token.getTipoUsuario(),
-                emitir(token.getUsuarioId(), token.getTipoUsuario()));
+        return new Rotacao(token.getUsuarioId(), emitir(token.getUsuarioId()));
     }
 
     @Transactional

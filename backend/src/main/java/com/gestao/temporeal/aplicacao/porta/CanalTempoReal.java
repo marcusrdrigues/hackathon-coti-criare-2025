@@ -11,6 +11,6 @@ public interface CanalTempoReal {
     /** Para as duas partes que acompanham a negociação. */
     void publicarNaNegociacao(UUID negociacaoId, EventoNegociacao evento);
 
-    /** Para um usuário só, na fila pessoal de avisos. */
-    void avisar(UUID usuarioId, AvisoTempoReal aviso);
+    /** Para toda a equipe de uma organização, na fila de avisos (cada pessoa conectada recebe). */
+    void avisar(UUID organizacaoId, AvisoTempoReal aviso);
 }

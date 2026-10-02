@@ -2,7 +2,7 @@ package com.gestao.temporeal.infraestrutura;
 
 import com.gestao.compras.aplicacao.NegociacaoService;
 import com.gestao.identidade.aplicacao.UsuarioAutenticado;
-import com.gestao.identidade.infraestrutura.seguranca.EmissorDeTokenJwt;
+import com.gestao.identidade.infraestrutura.seguranca.ClaimsDoToken;
 import com.gestao.identidade.infraestrutura.seguranca.UsuarioAtual;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.Message;
@@ -12,8 +12,6 @@ import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
@@ -21,7 +19,6 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.stereotype.Component;
 
 import java.security.Principal;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -68,10 +65,12 @@ public class AutenticacaoStomp implements ChannelInterceptor {
         }
         try {
             Jwt jwt = jwtDecoder.decode(cabecalho.substring(PREFIXO_BEARER.length()).trim());
-            String tipo = jwt.getClaimAsString(EmissorDeTokenJwt.CLAIM_TIPO);
-            List<GrantedAuthority> perfis = tipo == null ? List.of() : List.of(new SimpleGrantedAuthority("ROLE_" + tipo));
-            // O nome do usuário na sessão é o id: é ele que endereça /user/{id}/queue/avisos
-            return new JwtAuthenticationToken(jwt, perfis, jwt.getSubject());
+            String organizacao = jwt.getClaimAsString(ClaimsDoToken.ORGANIZACAO);
+            if (organizacao == null) {
+                throw new MessageDeliveryException("Sessão antiga. Faça login novamente.");
+            }
+            // O nome na sessão é a organização: os avisos de /user/{id}/queue/avisos chegam a toda a equipe
+            return new JwtAuthenticationToken(jwt, ClaimsDoToken.autoridades(jwt), organizacao);
         } catch (JwtException e) {
             throw new MessageDeliveryException("Token de acesso inválido ou expirado.");
         }

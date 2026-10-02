@@ -4,8 +4,7 @@ import com.gestao.compras.dominio.CategoriaCotacao;
 import com.gestao.compras.dominio.StatusCotacao;
 import com.gestao.compras.dominio.StatusNegociacao;
 import com.gestao.compras.dominio.StatusProposta;
-import com.gestao.identidade.aplicacao.EmpresaService;
-import com.gestao.identidade.aplicacao.FornecedorService;
+import com.gestao.identidade.aplicacao.OrganizacaoService;
 import com.gestao.painel.aplicacao.dto.CategoriaResumoResponse;
 import com.gestao.painel.aplicacao.dto.FornecedorResumoResponse;
 import com.gestao.painel.aplicacao.dto.PainelEmpresaResponse;
@@ -34,16 +33,15 @@ public class PainelService {
     private static final int TOP_FORNECEDORES = 5;
 
     private final ConsultasDoPainel consultas;
-    private final EmpresaService empresaService;
-    private final FornecedorService fornecedorService;
+    private final OrganizacaoService organizacaoService;
 
     @Transactional(readOnly = true)
     public PainelEmpresaResponse resumoEmpresa(UUID empresaId) {
-        empresaService.buscarPorId(empresaId); // 404 se a empresa não existir
+        organizacaoService.buscarPorId(empresaId); // 404 se a organização não existir
 
         List<FornecedorResumoResponse> top = consultas.fornecedoresQueMaisPropuseram(empresaId, TOP_FORNECEDORES)
                 .stream()
-                .map(f -> new FornecedorResumoResponse(f.getId(), f.getNome(), f.getEmail(), f.getTotalPropostas()))
+                .map(f -> new FornecedorResumoResponse(f.getId(), f.getNome(), f.getCnpj(), f.getTotalPropostas()))
                 .toList();
 
         return new PainelEmpresaResponse(
@@ -57,7 +55,7 @@ public class PainelService {
 
     @Transactional(readOnly = true)
     public PainelFornecedorResponse resumoFornecedor(UUID fornecedorId) {
-        fornecedorService.buscarPorId(fornecedorId);
+        organizacaoService.buscarPorId(fornecedorId);
 
         return new PainelFornecedorResponse(
                 consultas.contarCotacoesAbertasEmVigor(LocalDateTime.now()),

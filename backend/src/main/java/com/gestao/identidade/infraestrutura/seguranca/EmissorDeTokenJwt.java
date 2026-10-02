@@ -1,7 +1,7 @@
 package com.gestao.identidade.infraestrutura.seguranca;
 
+import com.gestao.identidade.aplicacao.UsuarioAutenticado;
 import com.gestao.identidade.aplicacao.porta.EmissorDeToken;
-import com.gestao.identidade.dominio.TipoUsuario;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
@@ -18,20 +18,20 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class EmissorDeTokenJwt implements EmissorDeToken {
 
-    public static final String CLAIM_TIPO = "tipo";
-
     private final JwtEncoder jwtEncoder;
     private final JwtProperties propriedades;
 
     @Override
-    public TokenAcesso gerar(UUID usuarioId, TipoUsuario tipo) {
+    public TokenAcesso gerar(UsuarioAutenticado usuario) {
         Instant agora = Instant.now();
 
-        // Só o necessário: quem é (sub) e o perfil. Nada de dado pessoal no token.
+        // Só identificadores: a pessoa (sub), a organização, o lado no negócio e o papel. Nada de dado pessoal.
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(propriedades.issuer())
-                .subject(usuarioId.toString())
-                .claim(CLAIM_TIPO, tipo.name())
+                .subject(usuario.usuarioId().toString())
+                .claim(ClaimsDoToken.ORGANIZACAO, usuario.organizacaoId().toString())
+                .claim(ClaimsDoToken.TIPO, usuario.tipo().name())
+                .claim(ClaimsDoToken.PAPEL, usuario.papel().name())
                 .issuedAt(agora)
                 .expiresAt(agora.plus(propriedades.expiracaoAcesso()))
                 .id(UUID.randomUUID().toString())

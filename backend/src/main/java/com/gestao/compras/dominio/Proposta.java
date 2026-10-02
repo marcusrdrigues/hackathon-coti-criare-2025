@@ -1,6 +1,7 @@
 package com.gestao.compras.dominio;
 
-import com.gestao.identidade.dominio.Fornecedor;
+import com.gestao.identidade.dominio.Organizacao;
+import com.gestao.identidade.dominio.Usuario;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -33,9 +34,15 @@ public class Proposta {
     @Column(name = "data_envio")
     private LocalDateTime dataEnvio;
 
+    /** O fornecedor que propõe */
     @ManyToOne
     @JoinColumn(name = "fornecedor_id", nullable = false)
-    private Fornecedor fornecedor;
+    private Organizacao fornecedor;
+
+    /** Quem enviou */
+    @ManyToOne
+    @JoinColumn(name = "enviada_por", nullable = false)
+    private Usuario enviadaPor;
 
     @ManyToOne
     @JoinColumn(name = "cotacao_id", nullable = false)

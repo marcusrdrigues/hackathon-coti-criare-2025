@@ -1,7 +1,6 @@
 package com.gestao.compras.dominio;
 
-import com.gestao.identidade.dominio.Empresa;
-import com.gestao.identidade.dominio.Fornecedor;
+import com.gestao.identidade.dominio.Organizacao;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -51,11 +50,11 @@ public class Negociacao {
 
     @ManyToOne
     @JoinColumn(name = "empresa_id", nullable = false)
-    private Empresa empresa;
+    private Organizacao empresa;
 
     @ManyToOne
     @JoinColumn(name = "fornecedor_id", nullable = false)
-    private Fornecedor fornecedor;
+    private Organizacao fornecedor;
 
     @OneToMany(mappedBy = "negociacao")
     @OrderBy("dataEnvio ASC")

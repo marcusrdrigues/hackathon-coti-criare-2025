@@ -4,7 +4,7 @@ import com.gestao.demonstracao.aplicacao.DadosDemonstracao;
 import com.gestao.identidade.aplicacao.AuthService;
 import com.gestao.identidade.aplicacao.TentativasLoginService;
 import com.gestao.identidade.aplicacao.dto.TokenResponse;
-import com.gestao.identidade.dominio.TipoUsuario;
+import com.gestao.identidade.dominio.TipoOrganizacao;
 import com.gestao.identidade.infraestrutura.seguranca.CookieDeSessao;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -40,17 +40,17 @@ public class DemonstracaoController {
     @GetMapping
     public ResponseEntity<List<ContaDemoResponse>> contas() {
         return ResponseEntity.ok(List.of(
-                new ContaDemoResponse(TipoUsuario.EMPRESA, "Criare Consulting",
+                new ContaDemoResponse(TipoOrganizacao.EMPRESA, "Criare Consulting",
                         "Publica cotações, compara propostas e negocia"),
-                new ContaDemoResponse(TipoUsuario.FORNECEDOR, "Tech Soluções Ltda",
+                new ContaDemoResponse(TipoOrganizacao.FORNECEDOR, "Tech Soluções Ltda",
                         "Encontra oportunidades, envia propostas e negocia")));
     }
 
     @Operation(summary = "Entrar como conta de demonstração",
             description = "Rota pública, disponível só no profile demo. Usa o mesmo fluxo do login normal")
     @PostMapping("/{perfil}")
-    public ResponseEntity<TokenResponse> entrar(@PathVariable TipoUsuario perfil) {
-        String email = perfil == TipoUsuario.EMPRESA
+    public ResponseEntity<TokenResponse> entrar(@PathVariable TipoOrganizacao perfil) {
+        String email = perfil == TipoOrganizacao.EMPRESA
                 ? DadosDemonstracao.EMAIL_EMPRESA
                 : DadosDemonstracao.EMAIL_FORNECEDOR;
 

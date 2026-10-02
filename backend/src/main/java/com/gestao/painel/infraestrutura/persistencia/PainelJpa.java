@@ -27,11 +27,11 @@ interface PainelJpa extends Repository<Cotacao, UUID> {
     long contarPropostasRecebidas(@Param("empresaId") UUID empresaId);
 
     @Query("""
-            SELECT f.id AS id, f.nomeCompleto AS nome, f.email AS email, COUNT(p) AS totalPropostas
+            SELECT f.id AS id, f.razaoSocial AS nome, f.cnpj AS cnpj, COUNT(p) AS totalPropostas
             FROM Proposta p
             JOIN p.fornecedor f
             WHERE p.cotacao.empresa.id = :empresaId
-            GROUP BY f.id, f.nomeCompleto, f.email
+            GROUP BY f.id, f.razaoSocial, f.cnpj
             ORDER BY COUNT(p) DESC""")
     List<FornecedorResumoProjection> fornecedoresQueMaisPropuseram(@Param("empresaId") UUID empresaId, Pageable pagina);
 
