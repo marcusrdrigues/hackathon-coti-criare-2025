@@ -588,13 +588,16 @@ cd backend && ./scripts/smoke-test-api.sh      # requer curl e jq
 | Suíte | O que cobre |
 |---|---|
 | `FluxoCotacaoIntegrationTest` | Cadastro, login, CNPJ inválido, e-mail duplicado, proposta duplicada, negociação, contrapropostas, fechamento, cancelamento, prazo vencido, dashboards e regras de posse (empresa concorrente, fornecedor concorrente, intruso na negociação) |
+| `ComprasApiTest` | O contrato HTTP de compras, como o front-end usa: publicar, editar, propor, retirar, recusar, negociar, conversar, fechar e cancelar, painéis, e o formato das respostas de erro (validação por campo, 404, id malformado, JSON inválido, cadastro repetido) |
 | `AutenticacaoIntegrationTest` | Conteúdo do JWT, token adulterado, refresh gravado como hash, rotação, detecção de reuso, logout e bloqueio de força bruta |
 | `SegurancaApiTest` | Pela camada HTTP: 401 sem token e com token inválido, rotas públicas, cookie `HttpOnly`/`SameSite`, 403 por perfil e por posse, identidade vinda do token, refresh pelo cookie, logout e CORS |
+| `TempoRealIntegrationTest` | WebSocket de verdade (STOMP): conexão sem token ou com token inválido recusada, mensagem e aviso entregues na hora, "digitando…" e quem não participa não consegue assinar a negociação |
 | `MigracoesPostgresTest` | Num PostgreSQL 16 real (Testcontainers): o Flyway aplica as migrações, o Hibernate valida o esquema e todas as tabelas existem |
 | `FluxoCotacaoPostgresTest` e `AutenticacaoPostgresTest` | Os mesmos cenários das duas suítes acima, agora no PostgreSQL real, para pegar diferenças que o H2 esconde |
 | `DemonstracaoApiTest` | Login de demonstração em um clique, health check e reset diário dos dados de exemplo |
 | `ArquiteturaTest` | A arquitetura como teste: módulos sem ciclos e usando só a API uns dos outros (Spring Modulith), e camadas da Clean Architecture com as dependências apontando para dentro (ArchUnit) |
 | `DocumentosTest` | Validação de CNPJ e normalização de dados |
+| `GlobalExceptionHandlerTest` | Respostas de erro difíceis de provocar pela API: erro inesperado sem detalhes internos, violação de integridade, acesso negado por perfil e bloqueio de login com `Retry-After` |
 | `smoke-test-api.sh` | Contra a API real com PostgreSQL: login, proteção das rotas, CORS, validações, regras de perfil e de posse, cotação → proposta → negociação → mensagens → fechamento, dashboards, refresh com rotação e reuso, logout e força bruta |
 | Playwright (`frontend/e2e`) | No navegador, com API e banco reais: empresa e fornecedor negociam do começo ao fim (publicar, propor pelo painel do mural, contraproposta, aceitar, fechar com confirmação), vendo um ao outro **ao vivo** (proposta e aviso chegando à empresa, contador de não lidas do fornecedor e atalho do aviso, "digitando…", aceite e fechamento sem recarregar), rota protegida, login com erro, cadastro com validação de CNPJ, sessão após F5, sair e tema claro/escuro. As telas de acesso rodam também num celular emulado |
 | Front-end | Interceptor (token, renovação automática e expiração), guards por perfil, tema claro/escuro, seletor (teclado e busca por letra), controle segmentado, confirmação, máscara de CNPJ e componente raiz |
