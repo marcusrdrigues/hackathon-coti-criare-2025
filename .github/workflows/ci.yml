@@ -89,11 +89,21 @@ jobs:
       - name: Resumo dos erros de build/teste
         if: failure()
         run: |
-          # Junta as linhas de erro numa anotação, para ver o motivo direto no resumo do job
-          resumo=$(grep -E "^\[ERROR\]|Tests run:.*Fail|expected|Exception" build.log | grep -v "^\[ERROR\] *$" | head -60 || true)
+          # Erros de compilação e do Maven, sem as linhas de log da aplicação
+          resumo=$(grep -E "^\[ERROR\]" build.log | grep -v "^\[ERROR\] *$\|Tests run:" | head -40 || true)
           if [ -n "$resumo" ]; then
             echo "::error title=Build do back-end::$(echo "$resumo" | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')"
           fi
+          # Cada teste que falhou vira uma anotação com o motivo
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          for arquivo in glob.glob('target/surefire-reports/TEST-*.xml'):
+              for caso in ET.parse(arquivo).getroot().iter('testcase'):
+                  for problema in list(caso.findall('failure')) + list(caso.findall('error')):
+                      motivo = (problema.get('message') or problema.text or '').strip()[:900]
+                      motivo = motivo.replace('%', '%25').replace('\r', '').replace('\n', '%0A')
+                      print(f"::error title={caso.get('classname').split('.')[-1]}.{caso.get('name')}::{motivo}")
+          PY
 
       - name: Subir a API com dados de demonstração (PostgreSQL)
         run: |
