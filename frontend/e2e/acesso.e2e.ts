@@ -45,8 +45,8 @@ test.describe('Acesso', () => {
     await page.getByRole('button', { name: 'Criar conta' }).click();
 
     await expect(page).toHaveURL(/\/pages\/dashboard-fornecedor$/);
-    // A conta é da pessoa; a organização aparece no painel e no menu da conta
-    await expect(page.getByText(`Fornecedor E2E ${id}`).first()).toBeVisible();
+    // A conta é da pessoa; o painel é da organização que ela acabou de cadastrar
+    await expect(page.locator('.subtitulo-pagina')).toHaveText(`Fornecedor E2E ${id}`);
   });
 
   test('sessão sobrevive ao recarregar a página', async ({ page }) => {
