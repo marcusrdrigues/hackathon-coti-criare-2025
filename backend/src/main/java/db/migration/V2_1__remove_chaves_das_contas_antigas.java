@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Prepara a V3 (pessoas e organizações): remove as chaves estrangeiras que ligam o negócio
@@ -26,6 +27,8 @@ public class V2_1__remove_chaves_das_contas_antigas extends BaseJavaMigration {
     private static final List<String> TABELAS_DO_NEGOCIO = List.of(
             "tb_cotacao", "tb_proposta", "tb_negociacao", "tb_mensagem_negociacao", "tb_refresh_token");
     private static final Set<String> CONTAS_ANTIGAS = Set.of("tb_empresa", "tb_fornecedor");
+    /** Nomes de restrição que o Hibernate e a V1 geram: letras, números e sublinhado. */
+    private static final Pattern IDENTIFICADOR = Pattern.compile("[A-Za-z0-9_]{1,63}");
 
     private record Chave(String tabela, String nome) {}
 
@@ -35,7 +38,10 @@ public class V2_1__remove_chaves_das_contas_antigas extends BaseJavaMigration {
         List<Chave> antigas = chavesParaContasAntigas(conexao);
         try (Statement comando = conexao.createStatement()) {
             for (Chave chave : antigas) {
-                comando.execute("ALTER TABLE " + chave.tabela() + " DROP CONSTRAINT " + entreAspas(chave.nome()));
+                // DDL não aceita parâmetro no lugar de um nome. A tabela vem da lista fixa acima e o
+                // nome da chave vem do catálogo do próprio banco, conferido contra IDENTIFICADOR.
+                String sql = "ALTER TABLE " + chave.tabela() + " DROP CONSTRAINT " + entreAspas(chave.nome());
+                comando.execute(sql); // NOSONAR java:S2077: identificadores do catálogo, validados
             }
         }
     }
@@ -60,6 +66,9 @@ public class V2_1__remove_chaves_das_contas_antigas extends BaseJavaMigration {
     }
 
     private static String entreAspas(String identificador) {
-        return '"' + identificador.replace("\"", "\"\"") + '"';
+        if (!IDENTIFICADOR.matcher(identificador).matches()) {
+            throw new IllegalStateException("Nome de restrição inesperado: " + identificador);
+        }
+        return '"' + identificador + '"';
     }
 }
