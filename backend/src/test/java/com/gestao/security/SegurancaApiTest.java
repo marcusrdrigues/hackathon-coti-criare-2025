@@ -3,10 +3,16 @@ package com.gestao.security;
 import com.gestao.entities.Cotacao;
 import com.gestao.entities.Empresa;
 import com.gestao.entities.Fornecedor;
+import com.gestao.entities.Negociacao;
+import com.gestao.entities.Proposta;
 import com.gestao.enums.CategoriaCotacao;
+import com.gestao.enums.TipoUsuario;
 import com.gestao.services.CotacaoService;
 import com.gestao.services.EmpresaService;
 import com.gestao.services.FornecedorService;
+import com.gestao.services.MensagemNegociacaoService;
+import com.gestao.services.NegociacaoService;
+import com.gestao.services.PropostaService;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,12 +27,14 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -46,17 +54,22 @@ class SegurancaApiTest {
     @Autowired private EmpresaService empresaService;
     @Autowired private FornecedorService fornecedorService;
     @Autowired private CotacaoService cotacaoService;
+    @Autowired private PropostaService propostaService;
+    @Autowired private NegociacaoService negociacaoService;
+    @Autowired private MensagemNegociacaoService mensagemService;
 
     private MockMvc mvc;
+    private Empresa criare;
+    private Fornecedor tech;
     private Cotacao cotacaoDaOutraEmpresa;
 
     @BeforeEach
     void setUp() {
         mvc = MockMvcBuilders.webAppContextSetup(contexto).apply(springSecurity()).build();
 
-        empresaService.cadastrarEmpresa(empresa("Criare Consulting", "11.222.333/0001-81", "empresa@api.com"));
+        criare = empresaService.cadastrarEmpresa(empresa("Criare Consulting", "11.222.333/0001-81", "empresa@api.com"));
         Empresa outra = empresaService.cadastrarEmpresa(empresa("Outra SA", "90.817.263/0001-80", "outra@api.com"));
-        fornecedorService.cadastrarFornecedor(fornecedor("Tech Soluções", "45.236.789/0001-12", "fornecedor@api.com"));
+        tech = fornecedorService.cadastrarFornecedor(fornecedor("Tech Soluções", "45.236.789/0001-12", "fornecedor@api.com"));
 
         Cotacao c = new Cotacao();
         c.setNomeServico("Notebooks");
@@ -187,7 +200,56 @@ class SegurancaApiTest {
                 .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"));
     }
 
+    @Test
+    void naoLidasAparecemNaListaESomemAoMarcarComoLida() throws Exception {
+        Negociacao negociacao = negociacaoComMensagemDaEmpresa();
+        String fornecedor = bearer(login("fornecedor@api.com"));
+        String url = "/api/v1/negociacoes/" + negociacao.getId();
+
+        mvc.perform(get("/api/v1/negociacoes/minhas").header(HttpHeaders.AUTHORIZATION, fornecedor))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].naoLidas").value(1));
+        mvc.perform(get(url).header(HttpHeaders.AUTHORIZATION, fornecedor))
+                .andExpect(jsonPath("$.naoLidas").value(1));
+
+        mvc.perform(patch(url + "/leitura").header(HttpHeaders.AUTHORIZATION, fornecedor))
+                .andExpect(status().isNoContent());
+
+        mvc.perform(get("/api/v1/negociacoes/minhas").header(HttpHeaders.AUTHORIZATION, fornecedor))
+                .andExpect(jsonPath("$[0].naoLidas").value(0));
+        // Para a empresa, a própria mensagem nunca conta
+        mvc.perform(get(url).header(HttpHeaders.AUTHORIZATION, bearer(login("empresa@api.com"))))
+                .andExpect(jsonPath("$.naoLidas").value(0));
+    }
+
+    @Test
+    void quemNaoParticipaNaoMarcaComoLida() throws Exception {
+        Negociacao negociacao = negociacaoComMensagemDaEmpresa();
+        mvc.perform(patch("/api/v1/negociacoes/" + negociacao.getId() + "/leitura")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(login("outra@api.com"))))
+                .andExpect(status().isForbidden());
+    }
+
     // ---------------------------------------------------------------- helpers
+
+    private Negociacao negociacaoComMensagemDaEmpresa() {
+        Cotacao cotacao = new Cotacao();
+        cotacao.setNomeServico("Cadeiras");
+        cotacao.setRequisitos("20 cadeiras ergonômicas");
+        cotacao.setCategoria(CategoriaCotacao.TECNOLOGIA);
+        cotacao.setDataLimite(LocalDateTime.now().plusDays(5));
+        cotacao = cotacaoService.criarCotacao(cotacao, criare.getId());
+
+        Proposta proposta = new Proposta();
+        proposta.setValor(new BigDecimal("11500.00"));
+        proposta.setDescricao("Entrega em 10 dias");
+        proposta = propostaService.criarProposta(proposta, tech.getId(), cotacao.getId());
+
+        Negociacao negociacao = negociacaoService.criarNegociacao(proposta.getId(), criare.getId());
+        mensagemService.enviarMensagem(negociacao.getId(), "Fechamos em 10.800?", new BigDecimal("10800.00"),
+                new UsuarioAutenticado(criare.getId(), TipoUsuario.EMPRESA));
+        return negociacao;
+    }
 
     private MvcResult login(String email) throws Exception {
         return mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)

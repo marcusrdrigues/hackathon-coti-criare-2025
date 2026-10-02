@@ -171,6 +171,23 @@ jobs:
         run: |
           motivo=$(grep -E "ERROR" sonar.log | head -15 || true)
           [ -n "$motivo" ] && echo "::error title=SonarCloud::$(echo "$motivo" | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')" || true
+          # Quais condições do quality gate reprovaram (ex.: cobertura do código novo)
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            alvo="pullRequest=${{ github.event.number }}"
+          else
+            alvo="branch=${{ github.ref_name }}"
+          fi
+          curl -s -o gate.json "https://sonarcloud.io/api/qualitygates/project_status?projectKey=marcusrdrigues_hackathon-coti-criare-2025&$alvo" || exit 0
+          python3 - <<'PY'
+          import json
+          try:
+              condicoes = json.load(open('gate.json'))['projectStatus']['conditions']
+          except Exception:
+              raise SystemExit(0)
+          for c in condicoes:
+              if c.get('status') == 'ERROR':
+                  print(f"::error title=Quality gate::{c['metricKey']} = {c.get('actualValue')} (limite {c.get('comparator')} {c.get('errorThreshold')})")
+          PY
 
   frontend:
     name: Frontend (Angular)
