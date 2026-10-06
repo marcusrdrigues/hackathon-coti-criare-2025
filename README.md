@@ -34,6 +34,7 @@
 - [Regras de negócio](#-regras-de-negócio)
 - [Segurança](#-segurança)
 - [Arquitetura](#️-arquitetura)
+- [Padrões de projeto](#-padrões-de-projeto)
 - [Como rodar](#️-como-rodar)
 - [Dados de demonstração](#-dados-de-demonstração)
 - [Deploy](#️-deploy)
@@ -396,6 +397,38 @@ erDiagram
 ```
 
 As tabelas antigas (`tb_empresa`, `tb_fornecedor` e `tb_perfil`) ficaram no banco, sem uso, até a versão nova ser validada em produção, e saíram na migração V5. Antes disso, a V2_1 (escrita em Java) soltou as chaves estrangeiras que apontavam para elas, porque o banco de produção nasceu do Hibernate e os nomes dessas chaves não são os do script.
+
+---
+
+## 🧱 Padrões de projeto
+
+Cada padrão abaixo resolve um problema concreto do projeto; nenhum entrou só para constar. A primeira tabela traz os clássicos do GoF, e a segunda, os que vêm do Spring Framework e da arquitetura.
+
+### Clássicos (GoF)
+
+| Padrão | Onde | Por quê |
+|---|---|---|
+| **Singleton** | Beans do Spring (`@Service`, `@Component`, `@Repository`), como `NegociacaoService` e `AcessoCompras` | Uma instância por aplicação, criada e guardada pelo container. É o Singleton sem construtor privado nem campo estático, e por isso fácil de trocar nos testes |
+| **Strategy** | A porta `EnvioDeEmail`, com duas implementações: `EmailPelaBrevo` e `EmailDesligado` | O mesmo contrato com dois comportamentos. A redefinição de senha chama `enviar(...)` e não sabe qual dos dois está ativo |
+| **Null Object** | `EmailDesligado` | Sem chave da Brevo, o envio não faz nada e só avisa no log, com o e-mail mascarado. Ninguém precisa espalhar `if (emailLigado)` pelo código |
+| **Factory Method** | O método `@Bean` de `ConfiguracaoDoEmail`, e `EventoNegociacao.mensagem(...)`, `status(...)` e `digitando(...)` | A criação fica num lugar só: a configuração do servidor decide qual envio de e-mail nasce, e cada tipo de evento do WebSocket é montado sempre do mesmo jeito, sem campo esquecido |
+| **Builder** | `RestClient.builder()`, em `ConfiguracaoDoEmail` | O cliente HTTP da Brevo é montado em partes (fábrica de requisições com timeout de conexão e de leitura), sem um construtor com uma fila de parâmetros |
+| **Adapter** | `NegociacaoRepositorioJpa`, `CanalStomp` e `EmailPelaBrevo`, que implementam as portas `NegociacaoRepositorio`, `CanalTempoReal` e `EnvioDeEmail` | A aplicação fala com interfaces dela; o adaptador traduz para o Spring Data JPA, o broker STOMP ou a API HTTP da Brevo. Trocar a tecnologia é trocar o adaptador, sem mexer na regra de negócio |
+| **Observer** | `NegociacaoService` publica `NegociacaoAlteradaEvento`; `NotificadorTempoReal` escuta com `@TransactionalEventListener` | O módulo de compras não conhece o tempo real: ele anuncia o que aconteceu, e quem se interessa reage. O aviso só sai depois do commit, então ninguém é avisado de algo que foi desfeito |
+| **Facade** | Os serviços de aplicação, como `NegociacaoService.criarNegociacao(...)` e `finalizarNegociacao(...)` | Uma chamada esconde a orquestração inteira: aceitar a proposta, abrir a negociação, gravar a primeira mensagem, fechar a cotação, recusar as outras propostas e publicar o evento. O controller só chama um método |
+
+### Spring Framework e arquitetura
+
+| Padrão | Onde | Por quê |
+|---|---|---|
+| **Injeção de dependência** | Construtores gerados pelo `@RequiredArgsConstructor` (Lombok) nos serviços e componentes | A classe declara do que precisa, e o Spring entrega. Nos testes, `RedefinicaoDeSenhaApiTest` troca o provedor de e-mail por uma caixa de saída de teste sem mudar uma linha do serviço |
+| **Repository** | As portas `*Repositorio` em `aplicacao/porta` | O caso de uso pede "salvar" ou "buscar por id" e não sabe de SQL nem de JPA |
+| **Specification** | `NegociacaoRepositorioJpa.buscarDaOrganizacao(...)`, com a `Specification` do Spring Data | Os filtros (organização, situação) são peças que se combinam numa consulta só, com a ordenação junto |
+| **DTO + Mapper** | Records em `aplicacao/dto` (`CotacaoRequest`, `CotacaoResponse`) e mapeadores como `CotacaoMapper` | A entidade nunca sai pela API, e o mapper monta a visão de quem pede: só a empresa dona da cotação vê a melhor oferta |
+| **Política de acesso centralizada** | `AcessoCompras` ([ADR 0016](docs/adr/0016-autorizacao-por-organizacao.md)) | A regra de quem vê o quê fica num lugar só, usado pela API REST e pelo WebSocket. Recurso de outra organização responde 404, igual a um id que não existe |
+| **Ports and Adapters e CQRS** | Todos os módulos; o módulo `painel` só lê | Explicados em [Arquitetura](#️-arquitetura). O `ArquiteturaTest` garante que a aplicação não depende da infraestrutura: se um caso de uso chamar o JPA direto, o build quebra |
+
+Os status de cotação, proposta e negociação formam uma máquina de estados simples, com enums e as transições validadas nos serviços (veja o diagrama em [Regras de negócio](#-regras-de-negócio)). Não é o State do GoF, com uma classe por estado: com tão poucos estados, o enum é mais fácil de ler e de manter.
 
 ---
 
